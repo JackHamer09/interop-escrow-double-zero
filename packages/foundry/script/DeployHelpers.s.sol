@@ -37,16 +37,18 @@ contract ScaffoldETHDeploy is Script {
   }
 
   function _startBroadcast() internal returns (address) {
+    // uint256 privateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
     vm.startBroadcast();
     (, address _deployer,) = vm.readCallers();
+    console.logString(string.concat("Deployer: ", vm.toString(_deployer)));
 
-    if (block.chainid == 31337 && _deployer.balance == 0) {
-      try this.anvil_setBalance(_deployer, ANVIL_BASE_BALANCE) {
-        emit AnvilSetBalance(_deployer, ANVIL_BASE_BALANCE);
-      } catch {
-        emit FailedAnvilRequest();
-      }
-    }
+    // if (block.chainid == 31337 && _deployer.balance == 0) {
+    //   try this.anvil_setBalance(_deployer, ANVIL_BASE_BALANCE) {
+    //     emit AnvilSetBalance(_deployer, ANVIL_BASE_BALANCE);
+    //   } catch {
+    //     emit FailedAnvilRequest();
+    //   }
+    // }
     return _deployer;
   }
 

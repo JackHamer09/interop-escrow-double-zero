@@ -15,15 +15,11 @@ fork: setup-anvil-wallet
 
 # Build the project
 build:
-	forge build --build-info --build-info-path out/build-info/
+	forge build --build-info --build-info-path out/build-info/ --zksync
 
 # Deploy the project
 deploy:
-	@if [ "$(RPC_URL)" = "localhost" ]; then \
-		forge script script/Deploy.s.sol --rpc-url localhost --password localhost --broadcast --legacy --ffi; \
-	else \
-		forge script script/Deploy.s.sol --rpc-url $(RPC_URL) --broadcast --legacy --ffi; \
-	fi
+	forge script script/Deploy.s.sol --rpc-url http://localhost:3050 --broadcast --zksync --private-key 2d64990aa363e3d38ae3417950fd40801d75e3d3bd57b86d17fcc261a6c951c6
 
 # Build and deploy target
 build-and-deploy: build deploy generate-abis
@@ -54,7 +50,7 @@ account-import:
 
 # Compile contracts
 compile:
-	forge compile
+	forge compile --zksync
 
 # Deploy and verify
 deploy-verify:
@@ -75,7 +71,7 @@ format:
 
 # Lint code
 lint:
-	forge fmt --check && prettier --check ./script/**/*.js
+	forge fmt --check && prettier --check ./scripts-js/**/*.js
 
 # Run tests
 test:
@@ -86,4 +82,3 @@ verify:
 	forge script script/VerifyAll.s.sol --ffi --rpc-url $(RPC_URL)
 
 build-and-verify: build verify
-

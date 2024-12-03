@@ -5,19 +5,19 @@ import {
   Transaction,
   TransactionReceipt,
   createTestClient,
+  http,
   publicActions,
   walletActions,
-  webSocket,
 } from "viem";
-import { hardhat } from "viem/chains";
+import { zksyncLocalNode } from "viem/chains";
 import { decodeTransactionData } from "~~/utils/scaffold-eth";
 
 const BLOCKS_PER_PAGE = 20;
 
 export const testClient = createTestClient({
-  chain: hardhat,
+  chain: { ...zksyncLocalNode, id: 271 },
   mode: "hardhat",
-  transport: webSocket("ws://127.0.0.1:8545"),
+  transport: http("http://127.0.0.1:3050"),
 })
   .extend(publicActions)
   .extend(walletActions);
@@ -72,7 +72,7 @@ export const useFetchBlocks = () => {
         ),
       );
 
-      setBlocks(fetchedBlocks);
+      setBlocks(fetchedBlocks as Block[]);
       setTransactionReceipts(prevReceipts => ({ ...prevReceipts, ...Object.assign({}, ...txReceipts) }));
     } catch (err) {
       setError(err instanceof Error ? err : new Error("An error occurred."));

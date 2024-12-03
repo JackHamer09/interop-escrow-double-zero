@@ -1,72 +1,225 @@
 "use client";
 
-import Link from "next/link";
-import type { NextPage } from "next";
-import { useAccount } from "wagmi";
-import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { Address } from "~~/components/scaffold-eth";
+import React, { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { useAccount, useWriteContract } from "wagmi";
+import { ArrowsUpDownIcon, LockClosedIcon } from "@heroicons/react/24/outline";
+import { CPAMM_ABI, CPAMM_ADDRESS } from "~~/contracts/cpamm";
+import { DAI_TOKEN, ERC20_ABI, Token, WBTC_TOKEN } from "~~/contracts/tokens";
+import useCpamm from "~~/hooks/use-cpamm";
+import useDaiToken from "~~/hooks/use-dai-token";
+import useWbtcToken from "~~/hooks/use-wbtc-token";
+import { cn } from "~~/utils/cn";
+import { formatTokenWithDecimals } from "~~/utils/currency";
+import waitForTransactionReceipt from "~~/utils/wait-for-transaction-receipt";
 
-const Home: NextPage = () => {
-  const { address: connectedAddress } = useAccount();
+export default function UniswapClone() {
+  const [selectedToken, setSelectedToken] = useState<Token>(DAI_TOKEN);
+  const [amount, setAmount] = useState("");
+  const dai = useDaiToken();
+  const wbtc = useWbtcToken();
+  const { writeContractAsync } = useWriteContract();
+  const { daiPoolLiquidity, wbtcPoolLiquidity, refetchAll } = useCpamm();
+  const { isConnected } = useAccount();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchAll();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refetchAll]);
+
+  const swapAmount = useMemo(() => {
+    if (!daiPoolLiquidity || !wbtcPoolLiquidity) {
+      return 0n;
+    }
+
+    const amountWithFee = (BigInt(amount) * 10n ** 18n * 997n) / 1000n; // 0.3% fee
+    const reserveIn = selectedToken.symbol === "DAI" ? daiPoolLiquidity : wbtcPoolLiquidity;
+    const reserveOut = selectedToken.symbol === "DAI" ? wbtcPoolLiquidity : daiPoolLiquidity;
+    return (reserveOut * amountWithFee) / (reserveIn + amountWithFee);
+  }, [daiPoolLiquidity, wbtcPoolLiquidity, amount, selectedToken.symbol]);
+
+  const swapPrice = useMemo(() => {
+    if (!daiPoolLiquidity || !wbtcPoolLiquidity) {
+      return 0n;
+    }
+    const mockAmountIn = 1n * 10n ** 18n;
+    const mockAmountInWithFee = (mockAmountIn * 997n) / 1000n; // 0.3% fee
+    const reserveIn = selectedToken.symbol === "DAI" ? daiPoolLiquidity : wbtcPoolLiquidity;
+    const reserveOut = selectedToken.symbol === "DAI" ? wbtcPoolLiquidity : daiPoolLiquidity;
+    return (reserveOut * mockAmountInWithFee) / (reserveIn + mockAmountInWithFee);
+  }, [daiPoolLiquidity, wbtcPoolLiquidity, selectedToken.symbol]);
+
+  const selectedTokenData = selectedToken.symbol === "DAI" ? dai : wbtc;
+  const oppositeToken = selectedToken.symbol === "DAI" ? WBTC_TOKEN : DAI_TOKEN;
+  const oppositeTokenData = oppositeToken.symbol === "DAI" ? dai : wbtc;
+  const amountWithDecimals = BigInt(amount) * BigInt(10 ** 18);
+
+  const handleTokenChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedToken(e.target.value === "DAI" ? DAI_TOKEN : WBTC_TOKEN);
+    setAmount("");
+  };
+
+  const handleSwitch = () => {
+    setSelectedToken(oppositeToken);
+    setAmount("");
+  };
+
+  const handleSwap = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      return;
+    }
+
+    const allowance = selectedTokenData.allowance ?? 0n;
+
+    if (allowance < amountWithDecimals) {
+      const approveTx = await toast.promise(
+        writeContractAsync({
+          abi: ERC20_ABI,
+          address: selectedToken.address,
+          functionName: "approve",
+          args: [CPAMM_ADDRESS, amountWithDecimals],
+        }),
+        {
+          loading: `Approving ${selectedToken.symbol}...`,
+          success: `${selectedToken.symbol} approved!`,
+          error: err => {
+            console.error(err);
+            return `Failed to approve ${selectedToken.symbol}`;
+          },
+        },
+      );
+
+      await toast.promise(
+        waitForTransactionReceipt({
+          hash: approveTx,
+        }),
+        {
+          loading: `Waiting for ${selectedToken.symbol} approval confirmation...`,
+          success: `${selectedToken.symbol} approval confirmed!`,
+          error: err => {
+            console.error(err);
+            return `Failed to approve ${selectedToken.symbol}`;
+          },
+        },
+      );
+    }
+
+    const swapTx = await toast.promise(
+      writeContractAsync({
+        abi: CPAMM_ABI,
+        address: CPAMM_ADDRESS,
+        functionName: "swap",
+        args: [selectedToken.address, amountWithDecimals],
+      }),
+      {
+        loading: `Swapping ${amount} ${selectedToken.symbol}...`,
+        success: "Swap successful!",
+        error: err => {
+          console.error(err);
+          return `Failed to swap ${amount} ${selectedToken.symbol}`;
+        },
+      },
+    );
+
+    await toast.promise(waitForTransactionReceipt({ hash: swapTx }), {
+      loading: `Waiting for swap confirmation...`,
+      success: "Swap confirmed!",
+      error: err => {
+        console.error(err);
+        return `Failed to swap ${amount} ${selectedToken.symbol}`;
+      },
+    });
+
+    // Reset everything
+    setAmount("");
+    dai.refetchAll();
+    wbtc.refetchAll();
+  };
 
   return (
-    <>
-      <div className="flex items-center flex-col flex-grow pt-10">
-        <div className="px-5">
-          <h1 className="text-center">
-            <span className="block text-2xl mb-2">Welcome to</span>
-            <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
-          </h1>
-          <div className="flex justify-center items-center space-x-2 flex-col sm:flex-row">
-            <p className="my-2 font-medium">Connected Address:</p>
-            <Address address={connectedAddress} />
+    <div className="flex-1 flex items-center justify-center relative">
+      <div className="card min-w-[450px] shadow-lg bg-white">
+        <div className={cn("card-body", !isConnected && "opacity-60")}>
+          <h2 className="card-title mb-4 font-medium text-2xl">Swap Tokens</h2>
+          <div className="form-control gap-2">
+            <label className="label">
+              <span className="label-text text-lg">From</span>
+              <span className="label-text-alt">
+                Balance: {formatTokenWithDecimals(selectedTokenData.balance ?? 0n, 18)} {selectedToken.symbol}
+              </span>
+            </label>
+            <select className="select select-bordered" value={selectedToken.symbol} onChange={handleTokenChange}>
+              <option key="DAI" value="DAI">
+                {DAI_TOKEN.name} ({DAI_TOKEN.symbol})
+              </option>
+              <option key="WBTC" value="WBTC">
+                {WBTC_TOKEN.name} ({WBTC_TOKEN.symbol})
+              </option>
+            </select>
+            <input
+              type="number"
+              placeholder="0"
+              className="input input-bordered"
+              min={0}
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+            />
           </div>
 
-          <p className="text-center text-lg">
-            Get started by editing{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/nextjs/app/page.tsx
-            </code>
-          </p>
-          <p className="text-center text-lg">
-            Edit your smart contract{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              YourContract.sol
-            </code>{" "}
-            in{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/hardhat/contracts
-            </code>
-          </p>
-        </div>
+          <div className="flex justify-center my-2">
+            <button className="btn btn-outline" onClick={handleSwitch}>
+              <ArrowsUpDownIcon className="h-4 w-4" />
+            </button>
+          </div>
 
-        <div className="flex-grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col sm:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your smart contract using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Contracts
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the{" "}
-                <Link href="/blockexplorer" passHref className="link">
-                  Block Explorer
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
+          <div className="form-control gap-2">
+            <label className="label">
+              <span className="label-text text-lg">To</span>
+              <span className="label-text-alt">
+                Balance: {formatTokenWithDecimals(oppositeTokenData.balance ?? 0n, 18)} {oppositeToken.symbol}
+              </span>
+            </label>
+            <select className="select select-bordered" value={oppositeToken.symbol} disabled>
+              <option key="DAI" value="DAI">
+                {DAI_TOKEN.name} ({DAI_TOKEN.symbol})
+              </option>
+              <option key="WBTC" value="WBTC">
+                {WBTC_TOKEN.name} ({WBTC_TOKEN.symbol})
+              </option>
+            </select>
+            <input
+              type="number"
+              placeholder="0.0"
+              className="input input-bordered"
+              value={formatTokenWithDecimals(swapAmount, 18)}
+              disabled
+            />
+          </div>
+
+          <div className="mt-4 text-sm">
+            <p>
+              Swap Price: 1 {selectedToken.symbol} = {formatTokenWithDecimals(swapPrice, 18)}{" "}
+              {selectedToken.symbol === "DAI" ? "WBTC" : "DAI"}
+            </p>
+          </div>
+
+          <div className="card-actions justify-end mt-6">
+            <button className="btn btn-primary" onClick={handleSwap} disabled={!amount || parseFloat(amount) <= 0}>
+              Swap
+            </button>
           </div>
         </div>
       </div>
-    </>
+      {!isConnected && (
+        <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm rounded-lg">
+          <div className="rounded-lg bg-neutral-800 border px-6 py-4 text-lg font-medium text-neutral-50 shadow-lg flex items-center gap-x-2">
+            <LockClosedIcon className="w-5 h-5" />
+            Connect your wallet to swap
+          </div>
+        </div>
+      )}
+    </div>
   );
-};
-
-export default Home;
+}
