@@ -216,7 +216,7 @@ export default function UniswapClone() {
         <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm rounded-lg">
           <div className="rounded-lg bg-neutral-800 border px-6 py-4 text-lg font-medium text-neutral-50 shadow-lg flex items-center gap-x-2">
             <LockClosedIcon className="w-5 h-5" />
-            Connect your wallet to swap
+            Connect your wallet to start
           </div>
         </div>
       )}
