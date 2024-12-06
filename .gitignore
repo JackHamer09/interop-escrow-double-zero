@@ -1,23 +1,42 @@
 # dependencies
 node_modules
+/.pnp
+.pnp.js
 
-# yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+# pnpm
+.pnpm-store/
+.pnpm-debug.log*
 
-# eslint
-.eslintcache
+# next.js
+.next/
+out/
+.vercel
 
-# misc
-.DS_Store
+# testing
+/coverage
+
+# production
+/build
+/dist
+
+# environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# debug
+npm-debug.log*
 
 # IDE
 .vscode
 .idea
+.eslintcache
 
-# cli
-dist
+# typescript
+*.tsbuildinfo
+
+# misc
+.DS_Store
+*.pem

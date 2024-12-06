@@ -5,6 +5,17 @@ set -e
 PRIVATE_KEY=$PRIVATE_KEY
 RPC_URL=$RPC_URL
 
+# Validate environment variables
+if [ -z "$PRIVATE_KEY" ]; then
+  echo "PRIVATE_KEY is not set"
+  exit 1
+fi
+
+if [ -z "$RPC_URL" ]; then
+  echo "RPC_URL is not set"
+  exit 1
+fi
+
 extract_deployed_address() {
     # Read input from stdin and extract the address after "Deployed to: "
     grep "Deployed to:" | cut -d' ' -f3

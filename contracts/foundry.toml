@@ -1,18 +1,8 @@
 [profile.default]
-src = 'contracts'
+src = 'src'
 out = 'out'
 libs = ['lib']
 fs_permissions = [{ access = "read-write", path = "./"}]
-
-[rpc_endpoints]
-default_network = "http://127.0.0.1:3050"
-localhost = "http://127.0.0.1:3050"
-zksync = "http://127.0.0.1:3050"
-
-[etherscan]
-polygonMumbai = { key = "${ETHERSCAN_API_KEY}" }
-sepolia = { key = "${ETHERSCAN_API_KEY}" }
-
 
 [fmt]
 multiline_func_header = "params_first"

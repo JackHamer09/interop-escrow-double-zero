@@ -1,0 +1,15 @@
+# Package manager files
+pnpm-lock.yaml
+node_modules
+
+# Build output
+dist
+build
+.next
+out
+
+# Coverage reports
+coverage
+
+# Generated files
+*.generated.*
