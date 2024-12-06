@@ -31,15 +31,15 @@ DEPLOYER_ADDRESS=$(get_address_from_private_key $PRIVATE_KEY)
 forge build --zksync
 
 # Deploy ERC20 tokens
-dai_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync contracts/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "DAI" "DAI" 18 | extract_deployed_address)
-wbtc_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync contracts/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "WBTC" "WBTC" 18 | extract_deployed_address)
+dai_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "DAI" "DAI" 18 | extract_deployed_address)
+wbtc_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "WBTC" "WBTC" 18 | extract_deployed_address)
 
 # Mint tokens
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $dai_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1000000000000000000000000 # 1 million DAI
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $wbtc_address "mint(address,uint256)" $DEPLOYER_ADDRESS 100000000000000000000000 # 100,000 WBTC
 
 # Deploy CPAMM
-cpamm_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync contracts/CPAMM.sol:CPAMM --constructor-args $dai_address $wbtc_address | extract_deployed_address)
+cpamm_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/CPAMM.sol:CPAMM --constructor-args $dai_address $wbtc_address | extract_deployed_address)
 
 echo "DAI: $dai_address"
 echo "WBTC: $wbtc_address"
