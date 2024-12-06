@@ -82,12 +82,16 @@ export const DAI_TOKEN = {
   symbol: "DAI",
   name: "DAI",
   address: env.NEXT_PUBLIC_DAI_ADDRESS,
+  logo: "/dai-badge.webp",
+  decimals: 18,
 };
 
 export const WBTC_TOKEN = {
   symbol: "WBTC",
   name: "Wrapped Bitcoin",
   address: env.NEXT_PUBLIC_WBTC_ADDRESS,
+  logo: "/wbtc-badge.webp",
+  decimals: 18,
 };
 
 export type Token = typeof DAI_TOKEN | typeof WBTC_TOKEN;

@@ -12,7 +12,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <html suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
-        <ThemeProvider forcedTheme="light">
+        <ThemeProvider forcedTheme="dark" attribute="class">
           <ScaffoldEthAppWithProviders>{children}</ScaffoldEthAppWithProviders>
         </ThemeProvider>
       </body>

@@ -2,8 +2,8 @@
 
 // @refresh reset
 import { Balance } from "../Balance";
+import { Button } from "../ui/button";
 import { AddressInfoDropdown } from "./AddressInfoDropdown";
-import { AddressQRCodeModal } from "./AddressQRCodeModal";
 import { WrongNetworkDropdown } from "./WrongNetworkDropdown";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Address } from "viem";
@@ -23,9 +23,9 @@ export const RainbowKitCustomConnectButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <button className="btn btn-primary min-h-[42px] h-[42px]" onClick={openConnectModal} type="button">
+                  <Button className="min-h-[42px] h-[42px]" onClick={openConnectModal} type="button">
                     Connect Wallet
-                  </button>
+                  </Button>
                 );
               }
 
@@ -34,14 +34,13 @@ export const RainbowKitCustomConnectButton = () => {
               }
 
               return (
-                <>
-                  <div className="flex flex-col items-center mr-1">
+                <div className="flex items-center">
+                  <div className="flex flex-col items-center mr-2">
                     <Balance address={account.address as Address} className="min-h-0 h-auto mr-2" />
                     <span className="text-xs">{chain.name}</span>
                   </div>
                   <AddressInfoDropdown address={account.address as Address} ensAvatar={account.ensAvatar} />
-                  <AddressQRCodeModal address={account.address as Address} modalId="qrcode-modal" />
-                </>
+                </div>
               );
             })()}
           </>

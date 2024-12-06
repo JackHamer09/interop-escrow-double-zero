@@ -1,14 +1,28 @@
 import { useCallback } from "react";
-import { useReadContract, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { CPAMM_ABI, CPAMM_ADDRESS } from "~~/contracts/cpamm";
 
 export default function useCpamm() {
+  const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
-  const { data: liquidity, refetch: refetchLiquidity } = useReadContract({
+  const {
+    data: liquidity,
+    refetch: refetchLiquidity,
+    error,
+  } = useReadContract({
     address: CPAMM_ADDRESS,
     abi: CPAMM_ABI,
     functionName: "getReserves",
   });
+  const { data: userShares } = useReadContract({
+    address: CPAMM_ADDRESS,
+    abi: CPAMM_ABI,
+    functionName: "balanceOf",
+    args: [address ?? ""],
+  });
+  if (error) {
+    console.error("error", error);
+  }
 
   const refetchAll = useCallback(() => {
     refetchLiquidity();
@@ -19,5 +33,6 @@ export default function useCpamm() {
     wbtcPoolLiquidity: liquidity?.[1],
     refetchAll,
     writeContractAsync,
+    userShares,
   };
 }
