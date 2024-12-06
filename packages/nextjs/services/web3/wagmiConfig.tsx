@@ -1,26 +1,31 @@
 import { wagmiConnectors } from "./wagmiConnectors";
-import { Chain, createClient, fallback, http } from "viem";
-import { hardhat, mainnet } from "viem/chains";
+import { createWalletClient, custom } from "viem";
 import { createConfig } from "wagmi";
-import scaffoldConfig from "~~/scaffold.config";
 import { env } from "~~/utils/env";
-import { getAlchemyHttpUrl } from "~~/utils/scaffold-eth";
-
-const { targetNetworks } = scaffoldConfig;
-
-// We always want to have mainnet enabled (ENS resolution, ETH price, etc). But only once.
-export const enabledChains = targetNetworks.find((network: Chain) => network.id === 1)
-  ? targetNetworks
-  : ([...targetNetworks, mainnet] as const);
 
 export const wagmiConfig = createConfig({
-  chains: enabledChains,
+  chains: [
+    {
+      id: env.NEXT_PUBLIC_CHAIN_ID,
+      name: env.NEXT_PUBLIC_CHAIN_NAME,
+      nativeCurrency: {
+        name: "Ethereum",
+        symbol: "ETH",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: [],
+        },
+      },
+    },
+  ],
   connectors: wagmiConnectors,
   ssr: true,
-  client({ chain }) {
-    return createClient({
+  client: ({ chain }) =>
+    createWalletClient({
       chain,
-      transport: http(env.NEXT_PUBLIC_RPC_URL),
-    });
-  },
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      transport: custom(window.ethereum!),
+    }),
 });

@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bars3Icon } from "@heroicons/react/24/outline";
-import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
-import { useOutsideClick } from "~~/hooks/scaffold-eth";
+import { RainbowKitCustomConnectButton } from "~~/components/RainbowKitCustomConnectButton";
+import { useOutsideClick } from "~~/hooks/use-outside-click";
 
 type HeaderMenuLink = {
   label: string;
@@ -14,7 +14,7 @@ type HeaderMenuLink = {
   icon?: React.ReactNode;
 };
 
-export const menuLinks: HeaderMenuLink[] = [
+const menuLinks: HeaderMenuLink[] = [
   {
     label: "Swap",
     href: "/",
@@ -25,7 +25,7 @@ export const menuLinks: HeaderMenuLink[] = [
   },
 ];
 
-export const HeaderMenuLinks = () => {
+const HeaderMenuLinks = () => {
   const pathname = usePathname();
 
   return (
@@ -63,7 +63,7 @@ export const Header = () => {
   );
 
   return (
-    <div className="navbar min-h-0 flex-shrink-0 justify-between px-0 sm:px-2">
+    <div className="navbar min-h-0 flex-shrink-0 justify-between px-0 sm:px-2 z-20">
       <div>
         <div className="md:hidden dropdown" ref={burgerMenuRef}>
           <label
@@ -99,7 +99,6 @@ export const Header = () => {
       </ul>
       <div className="mr-4">
         <RainbowKitCustomConnectButton />
-        <FaucetButton />
       </div>
     </div>
   );
