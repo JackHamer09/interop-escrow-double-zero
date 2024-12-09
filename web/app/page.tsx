@@ -255,7 +255,7 @@ export default function UniswapClone() {
           <h1 className="text-6xl text-center mb-8 leading-[4rem]">
             Private swaps,
             <br />
-            anytime
+            anytime.
           </h1>
 
           <HiddenContent>
@@ -269,6 +269,8 @@ export default function UniswapClone() {
                 onAmountChange={e => handleAmountChange(e, "from")}
                 onTokenChange={e => handleTokenChange(e, "from")}
                 disabled={isSwapping}
+                daiPoolLiquidity={daiPoolLiquidity}
+                wbtcPoolLiquidity={wbtcPoolLiquidity}
               />
 
               <div className="flex justify-center -my-3">
@@ -292,6 +294,8 @@ export default function UniswapClone() {
                 onAmountChange={e => handleAmountChange(e, "to")}
                 onTokenChange={e => handleTokenChange(e, "to")}
                 disabled={isSwapping}
+                daiPoolLiquidity={daiPoolLiquidity}
+                wbtcPoolLiquidity={wbtcPoolLiquidity}
               />
 
               <div className="mt-4 text-sm text-muted-foreground">
@@ -404,6 +408,8 @@ function SwapCard({
   displayAmount,
   token,
   selectedToken,
+  daiPoolLiquidity,
+  wbtcPoolLiquidity,
 }: {
   heading: string;
   balance: bigint;
@@ -413,6 +419,8 @@ function SwapCard({
   selectedToken: Token["symbol"];
   onTokenChange: (value: string) => void;
   disabled: boolean;
+  daiPoolLiquidity: bigint | undefined;
+  wbtcPoolLiquidity: bigint | undefined;
 }) {
   return (
     <Card>
@@ -421,13 +429,18 @@ function SwapCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-y-2 p-4 pt-0">
         <div className="flex items-center justify-between">
-          <input
-            placeholder="0"
-            className={cn("bg-transparent appearance-none focus:outline-none text-3xl", disabled && "opacity-50")}
-            value={displayAmount}
-            onChange={onAmountChange}
-            disabled={disabled}
-          />
+          <div className="flex flex-col flex-1">
+            <input
+              placeholder={!daiPoolLiquidity || !wbtcPoolLiquidity ? "-" : "0"}
+              className={cn("bg-transparent appearance-none focus:outline-none text-3xl", disabled && "opacity-50")}
+              value={displayAmount}
+              onChange={onAmountChange}
+              disabled={disabled || !daiPoolLiquidity || !wbtcPoolLiquidity}
+            />
+            {!daiPoolLiquidity || !wbtcPoolLiquidity ? (
+              <span className="text-sm text-red-600">No liquidity available in pool</span>
+            ) : null}
+          </div>
           <div className="flex flex-col gap-y-2">
             <Select value={selectedToken} disabled={disabled} onValueChange={onTokenChange}>
               <SelectTrigger className="bg-secondary text-secondary-foreground shadow hover:bg-secondary/80 text-base h-fit">

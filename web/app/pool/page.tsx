@@ -15,7 +15,7 @@ import { formatTokenWithDecimals } from "~~/utils/currency";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 export default function AddLiquidity() {
-  const { userShares, writeContractAsync } = useCpamm();
+  const { userShares, writeContractAsync, refetchAll } = useCpamm();
   const [removingLiquidity, setRemovingLiquidity] = useState(false);
   const formattedShares = formatTokenWithDecimals(userShares ?? 0n, 18);
 
@@ -51,6 +51,7 @@ export default function AddLiquidity() {
       });
     } finally {
       setRemovingLiquidity(false);
+      refetchAll();
     }
   };
 
