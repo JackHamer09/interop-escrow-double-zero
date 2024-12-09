@@ -320,7 +320,7 @@ export default function UniswapClone() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-y-4 min-h-screen pt-10">
+      <div className="flex flex-col gap-y-4 min-h-screen pt-10 max-w-7xl mx-auto">
         <section className="p-8 flex flex-col gap-y-10">
           <h2 className="text-4xl md:text-5xl font-medium tracking-tight">What makes Double Zero swap unique?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
