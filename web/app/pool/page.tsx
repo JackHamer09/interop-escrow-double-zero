@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { PlusIcon } from "@heroicons/react/24/solid";
+import HiddenContent from "~~/components/HiddenContent";
 import { Button } from "~~/components/ui/button";
 import { Card } from "~~/components/ui/card";
 import { CPAMM_ADDRESS } from "~~/contracts/cpamm";
@@ -63,24 +64,27 @@ export default function AddLiquidity() {
             Add Liquidity
           </Button>
         </Link>
-        <Card className="p-6 flex items-center justify-center mt-6 h-[200px]">
-          {userShares ? (
-            <p className={cn("text-3xl font-medium", removingLiquidity && "opacity-50")}>
-              {formattedShares} share{formattedShares === "1" ? "" : "s"}
-            </p>
-          ) : (
-            <p className="text-muted-foreground">No positions found</p>
-          )}
-        </Card>
-        <Button
-          className="mt-6 h-11"
-          variant="secondary"
-          disabled={!userShares}
-          onClick={handleRemoveLiquidity}
-          loading={removingLiquidity}
-        >
-          Remove Liquidity
-        </Button>
+
+        <HiddenContent className="inset-0">
+          <Card className="p-6 flex items-center justify-center mt-6 h-[200px]">
+            {userShares ? (
+              <p className={cn("text-3xl font-medium", removingLiquidity && "opacity-50")}>
+                {formattedShares} share{formattedShares === "1" ? "" : "s"}
+              </p>
+            ) : (
+              <p className="text-muted-foreground">No positions found</p>
+            )}
+          </Card>
+          <Button
+            className="mt-6 h-11"
+            variant="secondary"
+            disabled={!userShares}
+            onClick={handleRemoveLiquidity}
+            loading={removingLiquidity}
+          >
+            Remove Liquidity
+          </Button>
+        </HiddenContent>
       </div>
     </div>
   );

@@ -56,15 +56,13 @@ const HeaderMenuLinks = () => {
  */
 export const Header = () => {
   return (
-    <div className="flex min-h-16 justify-between z-20 w-full p-4">
-      <div>
-        <Link href="/" passHref className="hidden md:flex items-center gap-2 ml-4 mr-6 shrink-0">
-          <div className="flex relative w-10 h-10">
-            <Image alt="Double Zero Swap logo" className="cursor-pointer" fill src="/logo-dark.svg" />
-          </div>
-          <span className="text-xl font-normal">Double Zero Swap</span>
-        </Link>
-      </div>
+    <div className="flex h-[74px] justify-between z-20 w-full p-4">
+      <Link href="/" passHref className="hidden md:flex items-center gap-2 ml-4 mr-6 shrink-0">
+        <div className="flex relative w-10 h-10">
+          <Image alt="Double Zero Swap logo" className="cursor-pointer" fill src="/logo-dark.svg" />
+        </div>
+        <span className="text-xl font-normal">Double Zero Swap</span>
+      </Link>
       <ul className="hidden md:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">
         <HeaderMenuLinks />
       </ul>

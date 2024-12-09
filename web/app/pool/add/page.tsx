@@ -6,8 +6,9 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { useBoolean } from "usehooks-ts";
 import { parseUnits } from "viem";
-import { useAccount, useWriteContract } from "wagmi";
-import { AdjustmentsHorizontalIcon, LockClosedIcon, PlusCircleIcon, WalletIcon } from "@heroicons/react/24/outline";
+import { useWriteContract } from "wagmi";
+import { AdjustmentsHorizontalIcon, PlusCircleIcon, WalletIcon } from "@heroicons/react/24/outline";
+import HiddenContent from "~~/components/HiddenContent";
 import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
@@ -41,7 +42,6 @@ export default function AddLiquidity() {
     displayAmountA: "",
     displayAmountB: "",
   });
-  const { isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const { value: isAddingLiquidity, setValue: setIsAddingLiquidity } = useBoolean(false);
 
@@ -220,58 +220,51 @@ export default function AddLiquidity() {
           </Button>
         </Link>
 
-        <div className="card min-w-[450px]">
-          <div className={cn(!isConnected && "opacity-60")}>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                handleAddLiquidity();
-              }}
-            >
-              <PoolCard
-                heading="Token 1"
-                balance={tokenABalance ?? 0n}
-                displayAmount={poolState.displayAmountA}
-                token={poolState.tokenA}
-                selectedToken={poolState.tokenA.symbol}
-                onAmountChange={e => handleAmountChange(e, "tokenA")}
-                onTokenChange={e => handleTokenSelect(e, "tokenA")}
-                disabled={isAddingLiquidity}
-              />
-
-              <PlusCircleIcon className="h-7 w-7 my-4 mx-auto text-muted-foreground" />
-
-              <PoolCard
-                heading="Token 2"
-                balance={tokenBBalance ?? 0n}
-                displayAmount={poolState.displayAmountB}
-                token={poolState.tokenB}
-                selectedToken={poolState.tokenB.symbol}
-                onAmountChange={e => handleAmountChange(e, "tokenB")}
-                onTokenChange={e => handleTokenSelect(e, "tokenB")}
-                disabled={isAddingLiquidity}
-              />
-
-              <Button
-                type="submit"
-                className="w-full mt-6 h-11"
-                disabled={!poolState.amountA || !poolState.amountB}
-                loading={isAddingLiquidity}
+        <HiddenContent>
+          <div className="card min-w-[450px]">
+            <div>
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  handleAddLiquidity();
+                }}
               >
-                Add Liquidity
-              </Button>
-            </form>
-          </div>
+                <PoolCard
+                  heading="Token 1"
+                  balance={tokenABalance ?? 0n}
+                  displayAmount={poolState.displayAmountA}
+                  token={poolState.tokenA}
+                  selectedToken={poolState.tokenA.symbol}
+                  onAmountChange={e => handleAmountChange(e, "tokenA")}
+                  onTokenChange={e => handleTokenSelect(e, "tokenA")}
+                  disabled={isAddingLiquidity}
+                />
 
-          {!isConnected && (
-            <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm rounded-lg">
-              <div className="rounded-lg bg-zync-800 border px-6 py-4 text-lg font-medium text-neutral-50 shadow-lg flex items-center gap-x-2">
-                <LockClosedIcon className="w-5 h-5" />
-                Connect your wallet to add liquidity
-              </div>
+                <PlusCircleIcon className="h-7 w-7 my-4 mx-auto text-muted-foreground" />
+
+                <PoolCard
+                  heading="Token 2"
+                  balance={tokenBBalance ?? 0n}
+                  displayAmount={poolState.displayAmountB}
+                  token={poolState.tokenB}
+                  selectedToken={poolState.tokenB.symbol}
+                  onAmountChange={e => handleAmountChange(e, "tokenB")}
+                  onTokenChange={e => handleTokenSelect(e, "tokenB")}
+                  disabled={isAddingLiquidity}
+                />
+
+                <Button
+                  type="submit"
+                  className="w-full mt-6 h-11"
+                  disabled={!poolState.amountA || !poolState.amountB}
+                  loading={isAddingLiquidity}
+                >
+                  Add Liquidity
+                </Button>
+              </form>
             </div>
-          )}
-        </div>
+          </div>
+        </HiddenContent>
       </div>
     </div>
   );

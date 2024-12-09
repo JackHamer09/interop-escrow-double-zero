@@ -1,13 +1,14 @@
 import React from "react";
 import Image from "next/image";
 import { HeartIcon } from "@heroicons/react/24/solid";
+import { cn } from "~~/utils/cn";
 
 /**
  * Site footer
  */
-export const Footer = () => {
+export const Footer = ({ className }: { className?: string }) => {
   return (
-    <div className="py-5 w-full">
+    <div className={cn("py-5 w-full", className)}>
       <ul className="menu menu-horizontal w-full">
         <div className="flex justify-center items-center gap-2 text-sm w-full">
           <div className="flex justify-center items-center gap-2">
@@ -22,17 +23,6 @@ export const Footer = () => {
             >
               <Image src="msl-dark.svg" alt="Moonsong Labs" width={16} height={16} className="" />
               <span className="hover:underline">Moonsong Labs</span>
-            </a>
-          </div>
-          <span>·</span>
-          <div className="text-center">
-            <a
-              href="https://github.com/moonsonglabs/double-zero-dapp"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:underline"
-            >
-              Source
             </a>
           </div>
         </div>
