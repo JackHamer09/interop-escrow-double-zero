@@ -288,7 +288,8 @@ export default function UniswapClone() {
         <Button
           className="w-full h-11 mt-4 text-lg"
           type="submit"
-          disabled={!swapState.from.amount || !swapState.to.amount || isSwapping}
+          disabled={!swapState.from.amount || !swapState.to.amount}
+          loading={isSwapping}
         >
           Swap
         </Button>
@@ -333,7 +334,7 @@ function SwapCard({
         <div className="flex items-center justify-between">
           <input
             placeholder="0"
-            className="bg-transparent appearance-none focus:outline-none text-3xl"
+            className={cn("bg-transparent appearance-none focus:outline-none text-3xl", disabled && "opacity-50")}
             value={displayAmount}
             onChange={onAmountChange}
             disabled={disabled}

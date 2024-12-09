@@ -9,43 +9,48 @@ import { Card } from "~~/components/ui/card";
 import { CPAMM_ADDRESS } from "~~/contracts/cpamm";
 import { CPAMM_ABI } from "~~/contracts/cpamm";
 import useCpamm from "~~/hooks/use-cpamm";
+import { cn } from "~~/utils/cn";
 import { formatTokenWithDecimals } from "~~/utils/currency";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 export default function AddLiquidity() {
   const { userShares, writeContractAsync } = useCpamm();
   const [removingLiquidity, setRemovingLiquidity] = useState(false);
-
   const formattedShares = formatTokenWithDecimals(userShares ?? 0n, 18);
 
   const handleRemoveLiquidity = async () => {
     if (!userShares) return;
 
     setRemovingLiquidity(true);
-    const tx = await toast.promise(
-      writeContractAsync({
-        address: CPAMM_ADDRESS,
-        abi: CPAMM_ABI,
-        functionName: "removeLiquidity",
-        args: [userShares ?? 0n],
-      }),
-      {
+
+    try {
+      const tx = await toast.promise(
+        writeContractAsync({
+          address: CPAMM_ADDRESS,
+          abi: CPAMM_ABI,
+          functionName: "removeLiquidity",
+          args: [userShares ?? 0n],
+        }),
+        {
+          success: "Liquidity removed successfully",
+          loading: "Removing liquidity...",
+          error: err => {
+            console.error(err);
+            return "Failed to remove liquidity";
+          },
+        },
+      );
+      await toast.promise(waitForTransactionReceipt({ hash: tx }), {
         success: "Liquidity removed successfully",
-        loading: "Removing liquidity...",
+        loading: "Waiting for confirmation...",
         error: err => {
           console.error(err);
           return "Failed to remove liquidity";
         },
-      },
-    );
-    await toast.promise(waitForTransactionReceipt({ hash: tx }), {
-      success: "Liquidity removed successfully",
-      loading: "Waiting for confirmation...",
-      error: err => {
-        console.error(err);
-        return "Failed to remove liquidity";
-      },
-    });
+      });
+    } finally {
+      setRemovingLiquidity(false);
+    }
   };
 
   return (
@@ -60,7 +65,7 @@ export default function AddLiquidity() {
         </Link>
         <Card className="p-6 flex items-center justify-center mt-6 h-[200px]">
           {userShares ? (
-            <p className="text-3xl font-medium">
+            <p className={cn("text-3xl font-medium", removingLiquidity && "opacity-50")}>
               {formattedShares} share{formattedShares === "1" ? "" : "s"}
             </p>
           ) : (
@@ -70,8 +75,9 @@ export default function AddLiquidity() {
         <Button
           className="mt-6 h-11"
           variant="secondary"
-          disabled={!userShares || removingLiquidity}
+          disabled={!userShares}
           onClick={handleRemoveLiquidity}
+          loading={removingLiquidity}
         >
           Remove Liquidity
         </Button>

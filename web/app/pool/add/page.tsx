@@ -255,7 +255,8 @@ export default function AddLiquidity() {
               <Button
                 type="submit"
                 className="w-full mt-6 h-11"
-                disabled={!poolState.amountA || !poolState.amountB || isAddingLiquidity}
+                disabled={!poolState.amountA || !poolState.amountB}
+                loading={isAddingLiquidity}
               >
                 Add Liquidity
               </Button>
@@ -304,7 +305,7 @@ function PoolCard({
         <div className="flex items-center justify-between">
           <input
             placeholder="0"
-            className="bg-transparent appearance-none focus:outline-none text-3xl"
+            className={cn("bg-transparent appearance-none focus:outline-none text-3xl", disabled && "opacity-50")}
             value={displayAmount}
             onChange={onAmountChange}
             disabled={disabled}
