@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
-import { ChevronDownIcon, LockIcon, ShieldIcon } from "lucide-react";
+import { ChevronDownIcon, GithubIcon, LockIcon, ShieldIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBoolean } from "usehooks-ts";
 import { parseUnits } from "viem";
@@ -327,46 +327,55 @@ export default function UniswapClone() {
             <FeatureCard
               title="Privacy"
               description="Swap information can only be accessed through authentication."
-              icon={<ShieldIcon className="h-5 w-5" />}
+              icon={<ShieldIcon className="h-7 w-7" />}
               className="bg-blue-500/10 text-blue-400 min-h-[250px]"
             />
             <FeatureCard
               title="Permissioned swaps"
               description="All requests are verified by the chain permisison system."
-              icon={<LockIcon className="h-5 w-5" />}
+              icon={<LockIcon className="h-7 w-7" />}
               className="bg-purple-500/10 text-purple-500"
             />
           </div>
         </section>
         <section className="p-8 flex flex-col gap-y-10">
-          <h2 className="text-4xl md:text-5xl font-medium tracking-tight">How it works</h2>
+          <h2 className="text-4xl md:text-5xl font-medium tracking-tight">How it works?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FlowStep
               number="1"
               title="Initiate Swap"
               description="Authenticated user initiates a swap between ERC20 permissioned tokens."
-              className="bg-red-500/10 text-red-400"
             />
             <FlowStep
               number="2"
               title="Verify Permission"
               description="Proxy verifies authentication and user permission, handling access control features."
-              className="bg-amber-500/10 text-amber-500"
             />
-            <FlowStep
-              number="3"
-              title="Confirm Swap"
-              description="Swap is confirmed in Double Zero Validium chain."
-              className="bg-emerald-500/10 text-emerald-500"
-            />
+            <FlowStep number="3" title="Confirm Swap" description="Swap is confirmed in Double Zero Validium chain." />
           </div>
         </section>
         <section className="p-8 flex flex-col gap-y-10">
           <h2 className="text-4xl md:text-5xl font-medium tracking-tight">Learn more</h2>
-          <ul className="list-disc pl-5 space-y-4 text-lg">
+          <ul className="list-disc pl-3 space-y-4 text-lg">
+            <li className="flex items-center gap-x-3">
+              <div className="bg-pink-500/10 rounded-full p-2">
+                <GithubIcon className="h-5 w-5 text-pink-400" />
+              </div>
+              <a
+                className="font-semibold underline underline-offset-4"
+                href="https://github.com/Moonsong-Labs/double-zero-dapp"
+              >
+                Double Zero Dapp
+              </a>{" "}
+              <span className="text-muted-foreground">
+                - Interact with the Double Zero ecosystem through our decentralized application.
+              </span>
+            </li>
             <li className="flex flex-col gap-y-2">
               <div className="flex items-center gap-x-3">
-                <ShieldIcon className="h-5 w-5 text-blue-400" />
+                <div className="bg-pink-500/10 rounded-full p-2">
+                  <GithubIcon className="h-5 w-5 text-pink-400" />
+                </div>
                 <a
                   className="font-semibold underline underline-offset-4"
                   href="https://github.com/Moonsong-Labs/double-zero"
@@ -377,18 +386,6 @@ export default function UniswapClone() {
                   - Explore the Double Zero blockchain with our intuitive block explorer.
                 </span>
               </div>
-            </li>
-            <li className="flex items-center gap-x-3">
-              <LockIcon className="h-5 w-5 text-purple-500" />
-              <a
-                className="font-semibold underline underline-offset-4"
-                href="https://github.com/Moonsong-Labs/double-zero-dapp"
-              >
-                Double Zero Dapp
-              </a>{" "}
-              <span className="text-muted-foreground">
-                - Interact with the Double Zero ecosystem through our decentralized application.
-              </span>
             </li>
           </ul>
         </section>
@@ -485,13 +482,13 @@ function FeatureCard({
 }) {
   return (
     <Card className={cn("border-none rounded-3xl justify-between flex flex-col", className)}>
-      <CardHeader className="pb-3">
+      <CardHeader>
         <div className="flex items-center gap-x-2 bg-background w-fit py-3 px-4 rounded-3xl">
           {icon}
-          <span className="text-lg">{title}</span>
+          <span className="text-2xl">{title}</span>
         </div>
       </CardHeader>
-      <CardContent className="text-2xl pb-8">{description}</CardContent>
+      <CardContent className="text-xl pb-8 w-2/3">{description}</CardContent>
     </Card>
   );
 }
@@ -508,7 +505,7 @@ function FlowStep({
   className?: string;
 }) {
   return (
-    <div className={cn("flex-1 p-6 rounded-3xl relative", className)}>
+    <div className={cn("flex-1 p-6 rounded-3xl relative bg-neutral-200/10 text-neutral-300", className)}>
       <div className="flex items-center gap-3 mb-4">
         <div className="w-8 h-8 bg-background rounded-full flex items-center justify-center text-xl font-bold">
           {number}
