@@ -1,80 +1,75 @@
-# 🏗 Scaffold-ETH 2
+# Double Zero Swap
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+## Summary
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+Double zero swap is a simple constant product AMM build to be used on top of [Double Zero](https://github.com/Moonsong-Labs/double-zero).
 
-⚙️ Built using NextJS, RainbowKit, Foundry, Wagmi, Viem, and Typescript.
+It was built using standard technologies like:
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+- 🏗 Scaffold-ETH 2: https://scaffoldeth.io/
+- Foundry: https://foundry-book.zksync.io/
+- wagmi: https://wagmi.sh/
+- viem: https://viem.sh/
+- react: https://react.dev/
+- nextjs: https://nextjs.org/
+- rainbowkit: https://www.rainbowkit.com/
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+## How to start
 
-## Requirements
+Even when this was developed with a private validium chain in mind, you can use
+this app with any zksync compatible chain following these steps:
 
-Before you begin, you need to install the following tools:
+### 1. Deploy contracts
 
-- [Node (>= v18.18)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
-
-## Quickstart
-
-To get started with Scaffold-ETH 2, follow the steps below:
-
-1. Install dependencies if it was skipped in CLI:
+In your terminal run:
 
 ```
-cd my-dapp-example
-yarn install
+cd contracts
+ export PRIVATE_KEY=<deployer_private_keyt> # space at start to avoid sending pk to shell history
+env RPC_URL="http://localhost:3050" scripts/deploy.sh
 ```
 
-2. Run a local network in the first terminal:
+This script does several things:
+   - Deploys 2 ERC20 tokens
+   - Deploys the AMM contract
+   - Links everything together
+   - Mint some of both tokens and send them to the deploy address.
+
+At the end is going to log something like this:
 
 ```
-yarn chain
+DAI: <dai_address>
+WBTC: <wbtc_address>
+CPAMM: <cpamm_address>
 ```
 
-This command starts a local Ethereum network using Foundry. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/foundry/foundry.toml`.
+These addresses are going to be used in the next step
 
-3. On a second terminal, deploy the test contract:
+### 2. Webapp config
 
-```
-yarn deploy
-```
+The easiest way to configure the webapp is using a dotenv file
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/foundry/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/foundry/script` to deploy the contract to the network. You can also customize the deploy script.
-
-4. On a third terminal, start your NextJS app:
-
-```
-yarn start
+``` bash
+cp web/.env.example web/.env
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+Now you can edit that file and put your data:
 
-Run smart contract test with `yarn foundry:test`
+```
+NEXT_PUBLIC_CHAIN_ID="<your_chain_id>"
+NEXT_PUBLIC_CPAMM_ADDRESS="<cpamm_address>"
+NEXT_PUBLIC_DAI_ADDRESS="<dai_address>"
+NEXT_PUBLIC_WBTC_ADDRESS="<weth_address>"
+NEXT_PUBLIC_CHAIN_NAME="Local Chain"
+NEXT_PUBLIC_BLOCK_EXPLORER_URL="<double_zero_explorer_url>"
+```
 
-- Edit your smart contracts in `packages/foundry/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/foundry/script`
+### 3. Install dependencies and run
 
+Now the app can be launched
 
-## Documentation
-
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
-
-To know more about its features, check out our [website](https://scaffoldeth.io).
-
-## Contributing to Scaffold-ETH 2
-
-We welcome contributions to Scaffold-ETH 2!
-
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+``` bash
+cd web
+pnpm install
+pnpm dev
+```
