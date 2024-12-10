@@ -1,32 +1,43 @@
-import { useCallback } from "react";
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { useCallback, useMemo } from "react";
+import { useAccount, useReadContract, useSimulateContract, useWriteContract } from "wagmi";
 import { CPAMM_ABI, CPAMM_ADDRESS } from "~~/contracts/cpamm";
+
+const options = {
+  address: CPAMM_ADDRESS,
+  abi: CPAMM_ABI,
+} as const;
 
 export default function useCpamm() {
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
-  const {
-    data: liquidity,
-    refetch: refetchLiquidity,
-    error,
-  } = useReadContract({
-    address: CPAMM_ADDRESS,
-    abi: CPAMM_ABI,
+  const { data: liquidity, refetch: refetchLiquidity } = useReadContract({
+    ...options,
     functionName: "getReserves",
   });
   const { data: userShares } = useReadContract({
-    address: CPAMM_ADDRESS,
-    abi: CPAMM_ABI,
+    ...options,
     functionName: "balanceOf",
     args: [address ?? ""],
   });
-  if (error) {
-    console.error("error", error);
-  }
+  const { error: simulateAddLiquidityError } = useSimulateContract({
+    ...options,
+    functionName: "addLiquidity",
+    args: [1n, 1n],
+    query: {
+      retry: 1,
+    },
+  });
 
   const refetchAll = useCallback(() => {
     refetchLiquidity();
   }, [refetchLiquidity]);
+
+  const addLiquidityAllowed = useMemo(() => {
+    if (simulateAddLiquidityError === null) {
+      return true;
+    }
+    return !simulateAddLiquidityError.message.includes("Internal JSON-RPC error.");
+  }, [simulateAddLiquidityError]);
 
   return {
     daiPoolLiquidity: liquidity?.[0],
@@ -34,5 +45,6 @@ export default function useCpamm() {
     refetchAll,
     writeContractAsync,
     userShares,
+    addLiquidityAllowed,
   };
 }

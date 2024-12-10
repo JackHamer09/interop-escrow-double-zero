@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { AlertTriangleIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBoolean } from "usehooks-ts";
 import { parseUnits } from "viem";
@@ -33,7 +34,7 @@ interface PoolState {
 export default function AddLiquidity() {
   const dai = useDaiToken();
   const wbtc = useWbtcToken();
-  const { daiPoolLiquidity, wbtcPoolLiquidity, refetchAll: refetchCpamm } = useCpamm();
+  const { daiPoolLiquidity, wbtcPoolLiquidity, refetchAll: refetchCpamm, addLiquidityAllowed } = useCpamm();
   const [poolState, setPoolState] = useState<PoolState>({
     tokenA: DAI_TOKEN,
     tokenB: WBTC_TOKEN,
@@ -222,6 +223,15 @@ export default function AddLiquidity() {
 
         <HiddenContent>
           <div className="card min-w-[450px]">
+            {!addLiquidityAllowed && (
+              <div className="mb-6 p-4 rounded-lg flex items-center gap-4 border border-red-600/50 bg-red-600/10 text-red-600">
+                <AlertTriangleIcon className="h-5 w-5" />
+                <div>
+                  <h3 className="font-medium">Action Not Allowed</h3>
+                  <p className="text-sm">You are not currently allowed to add liquidity to this pool.</p>
+                </div>
+              </div>
+            )}
             <div>
               <form
                 onSubmit={e => {
@@ -237,7 +247,7 @@ export default function AddLiquidity() {
                   selectedToken={poolState.tokenA.symbol}
                   onAmountChange={e => handleAmountChange(e, "tokenA")}
                   onTokenChange={e => handleTokenSelect(e, "tokenA")}
-                  disabled={isAddingLiquidity}
+                  disabled={isAddingLiquidity || !addLiquidityAllowed}
                 />
 
                 <PlusCircleIcon className="h-7 w-7 my-4 mx-auto text-muted-foreground" />
@@ -250,13 +260,13 @@ export default function AddLiquidity() {
                   selectedToken={poolState.tokenB.symbol}
                   onAmountChange={e => handleAmountChange(e, "tokenB")}
                   onTokenChange={e => handleTokenSelect(e, "tokenB")}
-                  disabled={isAddingLiquidity}
+                  disabled={isAddingLiquidity || !addLiquidityAllowed}
                 />
 
                 <Button
                   type="submit"
                   className="w-full mt-6 h-11"
-                  disabled={!poolState.amountA || !poolState.amountB}
+                  disabled={!poolState.amountA || !poolState.amountB || !addLiquidityAllowed}
                   loading={isAddingLiquidity}
                 >
                   Add Liquidity
