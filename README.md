@@ -26,7 +26,7 @@ In your terminal run:
 ```
 cd contracts
  export PRIVATE_KEY=<deployer_private_keyt> # space at start to avoid sending pk to shell history
-env RPC_URL="http://localhost:3050" scripts/delpoy.sh
+env RPC_URL="http://localhost:3050" scripts/deploy.sh
 ```
 
 This script does several things:
