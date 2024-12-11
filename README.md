@@ -28,7 +28,8 @@ Double Zero Swap is a simple dapp built to be used on top of [Double Zero](https
 
 Clone the [Double Zero](https://github.com/Moonsong-Labs/double-zero) repository and follow the instructions to start the local network.
 
-> Note: this step is only required if you want to deploy the contracts using Double Zero. This app can be used with any EVM compatible chain, but you will need to change the RPC URL in the webapp config.
+> [!TIP]
+> This step is only required if you want to deploy the contracts using Double Zero. This app can be used with any EVM compatible chain, but you will need to change the RPC URL in the webapp config.
 
 ### 1. Deploy contracts
 
