@@ -3,11 +3,13 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { AlertTriangleIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBoolean } from "usehooks-ts";
 import { parseUnits } from "viem";
-import { useAccount, useWriteContract } from "wagmi";
-import { AdjustmentsHorizontalIcon, LockClosedIcon, PlusCircleIcon, WalletIcon } from "@heroicons/react/24/outline";
+import { useWriteContract } from "wagmi";
+import { AdjustmentsHorizontalIcon, PlusCircleIcon, WalletIcon } from "@heroicons/react/24/outline";
+import HiddenContent from "~~/components/HiddenContent";
 import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
@@ -32,7 +34,7 @@ interface PoolState {
 export default function AddLiquidity() {
   const dai = useDaiToken();
   const wbtc = useWbtcToken();
-  const { daiPoolLiquidity, wbtcPoolLiquidity, refetchAll: refetchCpamm } = useCpamm();
+  const { daiPoolLiquidity, wbtcPoolLiquidity, refetchAll: refetchCpamm, addLiquidityAllowed } = useCpamm();
   const [poolState, setPoolState] = useState<PoolState>({
     tokenA: DAI_TOKEN,
     tokenB: WBTC_TOKEN,
@@ -41,7 +43,6 @@ export default function AddLiquidity() {
     displayAmountA: "",
     displayAmountB: "",
   });
-  const { isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const { value: isAddingLiquidity, setValue: setIsAddingLiquidity } = useBoolean(false);
 
@@ -220,57 +221,60 @@ export default function AddLiquidity() {
           </Button>
         </Link>
 
-        <div className="card min-w-[450px]">
-          <div className={cn(!isConnected && "opacity-60")}>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                handleAddLiquidity();
-              }}
-            >
-              <PoolCard
-                heading="Token 1"
-                balance={tokenABalance ?? 0n}
-                displayAmount={poolState.displayAmountA}
-                token={poolState.tokenA}
-                selectedToken={poolState.tokenA.symbol}
-                onAmountChange={e => handleAmountChange(e, "tokenA")}
-                onTokenChange={e => handleTokenSelect(e, "tokenA")}
-                disabled={isAddingLiquidity}
-              />
-
-              <PlusCircleIcon className="h-7 w-7 my-4 mx-auto text-muted-foreground" />
-
-              <PoolCard
-                heading="Token 2"
-                balance={tokenBBalance ?? 0n}
-                displayAmount={poolState.displayAmountB}
-                token={poolState.tokenB}
-                selectedToken={poolState.tokenB.symbol}
-                onAmountChange={e => handleAmountChange(e, "tokenB")}
-                onTokenChange={e => handleTokenSelect(e, "tokenB")}
-                disabled={isAddingLiquidity}
-              />
-
-              <Button
-                type="submit"
-                className="w-full mt-6 h-11"
-                disabled={!poolState.amountA || !poolState.amountB || isAddingLiquidity}
-              >
-                Add Liquidity
-              </Button>
-            </form>
-          </div>
-
-          {!isConnected && (
-            <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm rounded-lg">
-              <div className="rounded-lg bg-zync-800 border px-6 py-4 text-lg font-medium text-neutral-50 shadow-lg flex items-center gap-x-2">
-                <LockClosedIcon className="w-5 h-5" />
-                Connect your wallet to add liquidity
+        <HiddenContent>
+          <div className="card min-w-[450px]">
+            {!addLiquidityAllowed && (
+              <div className="mb-6 p-4 rounded-lg flex items-center gap-4 border border-red-600/50 bg-red-600/10 text-red-600">
+                <AlertTriangleIcon className="h-5 w-5" />
+                <div>
+                  <h3 className="font-medium">Action Not Allowed</h3>
+                  <p className="text-sm">You are not currently allowed to add liquidity to this pool.</p>
+                </div>
               </div>
+            )}
+            <div>
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  handleAddLiquidity();
+                }}
+              >
+                <PoolCard
+                  heading="Token 1"
+                  balance={tokenABalance ?? 0n}
+                  displayAmount={poolState.displayAmountA}
+                  token={poolState.tokenA}
+                  selectedToken={poolState.tokenA.symbol}
+                  onAmountChange={e => handleAmountChange(e, "tokenA")}
+                  onTokenChange={e => handleTokenSelect(e, "tokenA")}
+                  disabled={isAddingLiquidity || !addLiquidityAllowed}
+                />
+
+                <PlusCircleIcon className="h-7 w-7 my-4 mx-auto text-muted-foreground" />
+
+                <PoolCard
+                  heading="Token 2"
+                  balance={tokenBBalance ?? 0n}
+                  displayAmount={poolState.displayAmountB}
+                  token={poolState.tokenB}
+                  selectedToken={poolState.tokenB.symbol}
+                  onAmountChange={e => handleAmountChange(e, "tokenB")}
+                  onTokenChange={e => handleTokenSelect(e, "tokenB")}
+                  disabled={isAddingLiquidity || !addLiquidityAllowed}
+                />
+
+                <Button
+                  type="submit"
+                  className="w-full mt-6 h-11"
+                  disabled={!poolState.amountA || !poolState.amountB || !addLiquidityAllowed}
+                  loading={isAddingLiquidity}
+                >
+                  Add Liquidity
+                </Button>
+              </form>
             </div>
-          )}
-        </div>
+          </div>
+        </HiddenContent>
       </div>
     </div>
   );
@@ -304,7 +308,7 @@ function PoolCard({
         <div className="flex items-center justify-between">
           <input
             placeholder="0"
-            className="bg-transparent appearance-none focus:outline-none text-3xl"
+            className={cn("bg-transparent appearance-none focus:outline-none text-3xl", disabled && "opacity-50")}
             value={displayAmount}
             onChange={onAmountChange}
             disabled={disabled}
