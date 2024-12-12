@@ -28,12 +28,33 @@ export const CPAMM_ABI = [
   },
   {
     type: "function",
+    name: "getRemainingDailyAllowance",
+    inputs: [{ name: "user", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "getReserves",
     inputs: [],
     outputs: [
       { name: "", type: "uint256", internalType: "uint256" },
       { name: "", type: "uint256", internalType: "uint256" },
     ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getUserFee",
+    inputs: [{ name: "user", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "lastTransactionDay",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
   {
@@ -59,6 +80,16 @@ export const CPAMM_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "setUserFeeTier",
+    inputs: [
+      { name: "user", type: "address", internalType: "address" },
+      { name: "tier", type: "uint256", internalType: "uint256" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
     type: "function",
@@ -88,6 +119,20 @@ export const CPAMM_ABI = [
     type: "function",
     name: "totalSupply",
     inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "userDailyVolume",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "userFeeTier",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },

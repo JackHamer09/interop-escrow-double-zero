@@ -1,4 +1,3 @@
-import { wagmiConnectors } from "./wagmiConnectors";
 import { createWalletClient, custom } from "viem";
 import { createConfig } from "wagmi";
 import { env } from "~~/utils/env";
@@ -20,7 +19,6 @@ export const wagmiConfig = createConfig({
       },
     },
   ],
-  connectors: wagmiConnectors,
   ssr: true,
   client: ({ chain }) =>
     createWalletClient({

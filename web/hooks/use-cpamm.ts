@@ -27,16 +27,35 @@ export default function useCpamm() {
       retry: 1,
     },
   });
+  const { data: fee, refetch: refetchFee } = useReadContract({
+    ...options,
+    functionName: "getUserFee",
+    args: [address ?? ""],
+  });
+  const { data: remainingDailyAllowance, refetch: refetchRemainingDailyAllowance } = useReadContract({
+    ...options,
+    functionName: "getRemainingDailyAllowance",
+    args: [address ?? ""],
+  });
 
   const refetchAll = useCallback(() => {
     refetchLiquidity();
-  }, [refetchLiquidity]);
+    refetchFee();
+    refetchRemainingDailyAllowance();
+  }, [refetchLiquidity, refetchFee, refetchRemainingDailyAllowance]);
 
   const addLiquidityAllowed = useMemo(() => {
+    // Get the last known state from localStorage, default to true if not set
+    const lastKnownState = localStorage.getItem("addLiquidityAllowed") === "false" ? false : true;
+
     if (simulateAddLiquidityError === null) {
-      return true;
+      return lastKnownState;
     }
-    return !simulateAddLiquidityError.message.includes("Internal JSON-RPC error.");
+
+    const currentState = !simulateAddLiquidityError.message.includes("Internal JSON-RPC error.");
+    // Store the new state
+    localStorage.setItem("addLiquidityAllowed", currentState.toString());
+    return currentState;
   }, [simulateAddLiquidityError]);
 
   return {
@@ -46,5 +65,7 @@ export default function useCpamm() {
     writeContractAsync,
     userShares,
     addLiquidityAllowed,
+    fee,
+    remainingDailyAllowance,
   };
 }
