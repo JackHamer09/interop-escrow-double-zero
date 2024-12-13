@@ -39,7 +39,7 @@ export default function UniswapClone() {
   const dai = useDaiToken();
   const wbtc = useWbtcToken();
   const { writeContractAsync } = useWriteContract();
-  const { daiPoolLiquidity, wbtcPoolLiquidity } = useCpamm();
+  const { daiPoolLiquidity, wbtcPoolLiquidity, fee, remainingDailyAllowance, refetchAll: cpammRefetchAll } = useCpamm();
   const { value: isSwapping, setValue: setIsSwapping } = useBoolean(false);
   const [swapState, setSwapState] = useState<SwapState>({
     from: {
@@ -240,6 +240,7 @@ export default function UniswapClone() {
       setIsSwapping(false);
       dai.refetchAll();
       wbtc.refetchAll();
+      cpammRefetchAll();
     }
   };
 
@@ -298,8 +299,24 @@ export default function UniswapClone() {
                 wbtcPoolLiquidity={wbtcPoolLiquidity}
               />
 
-              <div className="mt-4 text-sm text-muted-foreground">
-                1 {swapState.from.token.symbol} = {formatTokenWithDecimals(swapPrice, 18)} {swapState.to.token.symbol}
+              <div className="flex flex-col gap-y-2 mt-4 px-3 py-2 bg-secondary rounded-lg text-sm w-fit">
+                <div className="flex items-center gap-x-2">
+                  <span className="font-medium">Price:</span>
+                  <span className="text-primary">
+                    1 {swapState.from.token.symbol} = {formatTokenWithDecimals(swapPrice, 18)}{" "}
+                    {swapState.to.token.symbol}
+                  </span>
+                </div>
+                <div className="flex items-center gap-x-2">
+                  <span className="font-medium">Fee:</span>
+                  <span className="text-primary">{fee ? `${Number(fee) / 10}%` : "-"}</span>
+                </div>
+                <div className="flex items-center gap-x-2">
+                  <span className="font-medium">Daily Limit:</span>
+                  <span className="text-primary">
+                    {remainingDailyAllowance ? formatTokenWithDecimals(remainingDailyAllowance, 18) : "-"} tokens
+                  </span>
+                </div>
               </div>
 
               <Button

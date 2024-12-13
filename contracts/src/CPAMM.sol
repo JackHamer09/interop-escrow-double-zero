@@ -1,62 +1,90 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { IERC20 } from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { Math } from "openzeppelin-contracts/contracts/utils/math/Math.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {Math} from "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 contract CPAMM {
-  IERC20 public immutable token0;
-  IERC20 public immutable token1;
+    IERC20 public immutable token0;
+    IERC20 public immutable token1;
 
-  uint256 public reserve0;
-  uint256 public reserve1;
+    uint256 public reserve0;
+    uint256 public reserve1;
 
-  uint256 public totalSupply;
-  mapping(address => uint256) public balanceOf;
+    uint256 public totalSupply;
+    mapping(address => uint256) public balanceOf;
 
-  constructor(address _token0, address _token1) {
-    token0 = IERC20(_token0);
-    token1 = IERC20(_token1);
-  }
+    // Fee tiers
+    uint256 private constant BASIC_FEE = 10; // 1%
+    uint256 private constant PREMIUM_FEE = 5; // 0.5%
+    uint256 private constant VIP_FEE = 3; // 0.3%
 
-  function getReserves() external view returns (uint256, uint256) {
-    return (reserve0, reserve1);
-  }
+    // 0 = basic, 1 = premium, 2 = vip
+    mapping(address => uint256) public userFeeTier;
 
-  function _mint(address _to, uint256 _amount) private {
-    balanceOf[_to] += _amount;
-    totalSupply += _amount;
-  }
+    // Swap limit tiers (in token units)
+    uint256 private constant BASIC_LIMIT = 1000 * 1e18; // 1,000 tokens
+    uint256 private constant PREMIUM_LIMIT = 5000 * 1e18; // 5,000 tokens
+    uint256 private constant VIP_LIMIT = 25000 * 1e18; // 25,000 tokens
 
-  function _burn(address _from, uint256 _amount) private {
-    balanceOf[_from] -= _amount;
-    totalSupply -= _amount;
-  }
+    // Track daily volumes and last transaction day
+    mapping(address => uint256) public userDailyVolume;
+    mapping(address => uint256) public lastTransactionDay;
 
-  function _update(uint256 _reserve0, uint256 _reserve1) private {
-    reserve0 = _reserve0;
-    reserve1 = _reserve1;
-  }
+    constructor(address _token0, address _token1) {
+        token0 = IERC20(_token0);
+        token1 = IERC20(_token1);
+    }
 
-  function swap(
-    address _tokenIn,
-    uint256 _amountIn
-  ) external returns (uint256 amountOut) {
-    require(
-      _tokenIn == address(token0) || _tokenIn == address(token1),
-      "invalid token"
-    );
-    require(_amountIn > 0, "amount in = 0");
+    function setUserFeeTier(address user, uint256 tier) external {
+        require(tier <= 2, "Invalid tier");
+        userFeeTier[user] = tier;
+    }
 
-    bool isToken0 = _tokenIn == address(token0);
-    (IERC20 tokenIn, IERC20 tokenOut, uint256 reserveIn, uint256 reserveOut) =
-    isToken0
-      ? (token0, token1, reserve0, reserve1)
-      : (token1, token0, reserve1, reserve0);
+    function getReserves() external view returns (uint256, uint256) {
+        return (reserve0, reserve1);
+    }
 
-    tokenIn.transferFrom(msg.sender, address(this), _amountIn);
+    function _mint(address _to, uint256 _amount) private {
+        balanceOf[_to] += _amount;
+        totalSupply += _amount;
+    }
 
-    /*
+    function _burn(address _from, uint256 _amount) private {
+        balanceOf[_from] -= _amount;
+        totalSupply -= _amount;
+    }
+
+    function _update(uint256 _reserve0, uint256 _reserve1) private {
+        reserve0 = _reserve0;
+        reserve1 = _reserve1;
+    }
+
+    function swap(
+        address _tokenIn,
+        uint256 _amountIn
+    ) external returns (uint256 amountOut) {
+        require(
+            _tokenIn == address(token0) || _tokenIn == address(token1),
+            "invalid token"
+        );
+        require(_amountIn > 0, "amount in = 0");
+
+        _updateDailyVolume(msg.sender, _amountIn);
+
+        bool isToken0 = _tokenIn == address(token0);
+        (
+            IERC20 tokenIn,
+            IERC20 tokenOut,
+            uint256 reserveIn,
+            uint256 reserveOut
+        ) = isToken0
+                ? (token0, token1, reserve0, reserve1)
+                : (token1, token0, reserve1, reserve0);
+
+        tokenIn.transferFrom(msg.sender, address(this), _amountIn);
+
+        /*
         How much dy for dx?
 
         xy = k
@@ -67,23 +95,29 @@ contract CPAMM {
         (yx + ydx - xy) / (x + dx) = dy
         ydx / (x + dx) = dy
         */
-    // 0.3% fee
-    uint256 amountInWithFee = (_amountIn * 997) / 1000;
-    amountOut = (reserveOut * amountInWithFee) / (reserveIn + amountInWithFee);
+        uint256 fee = getUserFee(msg.sender);
+        uint256 amountInWithFee = (_amountIn * (1000 - fee)) / 1000;
 
-    tokenOut.transfer(msg.sender, amountOut);
+        amountOut =
+            (reserveOut * amountInWithFee) /
+            (reserveIn + amountInWithFee);
 
-    _update(token0.balanceOf(address(this)), token1.balanceOf(address(this)));
-  }
+        tokenOut.transfer(msg.sender, amountOut);
 
-  function addLiquidity(
-    uint256 _amount0,
-    uint256 _amount1
-  ) external returns (uint256 shares) {
-    token0.transferFrom(msg.sender, address(this), _amount0);
-    token1.transferFrom(msg.sender, address(this), _amount1);
+        _update(
+            token0.balanceOf(address(this)),
+            token1.balanceOf(address(this))
+        );
+    }
 
-    /*
+    function addLiquidity(
+        uint256 _amount0,
+        uint256 _amount1
+    ) external onlyPremiumOrVip returns (uint256 shares) {
+        token0.transferFrom(msg.sender, address(this), _amount0);
+        token1.transferFrom(msg.sender, address(this), _amount1);
+
+        /*
         How much dx, dy to add?
 
         xy = k
@@ -98,15 +132,15 @@ contract CPAMM {
         x / y = dx / dy
         dy = y / x * dx
         */
-    // Commented out because it's not needed for our PoC
-    // if (reserve0 > 0 || reserve1 > 0) {
-    //     require(
-    //         reserve0 * _amount1 == reserve1 * _amount0,
-    //         "x / y != dx / dy"
-    //     );
-    // }
+        // Commented out because it's not needed for our PoC
+        // if (reserve0 > 0 || reserve1 > 0) {
+        //     require(
+        //         reserve0 * _amount1 == reserve1 * _amount0,
+        //         "x / y != dx / dy"
+        //     );
+        // }
 
-    /*
+        /*
         How much shares to mint?
 
         f(x, y) = value of liquidity
@@ -125,7 +159,7 @@ contract CPAMM {
         (L1 - L0) * T / L0 = s
         */
 
-    /*
+        /*
         Claim
         (L1 - L0) / L0 = dx / x = dy / y
 
@@ -156,23 +190,27 @@ contract CPAMM {
         Finally
         (L1 - L0) / L0 = dx / x = dy / y
         */
-    if (totalSupply == 0) {
-      shares = Math.sqrt(_amount0 * _amount1);
-    } else {
-      shares = Math.min(
-        (_amount0 * totalSupply) / reserve0, (_amount1 * totalSupply) / reserve1
-      );
+        if (totalSupply == 0) {
+            shares = Math.sqrt(_amount0 * _amount1);
+        } else {
+            shares = Math.min(
+                (_amount0 * totalSupply) / reserve0,
+                (_amount1 * totalSupply) / reserve1
+            );
+        }
+        require(shares > 0, "shares = 0");
+        _mint(msg.sender, shares);
+
+        _update(
+            token0.balanceOf(address(this)),
+            token1.balanceOf(address(this))
+        );
     }
-    require(shares > 0, "shares = 0");
-    _mint(msg.sender, shares);
 
-    _update(token0.balanceOf(address(this)), token1.balanceOf(address(this)));
-  }
-
-  function removeLiquidity(
-    uint256 _shares
-  ) external returns (uint256 amount0, uint256 amount1) {
-    /*
+    function removeLiquidity(
+        uint256 _shares
+    ) external onlyPremiumOrVip returns (uint256 amount0, uint256 amount1) {
+        /*
         Claim
         dx, dy = amount of liquidity to remove
         dx = s / T * x
@@ -206,19 +244,89 @@ contract CPAMM {
         dy = s / T * y
         */
 
-    // bal0 >= reserve0
-    // bal1 >= reserve1
-    uint256 bal0 = token0.balanceOf(address(this));
-    uint256 bal1 = token1.balanceOf(address(this));
+        // bal0 >= reserve0
+        // bal1 >= reserve1
+        uint256 bal0 = token0.balanceOf(address(this));
+        uint256 bal1 = token1.balanceOf(address(this));
 
-    amount0 = (_shares * bal0) / totalSupply;
-    amount1 = (_shares * bal1) / totalSupply;
-    require(amount0 > 0 && amount1 > 0, "amount0 or amount1 = 0");
+        amount0 = (_shares * bal0) / totalSupply;
+        amount1 = (_shares * bal1) / totalSupply;
+        require(amount0 > 0 && amount1 > 0, "amount0 or amount1 = 0");
 
-    _burn(msg.sender, _shares);
-    _update(bal0 - amount0, bal1 - amount1);
+        _burn(msg.sender, _shares);
+        _update(bal0 - amount0, bal1 - amount1);
 
-    token0.transfer(msg.sender, amount0);
-    token1.transfer(msg.sender, amount1);
-  }
+        token0.transfer(msg.sender, amount0);
+        token1.transfer(msg.sender, amount1);
+    }
+
+    function getUserFee(address user) public view returns (uint256) {
+        if (userFeeTier[user] == 1) {
+            return PREMIUM_FEE;
+        } else if (userFeeTier[user] == 2) {
+            return VIP_FEE;
+        }
+        return BASIC_FEE;
+    }
+
+    function _getUserLimit(address user) private view returns (uint256) {
+        if (userFeeTier[user] == 1) {
+            return PREMIUM_LIMIT;
+        } else if (userFeeTier[user] == 2) {
+            return VIP_LIMIT;
+        }
+        return BASIC_LIMIT;
+    }
+
+    function _updateDailyVolume(address user, uint256 amount) private {
+        uint256 currentDay = block.timestamp / 86400;
+
+        // Reset volume if it's a new day
+        if (currentDay > lastTransactionDay[user]) {
+            userDailyVolume[user] = 0;
+            lastTransactionDay[user] = currentDay;
+        }
+
+        uint256 userLimit = _getUserLimit(user);
+        require(
+            userDailyVolume[user] + amount <= userLimit,
+            "Daily limit exceeded"
+        );
+
+        userDailyVolume[user] += amount;
+    }
+
+    function getRemainingDailyAllowance(
+        address user
+    ) external view returns (uint256) {
+        uint256 currentDay = block.timestamp / 86400;
+
+        // If it's a new day, full allowance is available
+        if (currentDay > lastTransactionDay[user]) {
+            return _getUserLimit(user);
+        }
+
+        uint256 userLimit = _getUserLimit(user);
+        if (userDailyVolume[user] >= userLimit) {
+            return 0;
+        }
+
+        return userLimit - userDailyVolume[user];
+    }
+
+    modifier onlyPremiumOrVip() {
+        require(
+            userFeeTier[msg.sender] == 2 || userFeeTier[msg.sender] == 1,
+            "Only VIP or premium users can call this function"
+        );
+        _;
+    }
+
+    modifier onlyVip() {
+        require(
+            userFeeTier[msg.sender] == 2,
+            "Only VIP users can call this function"
+        );
+        _;
+    }
 }
