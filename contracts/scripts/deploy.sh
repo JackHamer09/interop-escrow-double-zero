@@ -2,15 +2,15 @@
 
 set -e
 
-PRIVATE_KEY=$DEPLOYER_PRIVATE_KEY
+PRIVATE_KEY=$PRIVATE_KEY
 RPC_URL=$RPC_URL
 
 PREMIUM_USER_ADDRESS=$PREMIUM_USER_ADDRESS
 BASIC_USER_ADDRESS=$BASIC_USER_ADDRESS
 
 # Validate environment variables
-if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
-  echo "DEPLOYER_PRIVATE_KEY is not set"
+if [ -z "$PRIVATE_KEY" ]; then
+  echo "PRIVATE_KEY is not set"
   exit 1
 fi
 
