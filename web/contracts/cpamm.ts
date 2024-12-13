@@ -21,6 +21,13 @@ export const CPAMM_ABI = [
   },
   {
     type: "function",
+    name: "allowedToAddLiquidity",
+    inputs: [],
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "balanceOf",
     inputs: [{ name: "", type: "address", internalType: "address" }],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],

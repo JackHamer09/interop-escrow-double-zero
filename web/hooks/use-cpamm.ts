@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from "react";
-import { useAccount, useReadContract, useSimulateContract, useWriteContract } from "wagmi";
+import { useCallback, useEffect, useMemo } from "react";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { CPAMM_ABI, CPAMM_ADDRESS } from "~~/contracts/cpamm";
 
 const options = {
@@ -19,13 +19,10 @@ export default function useCpamm() {
     functionName: "balanceOf",
     args: [address ?? ""],
   });
-  const { error: simulateAddLiquidityError } = useSimulateContract({
+  const { data: allowedToAddLiquidity, refetch: refetchAllowedToAddLiquidity } = useReadContract({
     ...options,
-    functionName: "addLiquidity",
-    args: [1n, 1n],
-    query: {
-      retry: 1,
-    },
+    functionName: "allowedToAddLiquidity",
+    account: address ?? "",
   });
   const { data: fee, refetch: refetchFee } = useReadContract({
     ...options,
@@ -42,21 +39,26 @@ export default function useCpamm() {
     refetchLiquidity();
     refetchFee();
     refetchRemainingDailyAllowance();
-  }, [refetchLiquidity, refetchFee, refetchRemainingDailyAllowance]);
+    refetchAllowedToAddLiquidity();
+  }, [refetchLiquidity, refetchFee, refetchRemainingDailyAllowance, refetchAllowedToAddLiquidity]);
+
+  // Refetch all when the address changes
+  useEffect(() => {
+    refetchAll();
+  }, [address, refetchAll]);
 
   const addLiquidityAllowed = useMemo(() => {
     // Get the last known state from localStorage, default to true if not set
-    const lastKnownState = localStorage.getItem("addLiquidityAllowed") === "false" ? false : true;
+    const lastKnownState = globalThis?.localStorage?.getItem("addLiquidityAllowed") === "false" ? false : true;
 
-    if (simulateAddLiquidityError === null) {
+    // If the simulateAddLiquidityError is loading, then we are on the first render
+    if (allowedToAddLiquidity === undefined) {
       return lastKnownState;
     }
 
-    const currentState = !simulateAddLiquidityError.message.includes("Internal JSON-RPC error.");
-    // Store the new state
-    localStorage.setItem("addLiquidityAllowed", currentState.toString());
-    return currentState;
-  }, [simulateAddLiquidityError]);
+    globalThis?.localStorage?.setItem("addLiquidityAllowed", allowedToAddLiquidity.toString());
+    return allowedToAddLiquidity;
+  }, [allowedToAddLiquidity]);
 
   return {
     daiPoolLiquidity: liquidity?.[0],

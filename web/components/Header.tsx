@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -14,6 +15,12 @@ type HeaderMenuLink = {
 
 export const Header = () => {
   const { addLiquidityAllowed } = useCpamm();
+  const [showPool, setShowPool] = useState(false);
+
+  // Use it to update the state after hydration
+  useEffect(() => {
+    setShowPool(addLiquidityAllowed);
+  }, [addLiquidityAllowed]);
 
   return (
     <div className="flex h-[74px] justify-between z-20 w-full p-4">
@@ -23,9 +30,9 @@ export const Header = () => {
         </div>
         <span className="text-xl font-normal">Double Zero Swap</span>
       </Link>
-      <nav className="hidden md:flex lg:flex-nowrap px-1 gap-2">
+      <nav suppressHydrationWarning className="hidden md:flex lg:flex-nowrap px-1 gap-2">
         <HeaderMenuLink label="Swap" href="/" matches={["/"]} />
-        {addLiquidityAllowed && <HeaderMenuLink label="Pool" href="/pool" matches={["/pool", "/pool/add"]} />}
+        {showPool && <HeaderMenuLink label="Pool" href="/pool" matches={["/pool", "/pool/add"]} />}
       </nav>
       <div className="mr-4">
         <RainbowKitCustomConnectButton />

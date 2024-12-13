@@ -110,6 +110,10 @@ contract CPAMM {
         );
     }
 
+    function allowedToAddLiquidity() external view returns (bool) {
+      return userFeeTier[msg.sender] == 1 || userFeeTier[msg.sender] == 2;
+    }
+
     function addLiquidity(
         uint256 _amount0,
         uint256 _amount1
@@ -316,7 +320,7 @@ contract CPAMM {
 
     modifier onlyPremiumOrVip() {
         require(
-            userFeeTier[msg.sender] == 2 || userFeeTier[msg.sender] == 1,
+            userFeeTier[msg.sender] == 1 || userFeeTier[msg.sender] == 2,
             "Only VIP or premium users can call this function"
         );
         _;
