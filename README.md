@@ -36,9 +36,13 @@ Clone the [Double Zero](https://github.com/Moonsong-Labs/double-zero) repository
 In the `contracts` folder, you can find the contracts to be deployed and the deploy script. Run the following command to deploy the contracts:
 
 ```bash
-PRIVATE_KEY=<deployer_private_key> \
-RPC_URL="http://localhost:3050" \
-scripts/deploy.sh
+cd contracts
+
+env PRIVATE_KEY="<deployer_private_key>" \
+env RPC_URL="http://localhost:3050" \
+env PREMIUM_USER_ADDRESS="<premium_user_address>" \
+env BASIC_USER_ADDRESS="<basic_user_address>" \
+contracts/scripts/deploy.sh
 ```
 
 Take into account that the `RPC_URL` should be the one of the local network you have running. If attempting to run this using Double Zero, you should put the Private RPC address.
