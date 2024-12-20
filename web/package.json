@@ -5,13 +5,12 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "start": "next dev",
+    "start": "next start",
     "typecheck": "tsc --noEmit --incremental",
     "format": "prettier --write . '!(node_modules|.next|contracts)/**/*'",
     "format:check": "prettier --check . '!(node_modules|.next|contracts)/**/*'",
     "lint": "next lint",
     "lint:check": "next lint --max-warnings=0",
-    "serve": "next start",
     "ci:prepare": "run-s format lint typecheck"
   },
   "dependencies": {
