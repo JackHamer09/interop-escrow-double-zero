@@ -28,11 +28,12 @@ export const Header = () => {
         <div className="flex relative w-10 h-10">
           <Image alt="Double Zero Swap logo" className="cursor-pointer" fill src="/logo-dark.svg" />
         </div>
-        <span className="text-xl font-normal">Double Zero Swap</span>
+        <span className="text-xl font-normal">DualZero</span>
       </Link>
       <nav suppressHydrationWarning className="hidden md:flex lg:flex-nowrap px-1 gap-2">
         <HeaderMenuLink label="Swap" href="/" matches={["/"]} />
         {showPool && <HeaderMenuLink label="Pool" href="/pool" matches={["/pool", "/pool/add"]} />}
+        <HeaderMenuLink label="Escrowed Trades" href="/trades" matches={["/trades"]} />
       </nav>
       <div className="mr-4">
         <RainbowKitCustomConnectButton />

@@ -48,19 +48,29 @@ forge build --zksync
 # Deploy ERC20 tokens
 dai_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "DAI" "DAI" 18 | extract_deployed_address)
 wbtc_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "WBTC" "WBTC" 18 | extract_deployed_address)
+usdg_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Global Dollar" "USDG" 18 | extract_deployed_address)
+waapl_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Wrapped AAPL" "wAAPL" 18 | extract_deployed_address)
 
 # Mint tokens
 ## VIP User
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $dai_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1000000000000000000000000 # 1 million DAI
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $wbtc_address "mint(address,uint256)" $DEPLOYER_ADDRESS 100000000000000000000000 # 100,000 WBTC
+cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $usdg_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1000000000000000000000000 # 1,000,000 USDG
+cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $waapl_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1000000000000000000000 # 1,000 wAAPL
 
 ## Premium User
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $dai_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 100000000000000000000000 # 100,000 DAI
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $wbtc_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 10000000000000000000000 # 10,000 WBTC
+cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $usdg_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 1000000000000000000000000 # 1,000,000 USDG
+cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $waapl_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 10000000000000000000 # 10 wAAPL
+cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $PREMIUM_USER_ADDRESS --value 1ether # 1 ETH
 
 ## Basic User
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $dai_address "mint(address,uint256)" $BASIC_USER_ADDRESS 10000000000000000000000 # 10,000 DAI
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $wbtc_address "mint(address,uint256)" $BASIC_USER_ADDRESS 1000000000000000000000 # 1,000 WBTC
+cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $usdg_address "mint(address,uint256)" $BASIC_USER_ADDRESS 100000000000000000000000 # 100,000 USDG
+cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $waapl_address "mint(address,uint256)" $BASIC_USER_ADDRESS 100000000000000000000 # 100 wAAPL
+cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $BASIC_USER_ADDRESS --value 1ether # 1 ETH
 
 # Deploy CPAMM
 cpamm_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/CPAMM.sol:CPAMM --constructor-args $dai_address $wbtc_address | extract_deployed_address)
@@ -70,6 +80,12 @@ cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $cpamm_address "setUserF
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $cpamm_address "setUserFeeTier(address,uint256)" $PREMIUM_USER_ADDRESS 1
 cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $cpamm_address "setUserFeeTier(address,uint256)" $BASIC_USER_ADDRESS 0
 
+# Deploy TradeEscrow
+trade_escrow_address=$(forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY --zksync src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
+
 echo "DAI: $dai_address"
 echo "WBTC: $wbtc_address"
+echo "USDG: $usdg_address"
+echo "wAAPL: $waapl_address"
 echo "CPAMM: $cpamm_address"
+echo "TradeEscrow.sol: $trade_escrow_address"

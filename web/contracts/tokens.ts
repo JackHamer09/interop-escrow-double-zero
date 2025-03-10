@@ -30,6 +30,27 @@ export const ERC20_ABI = [
   },
   {
     type: "function",
+    name: "decimals",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8", internalType: "uint8" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "name",
+    inputs: [],
+    outputs: [{ name: "", type: "string", internalType: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "symbol",
+    inputs: [],
+    outputs: [{ name: "", type: "string", internalType: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "totalSupply",
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
@@ -94,4 +115,20 @@ export const WBTC_TOKEN = {
   decimals: 18,
 };
 
-export type Token = typeof DAI_TOKEN | typeof WBTC_TOKEN;
+export const USDG_TOKEN = {
+  symbol: "USDG",
+  name: "Global Dollar",
+  address: env.NEXT_PUBLIC_USDG_ADDRESS,
+  logo: "/usdg-badge.png",
+  decimals: 18,
+};
+
+export const WAAPL_TOKEN = {
+  symbol: "wAAPL",
+  name: "Wrapped AAPL",
+  address: env.NEXT_PUBLIC_WAAPL_ADDRESS,
+  logo: "/waapl-badge.webp",
+  decimals: 18,
+};
+
+export type Token = typeof DAI_TOKEN | typeof WBTC_TOKEN | typeof USDG_TOKEN | typeof WAAPL_TOKEN;

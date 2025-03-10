@@ -16,4 +16,5 @@ int_types = "long"
 
 
 [profile.default.zksync]
+solc_version = "0.8.24"
 zksolc = "1.5.6"

@@ -12,7 +12,7 @@ Chain with access control features and scoped data access._
 
 ## 📒 Summary
 
-Double Zero Swap is a simple dapp built to be used on top of [Double Zero](https://github.com/Moonsong-Labs/double-zero). It resembles a constant product AMM, but with private data access and access control features, brought by the Double Zero architecture.
+Double Zero Swap is a simple dapp built to be used on top of [Double Zero](https://github.com/Moonsong-Labs/double-zero). It resembles a constant product AMM, but with private data access and access control features, brought by the Double Zero architecture. It also allows for Escrow Trades between 2 parties via a privatized smart contract.
 
 ### Built With
 
@@ -49,17 +49,21 @@ Take into account that the `RPC_URL` should be the one of the local network you 
 
 The script does several things:
 
-- Deploys 2 ERC20 tokens
+- Deploys 4 ERC20 tokens
 - Deploys the AMM contract
+- Deploys the TradeEscrow contract
 - Links everything together
-- Mint some of both tokens and send them to the deploy address
+- Mint some of each token and send them to the deploy address
 
 At the end it will log the addresses of the deployed contracts:
 
 ```
 DAI: <dai_address>
 WBTC: <wbtc_address>
+USDG: <usdg_address>
+wAAPL: <waapl_address>
 CPAMM: <cpamm_address>
+TradeEscrow.sol: <trade_escrow_address>
 ```
 
 ### 2. Webapp config
@@ -75,8 +79,11 @@ Now you can edit that file and put your data:
 ```
 NEXT_PUBLIC_CHAIN_ID="<your_chain_id>"
 NEXT_PUBLIC_CPAMM_ADDRESS="<cpamm_address>"
+NEXT_PUBLIC_TRADE_ESCROW_ADDRESS="<trade_escrow_address>"
 NEXT_PUBLIC_DAI_ADDRESS="<dai_address>"
 NEXT_PUBLIC_WBTC_ADDRESS="<wbtc_address>"
+NEXT_PUBLIC_USDG_ADDRESS="<usdg_address>"
+NEXT_PUBLIC_WAAPL_ADDRESS="<waapl_address>"
 NEXT_PUBLIC_CHAIN_NAME="Local Chain"
 NEXT_PUBLIC_BLOCK_EXPLORER_URL="<double_zero_explorer_url>"
 ```
@@ -95,8 +102,9 @@ pnpm dev
 Double Zero Swap demonstrates the practical application of **_private DeFi_** through:
 
 1. **Private AMM**: A constant product market maker that maintains transaction privacy while enabling efficient token swaps.
-2. **Access Control**: Leverages Double Zero's architecture to manage who can view and interact with the protocol.
-3. **User Experience**: Simple interface built with modern web3 tools for seamless interaction.
-4. **Composability**: Built on Double Zero's infrastructure, showing how private DeFi protocols can be constructed.
+2. **Private Escrow Trades**: A platform for 2 parties to trade assets via an Escrow smart contract without revealing balance/transaction information about the other party.
+3. **Access Control**: Leverages Double Zero's architecture to manage who can view and interact with the protocol.
+4. **User Experience**: Simple interface built with modern web3 tools for seamless interaction.
+5. **Composability**: Built on Double Zero's infrastructure, showing how private DeFi protocols can be constructed.
 
 By implementing a basic DeFi primitive with privacy features, Double Zero Swap serves as a blueprint for building confidential decentralized applications that maintain the benefits of public blockchain technology while protecting sensitive transaction data.
