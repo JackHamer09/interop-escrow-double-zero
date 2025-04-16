@@ -7,3 +7,4 @@
 [submodule "contracts/lib/era-contracts"]
 	path = contracts/lib/era-contracts
 	url = https://github.com/matter-labs/era-contracts
+	branch = "kl/interop"
