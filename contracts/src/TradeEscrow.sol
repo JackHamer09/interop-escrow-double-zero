@@ -2,7 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {IInteropCenter} from "era-contracts/l1-contracts/contracts/bridgehub/IInteropCenter.sol";
-import {L2_INTEROP_CENTER, L2_STANDARD_TRIGGER_ACCOUNT_ADDR} from "era-contracts/system-contracts/contracts/Constants.sol";
+import {IInteropHandler} from "era-contracts/l1-contracts/contracts/bridgehub/IInteropHandler.sol";
+import {L2_INTEROP_CENTER, L2_STANDARD_TRIGGER_ACCOUNT_ADDR, L2_INTEROP_HANDLER} from "era-contracts/system-contracts/contracts/Constants.sol";
 import {InteropCallStarter, GasFields} from "era-contracts/l1-contracts/contracts/common/Messaging.sol";
 import {DataEncoding} from "era-contracts/l1-contracts/contracts/common/libraries/DataEncoding.sol";
 
@@ -101,7 +102,8 @@ contract TradeEscrow {
     function acceptTrade(uint256 _tradeId) external {
         Trade storage trade = trades[_tradeId];
         require(trade.status == TradeStatus.PendingApproval, "Trade is not pending");
-        require(msg.sender == trade.partyB, "Only the designated counterparty can accept");
+        address expectedSender = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
+        require(msg.sender == expectedSender, "Only the designated counterparty can accept");
         
         trade.status = TradeStatus.PendingFunds;
 
@@ -114,6 +116,7 @@ contract TradeEscrow {
     function deposit(uint256 _tradeId) external {
         Trade storage trade = trades[_tradeId];
         require(trade.status == TradeStatus.PendingFunds, "Trade is not approved");
+        address expectedPartyB = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
         
         // Handle deposit based on caller's role.
         if (msg.sender == trade.partyA) {
@@ -124,7 +127,7 @@ contract TradeEscrow {
             );
             trade.depositedA = true;
             emit DepositMade(_tradeId, msg.sender, trade.tokenA, trade.amountA);
-        } else if (msg.sender == trade.partyB) {
+        } else if (msg.sender == expectedPartyB) {
             require(!trade.depositedB, "Party B already deposited");
             require(
                 IERC20(trade.tokenB).transferFrom(msg.sender, address(this), trade.amountB),
