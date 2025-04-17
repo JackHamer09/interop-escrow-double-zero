@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBoolean } from "usehooks-ts";
-import { Address, isAddress, parseUnits } from "viem";
+import { Address, Hash, isAddress, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import { ArrowsUpDownIcon, WalletIcon } from "@heroicons/react/24/outline";
 import HiddenContent from "~~/components/HiddenContent";
@@ -21,9 +21,11 @@ import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
 import { Token, USDG_TOKEN, WAAPL_TOKEN } from "~~/contracts/tokens";
+import useInteropTransfer from "~~/hooks/use-interop";
 import useTradeEscrow, { EscrowTrade, EscrowTradeStatus } from "~~/hooks/use-trade-escrow";
 import useUsdgToken from "~~/hooks/use-usdg-token";
 import useWaaplToken from "~~/hooks/use-waapl-token";
+import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
 import { formatTokenWithDecimals } from "~~/utils/currency";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
@@ -41,6 +43,7 @@ interface TradeState {
 export default function AddEscrowedTrade() {
   const usdg = useUsdgToken();
   const waapl = useWaaplToken();
+  const { interopTransfer } = useInteropTransfer();
   const {
     myTrades,
     refetchAll: refetchTrades,
@@ -120,6 +123,21 @@ export default function AddEscrowedTrade() {
     }
 
     setIsAddingTrade(true);
+    console.log("Start");
+    await interopTransfer({
+      from: {
+        chainId: chain1.id,
+      },
+      recipient: {
+        chainId: chain2.id,
+        address: tradeState.partyB,
+      },
+      token: {
+        address: tradeState.tokenA.address,
+        assetId: tradeState.tokenA.assetId as Hash,
+        amount: tradeState.amountA,
+      },
+    });
 
     try {
       const createTrade = await toast.promise(
@@ -374,7 +392,8 @@ export default function AddEscrowedTrade() {
                                       trade.partyB == myAddress && "text-yellow-400 border-yellow-500 bg-yellow-700",
                                     )}
                                   >
-                                    Waiting for <br></br>{trade.partyB == myAddress ? "Your" : "Party"} Approval
+                                    Waiting for <br></br>
+                                    {trade.partyB == myAddress ? "Your" : "Party"} Approval
                                   </span>
                                 )}
                               </li>
@@ -524,11 +543,7 @@ export default function AddEscrowedTrade() {
                         {trade.status == EscrowTradeStatus.PendingFunds &&
                           ((trade.partyA == myAddress && trade.depositedA == false) ||
                             (trade.partyB == myAddress && trade.depositedB == false)) && (
-                            <Button
-                              className="p-4"
-                              loading={isAddingTrade}
-                              onClick={() => handleDepositTrade(trade)}
-                            >
+                            <Button className="p-4" loading={isAddingTrade} onClick={() => handleDepositTrade(trade)}>
                               Deposit Funds
                             </Button>
                           )}
@@ -607,12 +622,15 @@ export default function AddEscrowedTrade() {
   );
 }
 
-function ShortAddress({ address, isRight }: { address: string, isRight: boolean }) {
+function ShortAddress({ address, isRight }: { address: string; isRight: boolean }) {
   const shortAddress = address.slice(0, 5) + "..." + address.slice(address.length - 6, address.length);
 
   return (
     <div
-      className={cn("flex items-center text-sm text-muted-foreground hover:text-white hover:cursor-pointer", isRight && "justify-end")}
+      className={cn(
+        "flex items-center text-sm text-muted-foreground hover:text-white hover:cursor-pointer",
+        isRight && "justify-end",
+      )}
       onClick={() => navigator.clipboard.writeText(address)}
     >
       {shortAddress}
@@ -653,7 +671,7 @@ function PoolCard({
           {isPartyB === false && "You"}
           {isPartyB === true && (
             <input
-              placeholder="0xa1b2c3..."
+              placeholder="Enter address here"
               className={cn(
                 "bg-transparent appearance-none focus:outline-none text-sm w-full placeholder-red-300 text-blue-400",
                 !isAddress(displayPartyB) && "text-red-500",

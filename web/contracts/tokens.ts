@@ -102,6 +102,7 @@ export const ERC20_ABI = [
 export const DAI_TOKEN = {
   symbol: "DAI",
   name: "DAI",
+  assetId: env.NEXT_PUBLIC_DAI_ASSET_ID,
   address: env.NEXT_PUBLIC_DAI_ADDRESS,
   logo: "/dai-badge.webp",
   decimals: 18,
@@ -110,6 +111,7 @@ export const DAI_TOKEN = {
 export const WBTC_TOKEN = {
   symbol: "WBTC",
   name: "Wrapped Bitcoin",
+  assetId: env.NEXT_PUBLIC_WBTC_ASSET_ID,
   address: env.NEXT_PUBLIC_WBTC_ADDRESS,
   logo: "/wbtc-badge.webp",
   decimals: 18,
@@ -118,6 +120,7 @@ export const WBTC_TOKEN = {
 export const USDG_TOKEN = {
   symbol: "USDG",
   name: "Global Dollar",
+  assetId: env.NEXT_PUBLIC_USDG_ASSET_ID,
   address: env.NEXT_PUBLIC_USDG_ADDRESS,
   logo: "/usdg-badge.png",
   decimals: 18,
@@ -126,6 +129,7 @@ export const USDG_TOKEN = {
 export const WAAPL_TOKEN = {
   symbol: "wAAPL",
   name: "Wrapped AAPL",
+  assetId: env.NEXT_PUBLIC_WAAPL_ASSET_ID,
   address: env.NEXT_PUBLIC_WAAPL_ADDRESS,
   logo: "/waapl-badge.webp",
   decimals: 18,
