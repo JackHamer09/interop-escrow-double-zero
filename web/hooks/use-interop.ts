@@ -1,15 +1,18 @@
-import { getGasPrice } from "@wagmi/core";
+import { useEthersSigner } from "./use-ethers-signer";
 import { type Address } from "abitype";
 import * as ethers from "ethers";
-import { type Hash, getAddress } from "viem";
+import { type Hash, encodeAbiParameters, getAddress, keccak256 } from "viem";
 import { useAccount, useSwitchChain, useWriteContract } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
+import * as zksync from "zksync-ethers-interop-support";
 import { INTEROP_CENTER_ABI } from "~~/contracts/interop-center";
 import { ERC20_ABI } from "~~/contracts/tokens";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 import {
   L2_ASSET_ROUTER_ADDRESS,
+  L2_INTEROP_CENTER_ADDRESS,
   L2_INTEROP_HANDLER_ADDRESS,
+  L2_NATIVE_TOKEN_VAULT_ADDRESS,
   L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
   REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
 } from "~~/utils/constants";
@@ -28,6 +31,7 @@ export default function useInteropTransfer() {
   const account = useAccount();
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
+  const signer = useEthersSigner();
 
   async function switchChainIfNotSet(chainId: number) {
     if (account.chainId !== chainId) {
@@ -36,17 +40,31 @@ export default function useInteropTransfer() {
   }
 
   async function approveNativeTokenVault(args: { chainId: number; amount: bigint; tokenAddress: Address }) {
+    if (!account.address) throw new Error("Account address is not available");
+
     await switchChainIfNotSet(args.chainId);
+    const allowanceAddress = L2_NATIVE_TOKEN_VAULT_ADDRESS;
+    const getCurrentAllowance = await readContract(wagmiConfig, {
+      chainId: args.chainId,
+      address: args.tokenAddress,
+      abi: ERC20_ABI,
+      functionName: "allowance",
+      args: [account.address, allowanceAddress],
+    });
+    if (getCurrentAllowance >= args.amount) {
+      console.log("Enough NativeTokenVault allowance");
+      return;
+    }
+
     const transactionHash = await writeContractAsync({
       chainId: args.chainId,
       address: args.tokenAddress,
       abi: ERC20_ABI,
       functionName: "approve",
-      args: [L2_ASSET_ROUTER_ADDRESS, args.amount],
+      args: [allowanceAddress, args.amount],
     });
     const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: args.chainId, hash: transactionHash });
-    if (!receipt) throw new Error("Transaction failed");
-    if (receipt.status !== "success") throw new Error("Transaction failed");
+    if (receipt.status !== "success") throw new Error("Approve transaction failed");
     return receipt;
   }
 
@@ -64,21 +82,20 @@ export default function useInteropTransfer() {
       amount: bigint;
     };
   }) {
-    // await approveNativeTokenVault({
-    //   chainId: args.from.chainId,
-    //   amount: args.token.amount,
-    //   tokenAddress: args.token.address,
-    // });
-    // console.log("token approved");
+    await approveNativeTokenVault({
+      chainId: args.from.chainId,
+      amount: args.token.amount,
+      tokenAddress: args.token.address,
+    });
 
-    // console.log("Getting aliased address");
-    // const aliasedAddress = await getAliasedAddress(args.recipient.chainId, args.recipient.address);
-    // console.log("aliasedAddress", aliasedAddress);
-    const aliasedAddress = "0x7301AfAb6701AFcE1aD88149b7cE52B67D9836E1";
+    console.log("Getting aliased address...");
+    const aliasedAddress = await getAliasedAddress(0, args.recipient.address);
+    console.log("aliasedAddress address:", aliasedAddress);
 
     // Compose and send the interop request transaction
-    const feeValue = ethers.parseEther("1");
-    console.log("Requesting interop");
+    await switchChainIfNotSet(args.from.chainId);
+    const feeValue = ethers.parseEther("0.2");
+    console.log("Requesting interop...");
     const { transactionHash } = await requestInterop(
       args.from.chainId,
       args.recipient.chainId,
@@ -118,31 +135,28 @@ export default function useInteropTransfer() {
     execCallStarters: InteropCallStarter[],
   ) {
     if (!account.address) throw new Error("Account address is not available");
-    const totalValue = [...feeCallStarters, ...execCallStarters].reduce(
-      (total, item) => total + BigInt(item.requestedInteropCallValue),
-      0n as bigint,
-    );
+    if (!signer) throw new Error("No signer available");
+
     await switchChainIfNotSet(fromChainId);
     console.log("writeContractAsync");
+
+    const totalValue = [...feeCallStarters, ...execCallStarters].reduce(
+      (total, item) => total + BigInt(item.requestedInteropCallValue),
+      0n,
+    );
     const transactionHash = await writeContractAsync({
       chainId: fromChainId,
       abi: INTEROP_CENTER_ABI,
-      address: L2_INTEROP_HANDLER_ADDRESS,
+      address: L2_INTEROP_CENTER_ADDRESS,
       functionName: "requestInterop",
-      value: totalValue as any,
-      gas: 600000000n,
-      // gasPrice: await getGasPrice(wagmiConfig, {
-      //   chainId: fromChainId,
-      // }),
-      maxFeePerGas: 600000000n,
-      maxPriorityFeePerGas: 600000000n,
+      value: totalValue,
       args: [
-        BigInt(toChainId),
+        BigInt(toChainId.toString(16)),
         L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
         feeCallStarters,
         execCallStarters,
         {
-          gasLimit: 60000000n,
+          gasLimit: 30000000n,
           gasPerPubdataByteLimit: BigInt(REQUIRED_L2_GAS_PRICE_PER_PUBDATA),
           refundRecipient: account.address,
           paymaster: ethers.ZeroAddress,
@@ -150,32 +164,93 @@ export default function useInteropTransfer() {
         },
       ],
     });
+    /* const interopCenterContract = new zksync.Contract(L2_INTEROP_CENTER_ADDRESS, INTEROP_CENTER_ABI, signer);
+    const tx = await interopCenterContract.requestInterop(
+      toChainId.toString(16),
+      L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
+      feeCallStarters,
+      execCallStarters,
+      {
+        gasLimit: 30000000n,
+        gasPerPubdataByteLimit: REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
+        refundRecipient: account.address,
+        paymaster: ethers.ZeroAddress,
+        paymasterInput: "0x",
+      },
+      {
+        value: totalValue,
+      },
+    ); */
     console.log("Interop transactionHash", transactionHash);
     const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: fromChainId, hash: transactionHash });
     return receipt;
   }
 
   async function getAliasedAddress(chainId: number, address: Address): Promise<Address> {
-    const abi = [
-      {
-        type: "function",
-        name: "getAliasedAccount",
-        inputs: [
-          { name: "fromAsSalt", type: "address", internalType: "address" },
-          { name: "chainId", type: "uint256", internalType: "uint256" },
-        ],
-        outputs: [{ name: "aliasedAddress", type: "address", internalType: "address" }],
-        stateMutability: "view",
-      },
-    ] as const;
-    await switchChainIfNotSet(chainId);
     return await readContract(wagmiConfig, {
-      chainId,
+      // chainId: chainId,
       address: L2_INTEROP_HANDLER_ADDRESS,
-      abi,
+      abi: [
+        {
+          type: "function",
+          name: "getAliasedAccount",
+          inputs: [
+            { name: "fromAsSalt", type: "address", internalType: "address" },
+            { name: "", type: "uint256", internalType: "uint256" }, // Is this chain id?
+          ],
+          outputs: [{ name: "", type: "address", internalType: "address" }],
+          stateMutability: "view",
+        },
+      ],
       functionName: "getAliasedAccount",
       args: [getAddress(address.toLowerCase()), 0n], // <- Chain ID? Why does it work with any value right now...
     });
+  }
+
+  async function getAliasedAddressCalculated(chainId: number, address: Address): Promise<Address> {
+    /* 
+    L2_CONTRACT_DEPLOYER.getNewAddressCreate2(
+      address(this),
+      bytecodeHash,
+      keccak256(abi.encode(_sender, _chainId)),
+      abi.encode(_sender)
+    );
+    */
+
+    // await switchChainIfNotSet(chainId);
+    address = getAddress(address.toLowerCase());
+
+    // Match constructor encoding: abi.encode(_sender)
+    const constructorInput = encodeAbiParameters([{ type: "address" }], [address]);
+
+    // EfficientCall.keccak(_input) — assumed to be keccak256 of the constructor data
+    const constructorInputHash = keccak256(constructorInput);
+
+    // Salt: keccak256(abi.encode(_sender, _chainId))
+    const salt = keccak256(
+      encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [address, BigInt(chainId.toString(16))]),
+    );
+
+    const bytecodeHash = await readContract(wagmiConfig, {
+      address: L2_INTEROP_HANDLER_ADDRESS,
+      abi: [
+        {
+          inputs: [],
+          name: "bytecodeHash",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ],
+      functionName: "bytecodeHash",
+    });
+    return zksync.utils.create2Address(L2_INTEROP_HANDLER_ADDRESS, bytecodeHash, salt, constructorInputHash);
   }
 
   async function waitUntilInteropTxProcessed(

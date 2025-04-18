@@ -37,13 +37,12 @@ export class InteropBroadcasterService {
   }
 
   private async onNewTransactionReceipt({ receipt, chainId }: { receipt: TransactionReceipt; chainId: SupportedChainId }) {
-    
     if (getAddress(receipt.to) !== getAddress(L2_INTEROP_CENTER_ADDRESS)) return;
     
-    this.logger.debug(`New Transaction Receipt at chain ${chainId}: ${receipt.transactionHash}`);
+    const senderChain = supportedChains.find((chain) => chain.id === chainId);
+    this.logger.debug(`[${senderChain?.name || chainId}] New Transaction Receipt: ${receipt.transactionHash}`);
     const transactionKey = this.getTransactionKey(chainId, receipt.transactionHash);
     const senderClient = this.clientService.getClient({ chainId });
-    const senderChain = supportedChains.find((chain) => chain.id === chainId);
     const senderProvider = new zksync.Provider(senderChain.rpcUrls.default.http[0]);
     
     try {
@@ -126,6 +125,7 @@ export class InteropBroadcasterService {
   
       const hexTx = zksync.utils.serializeEip712(interopTx);
       const broadcastTx = await destinationProvider.broadcastTransaction(hexTx);
+      this.logger.debug(`[${senderChain.name}] Interop transaction sent to ${destinationChain.name}: ${broadcastTx.hash}`);
       await broadcastTx.wait();
   
       this.transactionStatusMap.set(transactionKey, {
@@ -136,7 +136,8 @@ export class InteropBroadcasterService {
         broadcastTransactionHash: broadcastTx.hash as Hash,
       });
     } catch (err) {
-      this.logger.error(`Interop tx processing failed for ${receipt.transactionHash}`, err);
+      this.logger.error(`Interop transaction processing failed for chain ${chainId}, transaction: ${receipt.transactionHash}`);
+      this.logger.error(err);
       const currentTx: InteropTransactionStatus | undefined = this.transactionStatusMap.get(transactionKey);
       this.transactionStatusMap.set(transactionKey, {
         status: currentTx?.status === "broadcasting" ? "broadcasting_failed" : "processing_failed",
