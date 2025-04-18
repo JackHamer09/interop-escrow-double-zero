@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {IInteropCenter} from "era-contracts/l1-contracts/contracts/bridgehub/IInteropCenter.sol";
+import {IInteropHandler} from "era-contracts/l1-contracts/contracts/bridgehub/IInteropHandler.sol";
+import {L2_INTEROP_CENTER, L2_STANDARD_TRIGGER_ACCOUNT_ADDR, L2_INTEROP_HANDLER} from "era-contracts/system-contracts/contracts/Constants.sol";
+import {InteropCallStarter, GasFields} from "era-contracts/l1-contracts/contracts/common/Messaging.sol";
+import {DataEncoding} from "era-contracts/l1-contracts/contracts/common/libraries/DataEncoding.sol";
+
 /// @notice Minimal ERC20 interface needed for transfers.
 interface IERC20 {
     function transferFrom(address from, address to, uint256 value) external returns (bool);
     function transfer(address to, uint256 value) external returns (bool);
+    function approve(address spender, uint256 amount) external returns (bool);
 }
 
 /// @title TradeEscrow
@@ -12,6 +19,9 @@ interface IERC20 {
 ///         This version uses a simplified status system and only exposes swap details
 ///         (including their status) to the involved counterparties.
 contract TradeEscrow {
+    uint160 constant USER_CONTRACTS_OFFSET = 0x10000; // 2^16
+    address constant L2_NATIVE_TOKEN_VAULT_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x04);
+    address constant L2_ASSET_ROUTER_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x03);
     
     /// @notice Trade status values.
     enum TradeStatus { PendingApproval, PendingFunds, Complete, Declined }
@@ -21,6 +31,7 @@ contract TradeEscrow {
         uint256 tradeId;
         address partyA;     // Proposer
         address partyB;     // Counterparty
+        uint256 partyBChainId; // Counterparty chain id
         address tokenA;     // Token that Party A sends
         uint256 amountA;    // Amount that Party A sends
         address tokenB;     // Token that Party B sends
@@ -48,6 +59,7 @@ contract TradeEscrow {
     
     /// @notice Proposes a new trade.
     /// @param _partyB The counterparty (Party B) who will eventually accept the trade.
+    /// @param _partyBChainId The counterparty's (Party B) chain id.
     /// @param _tokenA The token address that the proposer (Party A) will deposit.
     /// @param _amountA The amount of tokenA Party A will deposit.
     /// @param _tokenB The token address that the counterparty (Party B) will deposit.
@@ -55,6 +67,7 @@ contract TradeEscrow {
     /// @return tradeId The unique identifier for the proposed trade.
     function proposeTrade(
         address _partyB,
+        uint256 _partyBChainId,
         address _tokenA,
         uint256 _amountA,
         address _tokenB,
@@ -67,6 +80,7 @@ contract TradeEscrow {
             tradeId: tradeId,
             partyA: msg.sender,
             partyB: _partyB,
+            partyBChainId: _partyBChainId,
             tokenA: _tokenA,
             amountA: _amountA,
             tokenB: _tokenB,
@@ -88,7 +102,8 @@ contract TradeEscrow {
     function acceptTrade(uint256 _tradeId) external {
         Trade storage trade = trades[_tradeId];
         require(trade.status == TradeStatus.PendingApproval, "Trade is not pending");
-        require(msg.sender == trade.partyB, "Only the designated counterparty can accept");
+        address expectedSender = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
+        require(msg.sender == expectedSender, "Only the designated counterparty can accept");
         
         trade.status = TradeStatus.PendingFunds;
 
@@ -101,6 +116,7 @@ contract TradeEscrow {
     function deposit(uint256 _tradeId) external {
         Trade storage trade = trades[_tradeId];
         require(trade.status == TradeStatus.PendingFunds, "Trade is not approved");
+        address expectedPartyB = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
         
         // Handle deposit based on caller's role.
         if (msg.sender == trade.partyA) {
@@ -111,7 +127,7 @@ contract TradeEscrow {
             );
             trade.depositedA = true;
             emit DepositMade(_tradeId, msg.sender, trade.tokenA, trade.amountA);
-        } else if (msg.sender == trade.partyB) {
+        } else if (msg.sender == expectedPartyB) {
             require(!trade.depositedB, "Party B already deposited");
             require(
                 IERC20(trade.tokenB).transferFrom(msg.sender, address(this), trade.amountB),
@@ -139,10 +155,60 @@ contract TradeEscrow {
         trade.status = TradeStatus.Complete;
         
         // Transfer Party A's token to Party B.
-        require(
-            IERC20(trade.tokenA).transfer(trade.partyB, trade.amountA),
-            "Settlement transfer for tokenA failed"
-        );
+        if (block.chainid == trade.partyBChainId) {
+            require(
+                IERC20(trade.tokenA).transfer(trade.partyB, trade.amountA),
+                "Settlement transfer for tokenA failed"
+            );
+        } else {
+            // Approve token
+            IERC20(trade.tokenA).approve(L2_NATIVE_TOKEN_VAULT_ADDRESS, trade.amountA);
+            InteropCallStarter[] memory feePaymentCallStarters = new InteropCallStarter[](1);
+            InteropCallStarter[] memory executionCallStarters = new InteropCallStarter[](1);
+
+            feePaymentCallStarters[0] = InteropCallStarter(
+                false,
+                L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
+                "",
+                0,
+                0xB1A2BC2EC50000
+            );
+
+            executionCallStarters[0] = InteropCallStarter(
+                false,
+                L2_ASSET_ROUTER_ADDRESS,
+                abi.encode(
+                    0x01,
+                    abi.encode(
+                        DataEncoding.encodeNTVAssetId(block.chainid, trade.tokenA),
+                        abi.encode(
+                            trade.amountA,
+                            trade.partyB,
+                            address(0)
+                        )
+                    )
+                ),
+                0,
+                0
+            );
+
+            GasFields memory gasFields = GasFields(
+                30000000,
+                1000,
+                trade.partyB,
+                address(0),
+                ""
+            );
+
+            IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop(
+                trade.partyBChainId,
+                L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
+                feePaymentCallStarters,
+                executionCallStarters,
+                gasFields
+            );
+        }
+
         // Transfer Party B's token to Party A.
         require(
             IERC20(trade.tokenB).transfer(trade.partyA, trade.amountB),
@@ -197,4 +263,6 @@ contract TradeEscrow {
             myTrades[i] = trades[myTradeIds[i]];
         }
     }
+
+    receive() external payable {}
 }
