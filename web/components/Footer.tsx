@@ -15,6 +15,15 @@ export const Footer = ({ className }: { className?: string }) => {
       </p>
       <a
         className="flex justify-center items-center gap-1"
+        href="https://matter-labs.io/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <Image src={MslLogo} alt="Matter Labs" width={16} height={16} className="mr-1" />
+        <span className="hover:underline">Matter Labs</span>
+      </a>
+      <a
+        className="flex justify-center items-center gap-1"
         href="https://moonsonglabs.com/"
         target="_blank"
         rel="noreferrer"

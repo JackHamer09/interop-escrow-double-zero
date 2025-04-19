@@ -1,10 +1,9 @@
 import { useEthersSigner } from "./use-ethers-signer";
 import { type Address } from "abitype";
 import * as ethers from "ethers";
-import { type Hash, encodeAbiParameters, getAddress, keccak256 } from "viem";
+import { type Hash, getAddress } from "viem";
 import { useAccount, useSwitchChain, useWriteContract } from "wagmi";
-import { readContract, waitForTransactionReceipt } from "wagmi/actions";
-import * as zksync from "zksync-ethers-interop-support";
+import { readContract } from "wagmi/actions";
 import { INTEROP_CENTER_ABI } from "~~/contracts/interop-center";
 import { ERC20_ABI } from "~~/contracts/tokens";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
@@ -16,6 +15,7 @@ import {
   L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
   REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
 } from "~~/utils/constants";
+import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 // Types for interop call starters and gas fields.
 interface InteropCallStarter {
@@ -63,7 +63,7 @@ export default function useInteropTransfer() {
       functionName: "approve",
       args: [allowanceAddress, args.amount],
     });
-    const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: args.chainId, hash: transactionHash });
+    const receipt = await waitForTransactionReceipt({ chainId: args.chainId, hash: transactionHash });
     if (receipt.status !== "success") throw new Error("Approve transaction failed");
     return receipt;
   }
@@ -164,25 +164,8 @@ export default function useInteropTransfer() {
         },
       ],
     });
-    /* const interopCenterContract = new zksync.Contract(L2_INTEROP_CENTER_ADDRESS, INTEROP_CENTER_ABI, signer);
-    const tx = await interopCenterContract.requestInterop(
-      toChainId.toString(16),
-      L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
-      feeCallStarters,
-      execCallStarters,
-      {
-        gasLimit: 30000000n,
-        gasPerPubdataByteLimit: REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
-        refundRecipient: account.address,
-        paymaster: ethers.ZeroAddress,
-        paymasterInput: "0x",
-      },
-      {
-        value: totalValue,
-      },
-    ); */
     console.log("Interop transactionHash", transactionHash);
-    const receipt = await waitForTransactionReceipt(wagmiConfig, { chainId: fromChainId, hash: transactionHash });
+    const receipt = await waitForTransactionReceipt({ chainId: fromChainId, hash: transactionHash });
     return receipt;
   }
 
@@ -207,16 +190,15 @@ export default function useInteropTransfer() {
     });
   }
 
-  async function getAliasedAddressCalculated(chainId: number, address: Address): Promise<Address> {
-    /* 
-    L2_CONTRACT_DEPLOYER.getNewAddressCreate2(
-      address(this),
-      bytecodeHash,
-      keccak256(abi.encode(_sender, _chainId)),
-      abi.encode(_sender)
-    );
-    */
-
+  /* TODO: doesn't seem to produce correct result */
+  /* async function getAliasedAddressCalculated(chainId: number, address: Address): Promise<Address> {
+    // L2_CONTRACT_DEPLOYER.getNewAddressCreate2(
+    //   address(this),
+    //   bytecodeHash,
+    //   keccak256(abi.encode(_sender, _chainId)),
+    //   abi.encode(_sender)
+    // );
+   
     // await switchChainIfNotSet(chainId);
     address = getAddress(address.toLowerCase());
 
@@ -251,7 +233,7 @@ export default function useInteropTransfer() {
       functionName: "bytecodeHash",
     });
     return zksync.utils.create2Address(L2_INTEROP_HANDLER_ADDRESS, bytecodeHash, salt, constructorInputHash);
-  }
+  } */
 
   async function waitUntilInteropTxProcessed(
     transactionHash: string,
@@ -277,6 +259,7 @@ export default function useInteropTransfer() {
 
   return {
     interopTransfer,
+    approveNativeTokenVault,
   };
 }
 

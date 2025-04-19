@@ -1,30 +1,11 @@
-import { useEffect } from "react";
-import { useAccount, useReadContract } from "wagmi";
-import { DAI_TOKEN, ERC20_ABI } from "~~/contracts/tokens";
+import { useAccount } from "wagmi";
+import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 
 export function useConnectionStatus() {
-  const coso = useAccount();
-  const { isConnected, address: walletAddress } = coso;
-
-  const { isSuccess, refetch } = useReadContract({
-    address: DAI_TOKEN.address,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: [walletAddress ?? ""],
-    query: {
-      retry: false,
-    },
-  });
-
-  useEffect(() => {
-    const interval = setInterval(() => void refetch().catch(() => null), 3000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [refetch]);
+  const account = useAccount();
 
   return {
-    isConnected,
-    walletAndRpcMatch: isSuccess,
+    isConnected: account.isConnected,
+    walletAndRpcMatch: account.chainId && [chain1.id, chain2.id].includes(account.chainId),
   };
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { Address } from "viem";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { TRADE_ESCROW_ABI, TRADE_ESCROW_ADDRESS } from "~~/contracts/trade-escrow";
+import { chain1 } from "~~/services/web3/wagmiConfig";
 
 const options = {
   address: TRADE_ESCROW_ADDRESS,
@@ -29,10 +30,11 @@ export enum EscrowTradeStatus {
 }
 
 export default function useTradeEscrow() {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const { data: myTrades, refetch: refetchMySwaps } = useReadContract({
     ...options,
+    chainId: chain1.id,
     functionName: "getMySwaps",
     args: [address || "0x"],
   });
@@ -46,11 +48,18 @@ export default function useTradeEscrow() {
     refetchAll();
   }, [address, refetchAll]);
 
-  const proposeTradeAsync = (partyB: Address, tokenA: Address, amountA: bigint, tokenB: Address, amountB: bigint) =>
+  const proposeTradeAsync = (
+    partyB: Address,
+    partyBChainId: number,
+    tokenA: Address,
+    amountA: bigint,
+    tokenB: Address,
+    amountB: bigint,
+  ) =>
     writeContractAsync({
       ...options,
       functionName: "proposeTrade",
-      args: [partyB, tokenA, amountA, tokenB, amountB],
+      args: [partyB, BigInt(partyBChainId.toString(16)), tokenA, amountA, tokenB, amountB],
     });
 
   const cancelTradeAsync = (tradeId: bigint) =>
@@ -60,12 +69,17 @@ export default function useTradeEscrow() {
       args: [tradeId],
     });
 
-  const acceptTradeAsync = (tradeId: bigint) =>
-    writeContractAsync({
-      ...options,
-      functionName: "acceptTrade",
-      args: [tradeId],
-    });
+  const acceptTradeAsync = (tradeId: bigint) => {
+    if (chainId === chain1.id) {
+      return writeContractAsync({
+        ...options,
+        functionName: "acceptTrade",
+        args: [tradeId],
+      });
+    } else {
+      
+    }
+  }
 
   const depositTradeAsync = (tradeId: bigint) =>
     writeContractAsync({

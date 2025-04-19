@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBoolean } from "usehooks-ts";
-import { Address, Hash, isAddress, parseUnits } from "viem";
+import { Address, Chain, isAddress, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import { ArrowsUpDownIcon, WalletIcon } from "@heroicons/react/24/outline";
 import HiddenContent from "~~/components/HiddenContent";
@@ -31,6 +31,8 @@ import { formatTokenWithDecimals } from "~~/utils/currency";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 interface TradeState {
+  chainA: number;
+  chainB: number;
   tokenA: Token;
   tokenB: Token;
   amountA: bigint;
@@ -54,6 +56,8 @@ export default function AddEscrowedTrade() {
   } = useTradeEscrow();
   const { address: myAddress } = useAccount();
   const [tradeState, setTradeState] = useState<TradeState>({
+    chainA: chain1.id,
+    chainB: chain1.id,
     tokenA: USDG_TOKEN,
     tokenB: WAAPL_TOKEN,
     amountA: 0n,
@@ -117,32 +121,26 @@ export default function AddEscrowedTrade() {
     }));
   };
 
+  const handleChainChange = async (value: number, chainType: "chainA" | "chainB") => {
+    const selectedChain = value === chain1.id ? chain1 : chain2;
+
+    setTradeState(prev => ({
+      ...prev,
+      [chainType]: selectedChain.id,
+    }));
+  };
+
   const handleAddTrade = async () => {
     if (tradeState.amountA === 0n || tradeState.amountB === 0n || !isAddress(tradeState.partyB)) {
       return;
     }
 
     setIsAddingTrade(true);
-    console.log("Start");
-    await interopTransfer({
-      from: {
-        chainId: chain1.id,
-      },
-      recipient: {
-        chainId: chain2.id,
-        address: tradeState.partyB,
-      },
-      token: {
-        address: tradeState.tokenA.address,
-        assetId: tradeState.tokenA.assetId as Hash,
-        amount: tradeState.amountA,
-      },
-    });
-
     try {
       const createTrade = await toast.promise(
         proposeTradeAsync(
           tradeState.partyB,
+          tradeState.chainB,
           tradeState.tokenA.address,
           tradeState.amountA,
           tradeState.tokenB.address,
@@ -581,10 +579,12 @@ export default function AddEscrowedTrade() {
                   displayBalance={true}
                   displayPartyB={tradeState.partyB}
                   displayAmount={tradeState.displayAmountA}
+                  chain={chain1.id === tradeState.chainA ? chain1 : chain2}
                   token={tradeState.tokenA}
                   selectedToken={tradeState.tokenA.symbol}
                   onAmountChange={e => handleAmountChange(e, "tokenA")}
                   onPartyBChange={e => handlePartyBChange(e)}
+                  onChainChange={e => handleChainChange(e, "chainA")}
                   onTokenChange={e => handleTokenSelect(e, "tokenA")}
                   disabled={isAddingTrade}
                 />
@@ -597,10 +597,12 @@ export default function AddEscrowedTrade() {
                   displayBalance={false}
                   displayPartyB={tradeState.partyB}
                   displayAmount={tradeState.displayAmountB}
+                  chain={chain1.id === tradeState.chainB ? chain1 : chain2}
                   token={tradeState.tokenB}
                   selectedToken={tradeState.tokenB.symbol}
                   onAmountChange={e => handleAmountChange(e, "tokenB")}
                   onPartyBChange={e => handlePartyBChange(e)}
+                  onChainChange={e => handleChainChange(e, "chainB")}
                   onTokenChange={e => handleTokenSelect(e, "tokenB")}
                   disabled={isAddingTrade}
                 />
@@ -647,8 +649,10 @@ function PoolCard({
   onAmountChange,
   onPartyBChange,
   onTokenChange,
+  onChainChange,
   disabled,
   displayAmount,
+  chain,
   token,
   selectedToken,
 }: {
@@ -657,10 +661,12 @@ function PoolCard({
   balance: bigint;
   displayBalance: boolean;
   displayAmount: string;
+  chain: Chain;
   token: Token;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPartyBChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   selectedToken: Token["symbol"];
+  onChainChange: (value: number) => void;
   onTokenChange: (value: string) => void;
   disabled: boolean;
 }) {
@@ -670,18 +676,33 @@ function PoolCard({
         <CardTitle className="text-muted-foreground text-sm font-normal">
           {isPartyB === false && "You"}
           {isPartyB === true && (
-            <input
-              placeholder="Enter address here"
-              className={cn(
-                "bg-transparent appearance-none focus:outline-none text-sm w-full placeholder-red-300 text-blue-400",
-                !isAddress(displayPartyB) && "text-red-500",
-                disabled && "opacity-50",
-              )}
-              value={displayPartyB}
-              onChange={onPartyBChange}
-              disabled={disabled}
-              spellCheck={false}
-            />
+            <div className="flex justify-center mb-4">
+              <input
+                placeholder="Enter address here"
+                className={cn(
+                  "bg-transparent appearance-none focus:outline-none text-sm w-full placeholder-red-300 text-blue-400",
+                  !isAddress(displayPartyB) && "text-red-500",
+                  disabled && "opacity-50",
+                )}
+                value={displayPartyB}
+                onChange={onPartyBChange}
+                disabled={disabled}
+                spellCheck={false}
+              />
+              <Select
+                value={chain.id.toString()}
+                onValueChange={value => onChainChange(parseInt(value))}
+                disabled={disabled}
+              >
+                <SelectTrigger className="bg-secondary text-secondary-foreground shadow hover:bg-secondary/80 text-base w-48">
+                  <SelectValue placeholder="Select Chain" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={chain1.id.toString()}>{chain1.name}</SelectItem>
+                  <SelectItem value={chain2.id.toString()}>{chain2.name}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           )}
         </CardTitle>
       </CardHeader>

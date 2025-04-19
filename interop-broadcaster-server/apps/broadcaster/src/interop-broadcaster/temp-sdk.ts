@@ -108,6 +108,7 @@ export async function getInteropTriggerData(
 
   let trigger = false;
   if (decodedRequest[0][5]) {
+    console.log("Trigger", decodedRequest[0][5][1]);
     if (decodedRequest[0][5][1] == BigInt(800)) {
       trigger = true;
     }

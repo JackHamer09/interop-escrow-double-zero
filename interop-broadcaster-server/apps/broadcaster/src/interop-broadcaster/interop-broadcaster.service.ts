@@ -67,7 +67,7 @@ export class InteropBroadcasterService {
       ]);
       if (!triggerDataBundle.output) throw new Error('Trigger data bundle is empty');
   
-      const destinationChainId = parseInt(triggerDataBundle.output.destinationChainId, 16);
+      const destinationChainId = String(triggerDataBundle.output.destinationChainId).startsWith("0x") ? parseInt(triggerDataBundle.output.destinationChainId, 16) : Number(triggerDataBundle.output.destinationChainId);
       const destinationChain = supportedChains.find((c) => c.id === destinationChainId);
       this.transactionStatusMap.set(transactionKey, {
         status: "processing",
