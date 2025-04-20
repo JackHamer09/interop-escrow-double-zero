@@ -181,13 +181,6 @@ forge build --zksync
 deployer_chain_1_balance=$(cast balance --rpc-url $CHAIN_1_RPC_URL $DEPLOYER_ADDRESS)
 echo "Deployer balance: $deployer_chain_1_balance"
 
-# TEMP
-# echo "Deploying TradeEscrow..."
-# trade_escrow_address=$(forge create --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
-# cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 3ether
-# echo "trade_escrow_address: $trade_escrow_address"
-# exit 0
-
 # Deploy ERC20 tokens
 echo "Deploying ERC20 tokens..."
 dai_address=$(forge create --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "DAI" "DAI" 18 | extract_deployed_address)

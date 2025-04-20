@@ -65,7 +65,11 @@ export class InteropBroadcasterService {
         getInteropBundleData(senderProvider, receipt.transactionHash, 1),
         getInteropTriggerData(senderProvider, receipt.transactionHash, 2),
       ]);
-      if (!triggerDataBundle.output) throw new Error('Trigger data bundle is empty');
+      if (!triggerDataBundle.output) {
+        // Not an interop transaction or broken
+        this.transactionStatusMap.delete(transactionKey);
+        return;
+      }
   
       const destinationChainId = parseInt(triggerDataBundle.output.destinationChainId, 10);
       const destinationChain = supportedChains.find((c) => c.id === destinationChainId);

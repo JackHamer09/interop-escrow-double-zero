@@ -171,14 +171,14 @@ contract TradeEscrow {
                 L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
                 "",
                 0,
-                0xB1A2BC2EC50000
+                1 ether
             );
 
             executionCallStarters[0] = InteropCallStarter(
                 false,
                 L2_ASSET_ROUTER_ADDRESS,
-                abi.encode(
-                    0x01,
+                bytes.concat(
+                    bytes1(0x01),
                     abi.encode(
                         DataEncoding.encodeNTVAssetId(block.chainid, trade.tokenA),
                         abi.encode(
@@ -200,12 +200,12 @@ contract TradeEscrow {
                 ""
             );
 
-            uint256 valueToSend = feePaymentCallStarters[0].requestedInteropCallValue +
-                executionCallStarters[0].requestedInteropCallValue;
+            // uint256 valueToSend = feePaymentCallStarters[0].requestedInteropCallValue +
+            //     executionCallStarters[0].requestedInteropCallValue;
 
-            require(address(this).balance >= valueToSend, "Insufficient ETH for interop call");
+            require(address(this).balance >= 1 ether, "Insufficient ETH for interop call");
 
-            IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: valueToSend }(
+            IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: 1 ether }(
                 trade.partyBChainId,
                 L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
                 feePaymentCallStarters,
