@@ -36,7 +36,6 @@ export async function getInteropBundleData(
   const { message } = response;
 
   // Decode the interop message
-  // console.log("message", message)
   const decodedRequest = ethers.AbiCoder.defaultAbiCoder().decode([INTEROP_BUNDLE_ABI], "0x" + message.slice(4));
   const calls = [];
   for (let i = 0; i < decodedRequest[0][1].length; i++) {
@@ -48,14 +47,13 @@ export async function getInteropBundleData(
       data: decodedRequest[0][1][i][4],
     });
   }
-  // console.log(decodedRequest);
 
   const xl2Input = {
     destinationChainId: decodedRequest[0][0],
     calls: calls,
     executionAddress: decodedRequest[0][2],
   };
-  // console.log("response.proof", proof_fee)
+  
   const rawData = ethers.AbiCoder.defaultAbiCoder().encode([INTEROP_BUNDLE_ABI], [xl2Input]);
   const proofEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
     [MESSAGE_INCLUSION_PROOF_ABI],
@@ -85,7 +83,6 @@ export async function getInteropTriggerData(
   withdrawalHash: BytesLike,
   index = 0,
 ): Promise<Output> {
-  // console.log("index", index)
   const response = await tryGetMessageData(provider, withdrawalHash, index);
   if (!response)
     return {
@@ -99,17 +96,12 @@ export async function getInteropTriggerData(
   const { message } = response;
 
   // Decode the interop message
-  // console.log("trigger message", message)
-  // console.log("withdrawalHash", withdrawalHash)
-  // console.log("message", message)
   const decodedRequest = ethers.AbiCoder.defaultAbiCoder().decode([INTEROP_TRIGGER_ABI], "0x" + message.slice(4));
-
-  // console.log("decodedRequest", decodedRequest)
 
   let trigger = false;
   if (decodedRequest[0][5]) {
-    console.log("Trigger", decodedRequest[0][5][1]);
     if (decodedRequest[0][5][1] == BigInt(800)) {
+      // Why is this "trigger"? This is just pubData
       trigger = true;
     }
   }
@@ -117,13 +109,6 @@ export async function getInteropTriggerData(
     throw new Error("Trigger is not found");
   }
 
-  // let decodedCallRequest = ethers.AbiCoder.defaultAbiCoder().decode(
-  //   [INTEROP_BUNDLE_ABI],
-  //   '0x' + message.slice(2)
-  // )
-  // console.log("trigger", trigger)
-  // console.log("decodedCallRequest", decodedRequest)
-  // console.log("decodedCallRequest[0][0]", decodedRequest[0][2])
   const output = {
     destinationChainId: decodedRequest[0][0],
     from: decodedRequest[0][1],

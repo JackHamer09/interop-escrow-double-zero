@@ -68,7 +68,6 @@ async function getInteropTriggerData(provider, withdrawalHash, index = 0) {
     const decodedRequest = ethers.AbiCoder.defaultAbiCoder().decode([constants_1.INTEROP_TRIGGER_ABI], "0x" + message.slice(4));
     let trigger = false;
     if (decodedRequest[0][5]) {
-        console.log("Trigger", decodedRequest[0][5][1]);
         if (decodedRequest[0][5][1] == BigInt(800)) {
             trigger = true;
         }

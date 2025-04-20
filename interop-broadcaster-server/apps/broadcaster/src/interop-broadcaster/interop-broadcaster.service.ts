@@ -36,6 +36,17 @@ export class InteropBroadcasterService {
     return `${chainId}-${transactionHash}`;
   }
 
+  private decodeChainId(chainId: string): number {
+    let decodedChainId: number | null;
+    if (supportedChains.some((chain) => chain.id === parseInt(chainId, 10))) {
+      decodedChainId = parseInt(chainId, 10);
+    } else {
+      /* TODO: in fact this should always be the case, but for some reason there is a bug somewhere in other scripts */
+      decodedChainId = parseInt(chainId, 16);
+    }
+    return decodedChainId;
+  }
+
   private async onNewTransactionReceipt({ receipt, chainId }: { receipt: TransactionReceipt; chainId: SupportedChainId }) {
     if (getAddress(receipt.to) !== getAddress(L2_INTEROP_CENTER_ADDRESS)) return;
     
@@ -67,7 +78,7 @@ export class InteropBroadcasterService {
       ]);
       if (!triggerDataBundle.output) throw new Error('Trigger data bundle is empty');
   
-      const destinationChainId = String(triggerDataBundle.output.destinationChainId).startsWith("0x") ? parseInt(triggerDataBundle.output.destinationChainId, 16) : Number(triggerDataBundle.output.destinationChainId);
+      const destinationChainId = this.decodeChainId(triggerDataBundle.output.destinationChainId);
       const destinationChain = supportedChains.find((c) => c.id === destinationChainId);
       this.transactionStatusMap.set(transactionKey, {
         status: "processing",

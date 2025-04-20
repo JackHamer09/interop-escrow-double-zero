@@ -31,6 +31,16 @@ let InteropBroadcasterService = InteropBroadcasterService_1 = class InteropBroad
     getTransactionKey(chainId, transactionHash) {
         return `${chainId}-${transactionHash}`;
     }
+    decodeChainId(chainId) {
+        let decodedChainId;
+        if (chains_1.supportedChains.some((chain) => chain.id === parseInt(chainId, 10))) {
+            decodedChainId = parseInt(chainId, 10);
+        }
+        else {
+            decodedChainId = parseInt(chainId, 16);
+        }
+        return decodedChainId;
+    }
     async onNewTransactionReceipt({ receipt, chainId }) {
         if ((0, viem_1.getAddress)(receipt.to) !== (0, viem_1.getAddress)(constants_1.L2_INTEROP_CENTER_ADDRESS))
             return;
@@ -60,7 +70,7 @@ let InteropBroadcasterService = InteropBroadcasterService_1 = class InteropBroad
             ]);
             if (!triggerDataBundle.output)
                 throw new Error('Trigger data bundle is empty');
-            const destinationChainId = String(triggerDataBundle.output.destinationChainId).startsWith("0x") ? parseInt(triggerDataBundle.output.destinationChainId, 16) : Number(triggerDataBundle.output.destinationChainId);
+            const destinationChainId = this.decodeChainId(triggerDataBundle.output.destinationChainId);
             const destinationChain = chains_1.supportedChains.find((c) => c.id === destinationChainId);
             this.transactionStatusMap.set(transactionKey, {
                 status: "processing",

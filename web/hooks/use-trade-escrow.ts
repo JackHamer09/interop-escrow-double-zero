@@ -4,7 +4,7 @@ import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { TRADE_ESCROW_ABI, TRADE_ESCROW_ADDRESS } from "~~/contracts/trade-escrow";
 import { chain1 } from "~~/services/web3/wagmiConfig";
 
-const options = {
+export const options = {
   address: TRADE_ESCROW_ADDRESS,
   abi: TRADE_ESCROW_ABI,
 } as const;
@@ -73,6 +73,7 @@ export default function useTradeEscrow() {
     if (chainId === chain1.id) {
       return writeContractAsync({
         ...options,
+        chainId: chain1.id,
         functionName: "acceptTrade",
         args: [tradeId],
       });
@@ -91,7 +92,6 @@ export default function useTradeEscrow() {
   return {
     myTrades,
     refetchAll,
-    writeContractAsync,
     proposeTradeAsync,
     cancelTradeAsync,
     acceptTradeAsync,
