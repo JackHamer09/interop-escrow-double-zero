@@ -61,7 +61,7 @@ export function useRpcLogin() {
   }, [address, auth?.address, logout]);
 
   /* TODO: uncomment later */
-  /* const login = useCallback(async () => {
+  const login = useCallback(async () => {
     if (!address) return;
 
     setIsLoginPending(true);
@@ -96,8 +96,8 @@ export function useRpcLogin() {
     setAuth(newAuth);
     setStoredAuth(newAuth);
     setIsLoginPending(false);
-  }, [address, signMessageAsync]); */
-  const login = useCallback(async () => {
+  }, [address, signMessageAsync]);
+  /* const login = useCallback(async () => {
     if (!address) return;
 
     setIsLoginPending(true);
@@ -119,12 +119,12 @@ export function useRpcLogin() {
     setAuth(newAuth);
     setStoredAuth(newAuth);
     setIsLoginPending(false);
-  }, [address, signMessageAsync]);
+  }, [address, signMessageAsync]); */
 
   const fullRpcUrl = useMemo(() => {
     if (!auth?.rpcToken) return null;
-    return CHAIN1_BASE_RPC_URL; // TODO: remove later
-    // return `${CHAIN1_BASE_RPC_URL}/${auth.rpcToken}`;
+    // return CHAIN1_BASE_RPC_URL; // TODO: remove later
+    return `${CHAIN1_BASE_RPC_URL}/${auth.rpcToken}`;
   }, [auth?.rpcToken]);
 
   const isRpcAuthenticated = useMemo(() => {

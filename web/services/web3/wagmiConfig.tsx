@@ -4,8 +4,8 @@ import { getStoredAuth } from "~~/hooks/use-rpc-login";
 import { env } from "~~/utils/env";
 
 export const chain1 = {
-  id: env.NEXT_PUBLIC_CHAIN_ID,
-  name: env.NEXT_PUBLIC_CHAIN_NAME,
+  id: env.NEXT_PUBLIC_CHAIN_1_ID,
+  name: env.NEXT_PUBLIC_CHAIN_1_NAME,
   nativeCurrency: {
     name: "Ethereum",
     symbol: "ETH",
@@ -58,8 +58,8 @@ export const wagmiConfig = createConfig({
             };
           }
           const rpcUrl = env.NEXT_PUBLIC_CHAIN1_BASE_RPC_URL;
-          const fullRpcUrl = rpcUrl;
-          // const fullRpcUrl = `${rpcUrl}/${auth.rpcToken}`; // TODO: uncomment later
+          // const fullRpcUrl = rpcUrl;
+          const fullRpcUrl = `${rpcUrl}/${auth.rpcToken}`; // TODO: uncomment later
           const provider = http(fullRpcUrl)({ chain });
           const response = await provider.request({ method, params });
           // console.log("http response", { response });

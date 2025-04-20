@@ -4,8 +4,8 @@ import { chainConfig } from 'viem/zksync';
 export const chain1 = defineChain({
   ...chainConfig,
   id: 271,
-  name: 'Chain 1',
-  network: 'chain-1',
+  name: 'Chain A',
+  network: 'chain-a',
   nativeCurrency: {
     decimals: 18,
     name: 'Ether',
@@ -20,8 +20,8 @@ export const chain1 = defineChain({
 export const chain2 = defineChain({
   ...chainConfig,
   id: 260,
-  name: 'Chain 2',
-  network: 'chain-2',
+  name: 'Chain B',
+  network: 'chain-b',
   nativeCurrency: {
     decimals: 18,
     name: 'Ether',

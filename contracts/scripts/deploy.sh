@@ -7,7 +7,7 @@ if [ -f .env ]; then
 fi
 
 # Set environment variables with defaults if not already set
-DEPLOYER_PRIVATE_KEY=$DEPLOYER_PRIVATE_KEY
+DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY:-""}
 CHAIN_1_RPC_URL=${CHAIN_1_RPC_URL:-"http://127.0.0.1:3050"}
 CHAIN_2_RPC_URL=${CHAIN_2_RPC_URL:-"http://127.0.0.1:3150"}
 L1_RPC_URL=${L1_RPC_URL:-"http://127.0.0.1:8545"}
