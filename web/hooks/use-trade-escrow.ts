@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
+import useTradeEscrowInterop from "./use-trade-escrow-interop";
 import { Address } from "viem";
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { TRADE_ESCROW_ABI, TRADE_ESCROW_ADDRESS } from "~~/contracts/trade-escrow";
 import { chain1 } from "~~/services/web3/wagmiConfig";
 
@@ -13,6 +14,7 @@ export type EscrowTrade = {
   tradeId: bigint;
   partyA: string;
   partyB: string;
+  partyBChainId: bigint;
   tokenA: string;
   amountA: bigint;
   tokenB: string;
@@ -30,8 +32,17 @@ export enum EscrowTradeStatus {
 }
 
 export default function useTradeEscrow() {
-  const { address, chainId } = useAccount();
+  const { address, chainId: walletChainId } = useAccount();
+  const interop = useTradeEscrowInterop();
   const { writeContractAsync } = useWriteContract();
+  const { switchChainAsync } = useSwitchChain();
+
+  async function switchChainIfNotSet(chainId: number) {
+    if (walletChainId !== chainId) {
+      await switchChainAsync({ chainId });
+    }
+  }
+
   const { data: myTrades, refetch: refetchMySwaps } = useReadContract({
     ...options,
     chainId: chain1.id,
@@ -48,46 +59,71 @@ export default function useTradeEscrow() {
     refetchAll();
   }, [address, refetchAll]);
 
-  const proposeTradeAsync = (
+  const findTrade = (tradeId: bigint) => {
+    const trade = myTrades?.find(trade => trade.tradeId === tradeId);
+    if (!trade) throw new Error("Trade wasn't found");
+    const myExpectedChainId = trade.partyA === address ? BigInt(chain1.id) : trade.partyBChainId;
+    return { ...trade, myExpectedChainId };
+  };
+
+  const proposeTradeAsync = async (
     partyB: Address,
     partyBChainId: number,
     tokenA: Address,
     amountA: bigint,
     tokenB: Address,
     amountB: bigint,
-  ) =>
-    writeContractAsync({
+  ) => {
+    await switchChainIfNotSet(chain1.id);
+    return await writeContractAsync({
       ...options,
       functionName: "proposeTrade",
-      args: [partyB, BigInt(partyBChainId.toString(16)), tokenA, amountA, tokenB, amountB],
+      args: [partyB, BigInt(partyBChainId), tokenA, amountA, tokenB, amountB],
     });
+  }
 
-  const cancelTradeAsync = (tradeId: bigint) =>
-    writeContractAsync({
-      ...options,
-      functionName: "cancelTrade",
-      args: [tradeId],
-    });
+  const cancelTradeAsync = async (tradeId: bigint) => {
+    const trade = findTrade(tradeId);
+    await switchChainIfNotSet(Number(trade.myExpectedChainId));
+    if (trade.myExpectedChainId === BigInt(chain1.id)) {
+      return await writeContractAsync({
+        ...options,
+        functionName: "cancelTrade",
+        args: [tradeId],
+      });
+    } else {
+      return await interop.cancelTradeAsync(tradeId);
+    }
+  }
 
-  const acceptTradeAsync = (tradeId: bigint) => {
-    if (chainId === chain1.id) {
-      return writeContractAsync({
+  const acceptTradeAsync = async (tradeId: bigint) => {
+    const trade = findTrade(tradeId);
+    await switchChainIfNotSet(Number(trade.myExpectedChainId));
+    if (trade.myExpectedChainId === BigInt(chain1.id)) {
+      return await writeContractAsync({
         ...options,
         chainId: chain1.id,
         functionName: "acceptTrade",
         args: [tradeId],
       });
     } else {
-      
+      return await interop.acceptTradeAsync(tradeId);
+    }
+  };
+
+  const depositTradeAsync = async (tradeId: bigint) => {
+    const trade = findTrade(tradeId);
+    await switchChainIfNotSet(Number(trade.myExpectedChainId));
+    if (trade.myExpectedChainId === BigInt(chain1.id)) {
+      return await writeContractAsync({
+        ...options,
+        functionName: "deposit",
+        args: [tradeId],
+      });
+    } else {
+      return await interop.depositTradeAsync(tradeId, trade.tokenB, trade.amountB);
     }
   }
-
-  const depositTradeAsync = (tradeId: bigint) =>
-    writeContractAsync({
-      ...options,
-      functionName: "deposit",
-      args: [tradeId],
-    });
 
   return {
     myTrades,

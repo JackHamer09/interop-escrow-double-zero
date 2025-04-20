@@ -1,74 +1,65 @@
 import { type Hash, type TransactionReceipt } from "viem";
 import { Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { SupportedChainId } from "@app/common/chains";
+import { SupportedChainId, supportedChains } from "@app/common/chains";
 import { Observable } from "@app/common/utils/observable";
 
 import { ClientService } from "../client";
 
-type TransactionReceiptObserverData = { chainId: SupportedChainId; receipt: TransactionReceipt};
+type TransactionReceiptObserverData = { chainId: SupportedChainId; receipt: TransactionReceipt };
 
 @Injectable()
 export class TransactionWatchService {
-  private readonly logger: Logger;
-  private readonly client: any;
-  private readonly transactionReceiptObserver: Observable<TransactionReceiptObserverData>;
+  private readonly logger = new Logger(TransactionWatchService.name);
+  private readonly transactionReceiptObserver = new Observable<TransactionReceiptObserverData>();
 
-  constructor(configService: ConfigService, clientService: ClientService) {
-    const watchChainId = configService.get<SupportedChainId | undefined>("watchChainId");
-    if (!watchChainId) throw new Error("watchChainId is not set");
-    this.client = clientService.getClient({ chainId: watchChainId });
-
-    this.logger = new Logger(TransactionWatchService.name);
-    this.transactionReceiptObserver = new Observable<TransactionReceiptObserverData>();
-  }
+  constructor(private readonly clientService: ClientService) {}
 
   public startWatch() {
-    let lastProcessedBlock: bigint | undefined = undefined;
-  
-    this.client.watchBlockNumber({
-      onBlockNumber: async (latestBlockNumber: bigint) => {
-        try {
-          if (lastProcessedBlock === undefined) {
-            lastProcessedBlock = latestBlockNumber;
-            return;
-          }
-  
-          for (
-            let blockNumber = lastProcessedBlock + BigInt(1);
-            blockNumber <= latestBlockNumber;
-            blockNumber++
-          ) {
-            const block = await this.client.getBlock({ blockNumber });
-            this.logger.debug(`Processing block: ${block.number}`);
-  
-            block.transactions.forEach(this.onNewTransaction.bind(this));
-  
-            lastProcessedBlock = blockNumber;
-          }
-        } catch (error) {
-          this.logger.error(`Error while processing blocks: ${error}`);
-        }
-      },
-    });
+    for (const chain of supportedChains) {
+      const client = this.clientService.getClient({ chainId: chain.id });
+      let lastProcessedBlock: bigint | undefined;
 
-    // this.onNewTransaction("0xd8a6a0bfbd30feed4fdb029371802e9e662f41ffc0d14e1cad361bb3a74e89c7");
-  }
+      client.watchBlockNumber({
+        onBlockNumber: async (latestBlockNumber: bigint) => {
+          try {
+            if (lastProcessedBlock === undefined) {
+              lastProcessedBlock = latestBlockNumber;
+              return;
+            }
 
-  private async onNewTransaction(hash: Hash) {
-    try {
-      const receipt = await this.getTransactionReceipt(hash);
-      this.transactionReceiptObserver.notify({ receipt, chainId: this.client.chain.id });
-    } catch (error) {
-      this.logger.error(`Failed to get transaction receipt for hash ${hash}: ${error}`);
+            for (
+              let blockNumber = lastProcessedBlock + BigInt(1);
+              blockNumber <= latestBlockNumber;
+              blockNumber++
+            ) {
+              const block = await client.getBlock({ blockNumber });
+              this.logger.debug(`[${chain.name}] Processing block ${block.number}`);
+
+              for (const tx of block.transactions) {
+                this.handleTransaction(tx, chain.id);
+              }
+
+              lastProcessedBlock = blockNumber;
+            }
+          } catch (error) {
+            this.logger.error(`Error processing blocks on chain ${chain.id}: ${error}`);
+          }
+        },
+      });
     }
   }
-  
-  public subscribeToTransactionReceipt(callback: (receipt: TransactionReceiptObserverData) => void) {
-    return this.transactionReceiptObserver.subscribe(callback);
+
+  private async handleTransaction(hash: Hash, chainId: SupportedChainId) {
+    try {
+      const client = this.clientService.getClient({ chainId });
+      const receipt = await client.getTransactionReceipt({ hash });
+      this.transactionReceiptObserver.notify({ receipt, chainId });
+    } catch (error) {
+      this.logger.error(`Failed to get receipt for ${hash} on chain ${chainId}: ${error}`);
+    }
   }
 
-  private async getTransactionReceipt(hash: Hash): Promise<TransactionReceipt> {
-    return await this.client.getTransactionReceipt({ hash });
+  public subscribeToTransactionReceipt(callback: (data: TransactionReceiptObserverData) => void) {
+    return this.transactionReceiptObserver.subscribe(callback);
   }
 }

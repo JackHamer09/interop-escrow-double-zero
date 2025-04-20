@@ -167,7 +167,7 @@ contract TradeEscrow {
             InteropCallStarter[] memory executionCallStarters = new InteropCallStarter[](1);
 
             feePaymentCallStarters[0] = InteropCallStarter(
-                false,
+                true,
                 L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
                 "",
                 0,
@@ -200,7 +200,12 @@ contract TradeEscrow {
                 ""
             );
 
-            IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop(
+            uint256 valueToSend = feePaymentCallStarters[0].requestedInteropCallValue +
+                executionCallStarters[0].requestedInteropCallValue;
+
+            require(address(this).balance >= valueToSend, "Insufficient ETH for interop call");
+
+            IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: valueToSend }(
                 trade.partyBChainId,
                 L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
                 feePaymentCallStarters,
@@ -226,8 +231,9 @@ contract TradeEscrow {
             trade.status == TradeStatus.PendingApproval || trade.status == TradeStatus.PendingFunds,
             "Trade is not pending and cannot be cancelled"
         );
+        address expectedSenderB = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
         require(
-            msg.sender == trade.partyA || msg.sender == trade.partyB,
+            msg.sender == trade.partyA || msg.sender == expectedSenderB,
             "Not authorized to cancel"
         );
 
@@ -240,6 +246,7 @@ contract TradeEscrow {
             trade.depositedA = false;
             emit DepositRefunded(_tradeId, trade.partyA, trade.tokenA, trade.amountA);
         } else if (trade.depositedB) {
+            /* TODO: this should interop transfer back (when party B is from a different chain */
             require(
                 IERC20(trade.tokenB).transfer(trade.partyB, trade.amountB),
                 "TokenB refund transfer failed"

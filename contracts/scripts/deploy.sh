@@ -159,8 +159,8 @@ if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
   echo "Rich account address: $DEPLOYER_ADDRESS"
   echo "Rich account private key: $DEPLOYER_PRIVATE_KEY"
 
-  # Chain1 Min balance 5 ETH
-  deployer_chain1_min_balance=5000000000000000000
+  # Chain1 Min balance 7 ETH
+  deployer_chain1_min_balance=7000000000000000000
   deployer_chain1_min_balance_decimal=$(echo "scale=18; $deployer_chain1_min_balance / 1000000000000000000" | bc)
   # Deployer L2 balance
   deployer_chain_1_balance=$(cast balance --rpc-url $CHAIN_1_RPC_URL $DEPLOYER_ADDRESS)
@@ -180,6 +180,13 @@ forge build --zksync
 # Log deployer balance
 deployer_chain_1_balance=$(cast balance --rpc-url $CHAIN_1_RPC_URL $DEPLOYER_ADDRESS)
 echo "Deployer balance: $deployer_chain_1_balance"
+
+# TEMP
+# echo "Deploying TradeEscrow..."
+# trade_escrow_address=$(forge create --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
+# cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 3ether
+# echo "trade_escrow_address: $trade_escrow_address"
+# exit 0
 
 # Deploy ERC20 tokens
 echo "Deploying ERC20 tokens..."
@@ -215,7 +222,7 @@ cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $dai_ad
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $wbtc_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 10000000000000000000000 # 10,000 WBTC
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdg_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 1000000000000000000000000 # 1,000,000 USDG
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $waapl_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 10000000000000000000 # 10 wAAPL
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $PREMIUM_USER_ADDRESS --value 1ether # 1 ETH
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $PREMIUM_USER_ADDRESS --value 1ether
 
 ## Basic User
 echo "Minting tokens for Basic user..."
@@ -262,16 +269,17 @@ cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $cpamm_
 # Deploy TradeEscrow
 echo "Deploying TradeEscrow..."
 trade_escrow_address=$(forge create --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 3ether
 
+echo ""
+echo "Accounts:"
+echo "VIP user (deployer): $DEPLOYER_ADDRESS"
+echo "Premium user: $PREMIUM_USER_ADDRESS"
+echo "Basic user: $BASIC_USER_ADDRESS"
 echo ""
 echo "Contracts:"
 echo "CPAMM: $cpamm_address"
 echo "TradeEscrow.sol: $trade_escrow_address"
-echo ""
-echo "Accounts:"
-echo "VIP user: $DEPLOYER_ADDRESS"
-echo "Premium user: $PREMIUM_USER_ADDRESS"
-echo "Basic user: $BASIC_USER_ADDRESS"
 echo ""
 echo "Tokens:"
 echo "DAI: "

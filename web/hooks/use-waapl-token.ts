@@ -1,46 +1,48 @@
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { ERC20_ABI, WAAPL_TOKEN } from "~~/contracts/tokens";
 import { TRADE_ESCROW_ADDRESS } from "~~/contracts/trade-escrow";
+import { chain1 } from "~~/services/web3/wagmiConfig";
 
 export default function useWaaplToken() {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
   const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: WAAPL_TOKEN.address,
+    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
     abi: ERC20_ABI,
     functionName: "balanceOf",
     args: [address ?? ""],
   });
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: WAAPL_TOKEN.address,
+    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
     abi: ERC20_ABI,
     functionName: "allowance",
     args: [address ?? "", TRADE_ESCROW_ADDRESS],
   });
   const { data: decimals } = useReadContract({
-    address: WAAPL_TOKEN.address,
+    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
     abi: ERC20_ABI,
     functionName: "decimals",
   });
   const { data: tokenName } = useReadContract({
-    address: WAAPL_TOKEN.address,
+    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
     abi: ERC20_ABI,
     functionName: "name",
   });
   const { data: tokenSymbol } = useReadContract({
-    address: WAAPL_TOKEN.address,
+    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
     abi: ERC20_ABI,
     functionName: "symbol",
   });
 
   const { writeContractAsync } = useWriteContract();
-
-  const approve = (amount: bigint) =>
-    writeContractAsync({
+  const approve = (amount: bigint) => {
+    if (chainId !== chain1.id) throw new Error(`Switch to ${chain1.name} to approve ${tokenSymbol || 'wAPPL'}`);
+    return writeContractAsync({
       abi: ERC20_ABI,
       address: WAAPL_TOKEN.address,
       functionName: "approve",
       args: [TRADE_ESCROW_ADDRESS, amount],
     });
+  }
 
   const refetchAll = () => {
     refetchBalance();

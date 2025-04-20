@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { LockIcon, NetworkIcon } from "lucide-react";
+import { useAccount } from "wagmi";
 import { Button } from "~~/components/ui/button";
 import { useConnectionStatus } from "~~/hooks/use-connection-status";
 import { useRpcLogin } from "~~/hooks/use-rpc-login";
 import { cn } from "~~/utils/cn";
+import { chain1 } from "~~/services/web3/wagmiConfig";
 
 export default function HiddenContent({ children, className }: { children: React.ReactNode; className?: string }) {
+  const { chainId } = useAccount();
   const { isConnected } = useConnectionStatus();
   const { isRpcAuthenticated, login, fullRpcUrl, switchOrAddChain } = useRpcLogin();
 
@@ -47,10 +50,12 @@ export default function HiddenContent({ children, className }: { children: React
                 <span className="text-sm">RPC Authorized: {fullRpcUrl}</span>
               </div>
               <div className="flex w-full gap-4 mt-2">
-                <Button variant="secondary" onClick={() => switchOrAddChain()} className="h-10">
-                  Add chain to wallet
-                </Button>
-                <Button onClick={() => setShowContinue(false)} className="h-10">
+                {chainId !== chain1.id && (
+                  <Button variant="secondary" onClick={() => switchOrAddChain()} className="h-10 w-full">
+                    Add chain to wallet
+                  </Button>
+                )}
+                <Button onClick={() => setShowContinue(false)} className="h-10 w-full">
                   Continue
                 </Button>
               </div>

@@ -1,1 +1,0 @@
-{"version":3,"file":"runMigrations.js","sourceRoot":"","sources":["../../../libs/db/src/runMigrations.ts"],"names":[],"mappings":";;AAIA,sCAKC;AAPD,qDAAoD;AAE7C,KAAK,UAAU,aAAa,CAAC,MAAqB;IACvD,MAAM,CAAC,GAAG,CAAC,uBAAuB,CAAE,CAAC;IACrC,MAAM,wBAAoB,CAAC,UAAU,EAAE,CAAC;IACxC,MAAM,wBAAoB,CAAC,aAAa,EAAE,CAAC;IAC3C,MAAM,CAAC,GAAG,CAAC,uBAAuB,CAAE,CAAC;AACvC,CAAC"}

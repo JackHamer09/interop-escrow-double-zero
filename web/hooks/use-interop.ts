@@ -151,7 +151,7 @@ export default function useInteropTransfer() {
       functionName: "requestInterop",
       value: totalValue,
       args: [
-        BigInt(toChainId.toString(16)),
+        BigInt(toChainId),
         L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
         feeCallStarters,
         execCallStarters,
@@ -210,7 +210,7 @@ export default function useInteropTransfer() {
 
     // Salt: keccak256(abi.encode(_sender, _chainId))
     const salt = keccak256(
-      encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [address, BigInt(chainId.toString(16))]),
+      encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [address, BigInt(chainId)]),
     );
 
     const bytecodeHash = await readContract(wagmiConfig, {
@@ -241,18 +241,19 @@ export default function useInteropTransfer() {
     pollingInterval = 500,
   ) {
     while (true) {
-      const interopStatus = await fetch(
+      const data = await fetch(
         `http://localhost:3030/api/interop-transaction-status/?transactionHash=${transactionHash}&senderChainId=${senderChainId}`,
       )
-        .then(res => res.json())
-        .then(data => data.status);
-      if (interopStatus === "not_found") {
+        .then(res => res.json());
+      if (data.interopStatus === "not_found") {
         throw new Error(`Interop transaction not found: ${transactionHash}`);
+      } else if (data.interopStatus === "broadcasting_failed") {
+        throw new Error(`Transaction broadcast failed, likely transaction failed on the destination chain. Hash: ${data.broadcastTransactionHash}`);
       }
-      if (interopStatus === "completed") {
+      if (data.interopStatus === "completed") {
         break;
       }
-      console.log(`Interop transaction status: ${interopStatus}`);
+      console.log(`Interop transaction status: ${data.interopStatus}`);
       await new Promise(resolve => setTimeout(resolve, pollingInterval));
     }
   }

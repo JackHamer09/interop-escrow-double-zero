@@ -100,7 +100,7 @@ export async function getInteropTriggerData(
 
   let trigger = false;
   if (decodedRequest[0][5]) {
-    if (decodedRequest[0][5][1] == BigInt(800)) {
+    if (decodedRequest[0][5][1] == BigInt(800) || decodedRequest[0][5][1] == BigInt(1000)) {
       // Why is this "trigger"? This is just pubData
       trigger = true;
     }

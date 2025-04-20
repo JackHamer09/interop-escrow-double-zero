@@ -62,7 +62,7 @@ export const wagmiConfig = createConfig({
           // const fullRpcUrl = `${rpcUrl}/${auth.rpcToken}`; // TODO: uncomment later
           const provider = http(fullRpcUrl)({ chain });
           const response = await provider.request({ method, params });
-          console.log("http response", { response });
+          // console.log("http response", { response });
           return response;
         },
       }),

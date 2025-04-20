@@ -104,6 +104,7 @@ export const DAI_TOKEN = {
   name: "DAI",
   assetId: env.NEXT_PUBLIC_DAI_ASSET_ID,
   address: env.NEXT_PUBLIC_DAI_ADDRESS,
+  address_chain2: env.NEXT_PUBLIC_DAI_CHAIN_2_ADDRESS,
   logo: "/dai-badge.webp",
   decimals: 18,
 };
@@ -113,6 +114,7 @@ export const WBTC_TOKEN = {
   name: "Wrapped Bitcoin",
   assetId: env.NEXT_PUBLIC_WBTC_ASSET_ID,
   address: env.NEXT_PUBLIC_WBTC_ADDRESS,
+  address_chain2: env.NEXT_PUBLIC_WBTC_CHAIN_2_ADDRESS,
   logo: "/wbtc-badge.webp",
   decimals: 18,
 };
@@ -122,6 +124,7 @@ export const USDG_TOKEN = {
   name: "Global Dollar",
   assetId: env.NEXT_PUBLIC_USDG_ASSET_ID,
   address: env.NEXT_PUBLIC_USDG_ADDRESS,
+  address_chain2: env.NEXT_PUBLIC_USDG_CHAIN_2_ADDRESS,
   logo: "/usdg-badge.png",
   decimals: 18,
 };
@@ -131,6 +134,7 @@ export const WAAPL_TOKEN = {
   name: "Wrapped AAPL",
   assetId: env.NEXT_PUBLIC_WAAPL_ASSET_ID,
   address: env.NEXT_PUBLIC_WAAPL_ADDRESS,
+  address_chain2: env.NEXT_PUBLIC_WAAPL_CHAIN_2_ADDRESS,
   logo: "/waapl-badge.webp",
   decimals: 18,
 };

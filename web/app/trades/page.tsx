@@ -244,45 +244,48 @@ export default function AddEscrowedTrade() {
 
     const tokenA = trade.tokenA === USDG_TOKEN.address ? usdg : waapl;
     const tokenB = trade.tokenB === USDG_TOKEN.address ? usdg : waapl;
+    const myExpectedChainId = trade.partyA === myAddress ? chain1.id : Number(trade.partyBChainId.toString());
 
     try {
-      // Check allowances for both tokens
-      if (trade.partyA === myAddress && (tokenA.allowance ?? 0n) < trade.amountA) {
-        const approveTokenA = await toast.promise(tokenA.approve(trade.amountA), {
-          loading: `Approving use of ${tokenA.tokenSymbol} funds...`,
-          success: `${tokenA.tokenSymbol} approved!`,
-          error: err => {
-            console.error(err);
-            return `Failed to approve ${tokenA.tokenSymbol}`;
-          },
-        });
-        await toast.promise(waitForTransactionReceipt({ hash: approveTokenA }), {
-          loading: `Waiting for ${tokenA.tokenSymbol} approval confirmation...`,
-          success: `${tokenA.tokenSymbol} approval confirmed!`,
-          error: err => {
-            console.error(err);
-            return `Failed to approve ${tokenA.tokenSymbol}`;
-          },
-        });
-      }
-
-      if (trade.partyB === myAddress && (tokenB.allowance ?? 0n) < trade.amountB) {
-        const approveTokenB = await toast.promise(tokenB.approve(trade.amountB), {
-          loading: `Approving use of ${tokenB.tokenSymbol} funds...`,
-          success: `${tokenB.tokenSymbol} approved!`,
-          error: err => {
-            console.error(err);
-            return `Failed to approve ${tokenB.tokenSymbol}`;
-          },
-        });
-        await toast.promise(waitForTransactionReceipt({ hash: approveTokenB }), {
-          loading: `Waiting for ${tokenB.tokenSymbol} approval confirmation...`,
-          success: `${tokenB.tokenSymbol} approval confirmed!`,
-          error: err => {
-            console.error(err);
-            return `Failed to approve ${tokenB.tokenSymbol}`;
-          },
-        });
+      if (myExpectedChainId === chain1.id) {
+        // Check allowances for both tokens
+        if (trade.partyA === myAddress && (tokenA.allowance ?? 0n) < trade.amountA) {
+          const approveTokenA = await toast.promise(tokenA.approve(trade.amountA), {
+            loading: `Approving use of ${tokenA.tokenSymbol} funds...`,
+            success: `${tokenA.tokenSymbol} approved!`,
+            error: err => {
+              console.error(err);
+              return `Failed to approve ${tokenA.tokenSymbol}`;
+            },
+          });
+          await toast.promise(waitForTransactionReceipt({ hash: approveTokenA }), {
+            loading: `Waiting for ${tokenA.tokenSymbol} approval confirmation...`,
+            success: `${tokenA.tokenSymbol} approval confirmed!`,
+            error: err => {
+              console.error(err);
+              return `Failed to approve ${tokenA.tokenSymbol}`;
+            },
+          });
+        }
+  
+        if (trade.partyB === myAddress && (tokenB.allowance ?? 0n) < trade.amountB) {
+          const approveTokenB = await toast.promise(tokenB.approve(trade.amountB), {
+            loading: `Approving use of ${tokenB.tokenSymbol} funds...`,
+            success: `${tokenB.tokenSymbol} approved!`,
+            error: err => {
+              console.error(err);
+              return `Failed to approve ${tokenB.tokenSymbol}`;
+            },
+          });
+          await toast.promise(waitForTransactionReceipt({ hash: approveTokenB }), {
+            loading: `Waiting for ${tokenB.tokenSymbol} approval confirmation...`,
+            success: `${tokenB.tokenSymbol} approval confirmed!`,
+            error: err => {
+              console.error(err);
+              return `Failed to approve ${tokenB.tokenSymbol}`;
+            },
+          });
+        }
       }
 
       const acceptTrade = await toast.promise(depositTradeAsync(trade.tradeId), {

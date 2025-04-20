@@ -1,1 +1,0 @@
-{"version":3,"file":"metrics.provider.js","sourceRoot":"","sources":["../../../../../../../apps/broadcaster/src/metrics/metrics.provider.ts"],"names":[],"mappings":";;;AACA,mEAAqE;AAExD,QAAA,4BAA4B,GAAG,0BAA0B,CAAC;AAG1D,QAAA,eAAe,GAAoB;IAC9C,IAAA,yCAAqB,EAAC;QACpB,IAAI,EAAE,oCAA4B;QAClC,IAAI,EAAE,8CAA8C;QACpD,UAAU,EAAE;YACV,QAAQ;YACR,MAAM;YACN,YAAY;SACb;KACF,CAAE;CACJ,CAAC"}
