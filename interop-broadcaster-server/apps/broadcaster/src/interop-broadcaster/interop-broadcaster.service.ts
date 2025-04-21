@@ -40,7 +40,6 @@ export class InteropBroadcasterService {
     // if (getAddress(receipt.to) !== getAddress(L2_INTEROP_CENTER_ADDRESS)) return;
     
     const senderChain = supportedChains.find((chain) => chain.id === chainId);
-    this.logger.debug(`[${senderChain?.name || chainId}] New Transaction Receipt: ${receipt.transactionHash}`);
     const transactionKey = this.getTransactionKey(chainId, receipt.transactionHash);
     const senderClient = this.clientService.getClient({ chainId });
     const senderProvider = new zksync.Provider(senderChain.rpcUrls.default.http[0]);
@@ -72,13 +71,14 @@ export class InteropBroadcasterService {
       }
   
       const destinationChainId = parseInt(triggerDataBundle.output.destinationChainId, 10);
-      const destinationChain = supportedChains.find((c) => c.id === destinationChainId);
       this.transactionStatusMap.set(transactionKey, {
         status: "processing",
         senderChainId: chainId,
         destinationChainId: destinationChainId,
         transactionHash: receipt.transactionHash
       });
+      this.logger.debug(`[${senderChain?.name || chainId}] New interop transaction to chain ${destinationChainId}: ${receipt.transactionHash}`);
+      const destinationChain = supportedChains.find((c) => c.id === destinationChainId);
       if (!destinationChain) throw new Error(`Unsupported chainId: ${destinationChainId}`);
   
       const destinationClient = this.clientService.getClient({ chainId: destinationChainId as SupportedChainId });

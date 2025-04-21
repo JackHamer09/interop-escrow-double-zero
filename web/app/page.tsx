@@ -21,7 +21,6 @@ import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
 import { Token, USDG_TOKEN, WAAPL_TOKEN } from "~~/contracts/tokens";
-import useInteropTransfer from "~~/hooks/use-interop";
 import useTradeEscrow, { EscrowTrade, EscrowTradeStatus } from "~~/hooks/use-trade-escrow";
 import useUsdgToken from "~~/hooks/use-usdg-token";
 import useWaaplToken from "~~/hooks/use-waapl-token";
@@ -45,7 +44,6 @@ interface TradeState {
 export default function AddEscrowedTrade() {
   const usdg = useUsdgToken();
   const waapl = useWaaplToken();
-  const { interopTransfer } = useInteropTransfer();
   const {
     myTrades,
     refetchAll: refetchTrades,
