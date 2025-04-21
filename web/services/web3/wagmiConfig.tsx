@@ -43,10 +43,20 @@ export const wagmiConfig = createConfig({
           // console.log({ chain: chain.id, method, params });
           if (params?.from || chain.id !== chain1.id || method === 'wallet_addEthereumChain') {
             // Signature request or non-chain1-requests
+            console.log("Sending request to wallet", { method, params });
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const response = await window.ethereum!.request({ method, params });
             // console.log("window.ethereum response", { response });
             return response;
+          }
+
+          if (chain.id === chain1.id) {
+            try {
+              const response = await window.ethereum!.request({ method, params });
+              return response;
+            } catch (error) {
+              console.warn("Tried to request through wallet but failed", { clientChain: chain.id, method, params }, (error as any)?.data?.message);
+            }
           }
 
           const auth = getStoredAuth();

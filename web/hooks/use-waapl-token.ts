@@ -1,34 +1,34 @@
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { ERC20_ABI, WAAPL_TOKEN } from "~~/contracts/tokens";
 import { TRADE_ESCROW_ADDRESS } from "~~/contracts/trade-escrow";
-import { chain1 } from "~~/services/web3/wagmiConfig";
+import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 
 export default function useWaaplToken() {
   const { address, chainId } = useAccount();
   const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
+    address: chainId === chain2.id ? WAAPL_TOKEN.address_chain2 : WAAPL_TOKEN.address,
     abi: ERC20_ABI,
     functionName: "balanceOf",
     args: [address ?? ""],
   });
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
+    address: chainId === chain2.id ? WAAPL_TOKEN.address_chain2 : WAAPL_TOKEN.address,
     abi: ERC20_ABI,
     functionName: "allowance",
     args: [address ?? "", TRADE_ESCROW_ADDRESS],
   });
   const { data: decimals } = useReadContract({
-    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
+    address: chainId === chain2.id ? WAAPL_TOKEN.address_chain2 : WAAPL_TOKEN.address,
     abi: ERC20_ABI,
     functionName: "decimals",
   });
   const { data: tokenName } = useReadContract({
-    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
+    address: chainId === chain2.id ? WAAPL_TOKEN.address_chain2 : WAAPL_TOKEN.address,
     abi: ERC20_ABI,
     functionName: "name",
   });
   const { data: tokenSymbol } = useReadContract({
-    address: chainId === chain1.id ? WAAPL_TOKEN.address : WAAPL_TOKEN.address_chain2,
+    address: chainId === chain2.id ? WAAPL_TOKEN.address_chain2 : WAAPL_TOKEN.address,
     abi: ERC20_ABI,
     functionName: "symbol",
   });

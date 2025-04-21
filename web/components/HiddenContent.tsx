@@ -9,7 +9,7 @@ import { chain1 } from "~~/services/web3/wagmiConfig";
 
 export default function HiddenContent({ children, className }: { children: React.ReactNode; className?: string }) {
   const { chainId } = useAccount();
-  const { isConnected } = useConnectionStatus();
+  const { isConnected, canSuccessfullyRequestThroughWallet } = useConnectionStatus();
   const { isRpcAuthenticated, login, fullRpcUrl, saveChainToWallet } = useRpcLogin();
 
   const [showContinue, setShowContinue] = useState(false);
@@ -25,7 +25,7 @@ export default function HiddenContent({ children, className }: { children: React
       ? "Please authorize the RPC connection to continue"
       : "Connected and authorized";
 
-  if (isConnected && isRpcAuthenticated && !showContinue) return children;
+  if (isConnected && (canSuccessfullyRequestThroughWallet || (isRpcAuthenticated && !showContinue))) return children;
 
   return (
     <div className="relative">

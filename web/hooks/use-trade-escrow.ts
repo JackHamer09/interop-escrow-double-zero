@@ -43,7 +43,7 @@ export default function useTradeEscrow() {
     }
   }
 
-  const { data: myTrades, refetch: refetchMySwaps } = useReadContract({
+  const { data: myTrades, isSuccess: successfullyReceivedSwaps, refetch: refetchMySwaps } = useReadContract({
     ...options,
     chainId: chain1.id,
     functionName: "getMySwaps",
@@ -56,7 +56,7 @@ export default function useTradeEscrow() {
 
   // Refetch all when the address changes
   useEffect(() => {
-    refetchAll();
+    refetchMySwaps();
   }, [address, refetchAll]);
 
   const findTrade = (tradeId: bigint) => {
@@ -127,7 +127,9 @@ export default function useTradeEscrow() {
 
   return {
     myTrades,
+    successfullyReceivedSwaps,
     refetchAll,
+    refetchMySwaps,
     proposeTradeAsync,
     cancelTradeAsync,
     acceptTradeAsync,
