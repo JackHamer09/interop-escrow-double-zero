@@ -1,17 +1,21 @@
 import "@rainbow-me/rainbowkit/styles.css";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import { Metadata } from "next";
-import { Footer } from "~~/components/Footer";
+import { AppWithProviders } from "~~/components/AppWithProviders";
+import { ThemeProvider } from "~~/components/ThemeProvider";
 import "~~/styles/globals.css";
 
-export const metadata: Metadata = { title: "Double Zero Trades", description: "Double Zero Trades" };
+export const metadata: Metadata = { title: "Double Zero Swap", description: "Double Zero Swap" };
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      {children}
-      <Footer />
-    </>
+    <html suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <body>
+        <ThemeProvider forcedTheme="dark" attribute="class">
+          <AppWithProviders>{children}</AppWithProviders>
+        </ThemeProvider>
+      </body>
+    </html>
   );
-};
-
-export default Layout;
+}

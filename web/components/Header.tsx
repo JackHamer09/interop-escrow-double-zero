@@ -31,7 +31,7 @@ export const Header = () => {
         <span className="text-xl font-normal">DualZero</span>
       </Link>
       <nav suppressHydrationWarning className="hidden md:flex lg:flex-nowrap px-1 gap-2">
-        <HeaderMenuLink label="Escrowed Trades" href="/" matches={["/"]} />
+        <HeaderMenuLink label="Escrowed Trades" href="/trade" matches={["/trade"]} />
       </nav>
       <div className="mr-4">
         <RainbowKitCustomConnectButton />

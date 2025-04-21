@@ -10,7 +10,7 @@ import { chain1 } from "~~/services/web3/wagmiConfig";
 export default function HiddenContent({ children, className }: { children: React.ReactNode; className?: string }) {
   const { chainId } = useAccount();
   const { isConnected } = useConnectionStatus();
-  const { isRpcAuthenticated, login, fullRpcUrl, switchOrAddChain } = useRpcLogin();
+  const { isRpcAuthenticated, login, fullRpcUrl, saveChainToWallet } = useRpcLogin();
 
   const [showContinue, setShowContinue] = useState(false);
 
@@ -47,14 +47,13 @@ export default function HiddenContent({ children, className }: { children: React
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-2">
                 <NetworkIcon className="w-4 h-4" />
-                <span className="text-sm">RPC Authorized: {fullRpcUrl}</span>
+                <span className="text-sm">RPC Authorized:</span>
               </div>
+              <div className="text-xs font-mono text-center">{fullRpcUrl}</div>
               <div className="flex w-full gap-4 mt-2">
-                {chainId !== chain1.id && (
-                  <Button variant="secondary" onClick={() => switchOrAddChain()} className="h-10 w-full">
-                    Add chain to wallet
-                  </Button>
-                )}
+                <Button variant="secondary" onClick={() => saveChainToWallet()} className="h-10 w-full">
+                  Add chain to wallet
+                </Button>
                 <Button onClick={() => setShowContinue(false)} className="h-10 w-full">
                   Continue
                 </Button>

@@ -41,7 +41,7 @@ export const wagmiConfig = createConfig({
       transport: custom({
         async request({ method, params }) {
           // console.log({ chain: chain.id, method, params });
-          if (params?.from || chain.id !== chain1.id) {
+          if (params?.from || chain.id !== chain1.id || method === 'wallet_addEthereumChain') {
             // Signature request or non-chain1-requests
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const response = await window.ethereum!.request({ method, params });

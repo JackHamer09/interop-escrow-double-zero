@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { $fetch } from "ofetch";
-import { SiweMessage, generateNonce } from "siwe";
-import { useAccount, useSignMessage, useSwitchChain } from "wagmi";
+import { SiweMessage } from "siwe";
+import { useAccount, useSignMessage, useSwitchChain, useClient } from "wagmi";
 import { chain1 } from "~~/services/web3/wagmiConfig";
 import { env } from "~~/utils/env";
+import { addChain } from "viem/actions";
 
 const STORAGE_KEY = "rpc_auth";
 const AUTH_API_URL = env.NEXT_PUBLIC_AUTH_API_URL;
@@ -37,7 +38,7 @@ const setStoredAuth = (data: AuthData | null) => {
 export function useRpcLogin() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { switchChainAsync } = useSwitchChain();
+  const client = useClient();
   const [auth, setAuth] = useState<AuthData | null>(() => getStoredAuth());
   const [isLoginPending, setIsLoginPending] = useState(false);
 
@@ -132,18 +133,27 @@ export function useRpcLogin() {
     return auth.address.toLowerCase() === address?.toLowerCase();
   }, [auth, address]);
 
-  const switchOrAddChain = async () => {
+  const saveChainToWallet = async () => {
     if (!isRpcAuthenticated || !fullRpcUrl) {
       throw new Error("User is not authenticated");
     }
-    return await switchChainAsync({
-      chainId: chain1.id,
-      addEthereumChainParameter: {
-        chainName: chain1.name,
+    return await addChain(client as any, {
+      chain: {
+        id: chain1.id,
+        name: chain1.name,
         nativeCurrency: chain1.nativeCurrency,
-        rpcUrls: [fullRpcUrl],
-        blockExplorerUrls: ["http://localhost:3010"],
-      },
+        rpcUrls: {
+          default: {
+            http: [fullRpcUrl],
+          },
+        },
+        blockExplorers: {
+          default: {
+            name: "Block Explorer",
+            url: "http://localhost:3010"
+          },
+        },
+      }
     });
   };
 
@@ -154,6 +164,6 @@ export function useRpcLogin() {
     logout,
     auth,
     fullRpcUrl,
-    switchOrAddChain,
+    saveChainToWallet,
   };
 }

@@ -77,8 +77,8 @@ export class InteropBroadcasterService {
         destinationChainId: destinationChainId,
         transactionHash: receipt.transactionHash
       });
-      this.logger.debug(`[${senderChain?.name || chainId}] New interop transaction to chain ${destinationChainId}: ${receipt.transactionHash}`);
       const destinationChain = supportedChains.find((c) => c.id === destinationChainId);
+      this.logger.debug(`[${senderChain?.name || chainId}] New interop transaction to ${ destinationChain?.name || destinationChainId}: ${receipt.transactionHash}`);
       if (!destinationChain) throw new Error(`Unsupported chainId: ${destinationChainId}`);
   
       const destinationClient = this.clientService.getClient({ chainId: destinationChainId as SupportedChainId });

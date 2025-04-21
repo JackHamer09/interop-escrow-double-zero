@@ -19,16 +19,15 @@ export const Footer = ({ className }: { className?: string }) => {
         target="_blank"
         rel="noreferrer"
       >
-        <Image src={MslLogo} alt="Matter Labs" width={16} height={16} className="mr-1" />
         <span className="hover:underline">Matter Labs</span>
       </a>
+      and
       <a
         className="flex justify-center items-center gap-1"
         href="https://moonsonglabs.com/"
         target="_blank"
         rel="noreferrer"
       >
-        <Image src={MslLogo} alt="Moonsong Labs" width={16} height={16} className="mr-1" />
         <span className="hover:underline">Moonsong Labs</span>
       </a>
     </div>
