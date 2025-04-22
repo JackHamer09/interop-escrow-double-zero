@@ -11,8 +11,8 @@ DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY:-""}
 CHAIN_1_RPC_URL=${CHAIN_1_RPC_URL:-"http://127.0.0.1:3050"}
 CHAIN_2_RPC_URL=${CHAIN_2_RPC_URL:-"http://127.0.0.1:3150"}
 L1_RPC_URL=${L1_RPC_URL:-"http://127.0.0.1:8545"}
-PREMIUM_USER_ADDRESS=$PREMIUM_USER_ADDRESS
-BASIC_USER_ADDRESS=$BASIC_USER_ADDRESS
+USER_1_CHAIN_A_ADDRESS=$USER_1_CHAIN_A_ADDRESS
+USER_2_CHAIN_B_ADDRESS=$USER_2_CHAIN_B_ADDRESS
 
 # Some constants
 DEFAULT_DEPLOYER_PRIVATE_KEY="0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110" # Rich local wallet
@@ -29,13 +29,13 @@ if [ -z "$CHAIN_1_RPC_URL" ]; then
   exit 1
 fi
 
-if [ -z "$PREMIUM_USER_ADDRESS" ]; then
-  echo "PREMIUM_USER_ADDRESS is not set"
+if [ -z "$USER_1_CHAIN_A_ADDRESS" ]; then
+  echo "USER_1_CHAIN_A_ADDRESS is not set"
   exit 1
 fi
 
-if [ -z "$BASIC_USER_ADDRESS" ]; then
-  echo "BASIC_USER_ADDRESS is not set"
+if [ -z "$USER_2_CHAIN_B_ADDRESS" ]; then
+  echo "USER_2_CHAIN_B_ADDRESS is not set"
   exit 1
 fi
 
@@ -159,8 +159,8 @@ if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
   echo "Rich account address: $DEPLOYER_ADDRESS"
   echo "Rich account private key: $DEPLOYER_PRIVATE_KEY"
 
-  # Chain1 Min balance 7 ETH
-  deployer_chain1_min_balance=7000000000000000000
+  # Chain1 Min balance 1000 ETH
+  deployer_chain1_min_balance=1000000000000000000000
   deployer_chain1_min_balance_decimal=$(echo "scale=18; $deployer_chain1_min_balance / 1000000000000000000" | bc)
   # Deployer L2 balance
   deployer_chain_1_balance=$(cast balance --rpc-url $CHAIN_1_RPC_URL $DEPLOYER_ADDRESS)
@@ -211,16 +211,16 @@ cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $waapl_
 
 ## Premium User
 echo "Minting tokens for Premium user..."
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $dai_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 100000000000000000000000 # 100,000 DAI
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $wbtc_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 10000000000000000000000 # 10,000 WBTC
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdg_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 1000000000000000000000000 # 1,000,000 USDG
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $waapl_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 10000000000000000000 # 10 wAAPL
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $PREMIUM_USER_ADDRESS --value 1ether
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $dai_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 100000000000000000000000 # 100,000 DAI
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $wbtc_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 10000000000000000000000 # 10,000 WBTC
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdg_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 1000000000000000000000000 # 1,000,000 USDG
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $waapl_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 10000000000000000000 # 10 wAAPL
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $USER_1_CHAIN_A_ADDRESS --value 100ether
 
 ## Basic User
 echo "Minting tokens for Basic user..."
 ### Mint for Deployer on Chain1
-npx zksync-cli@latest bridge deposit --amount "1" --pk $DEPLOYER_PRIVATE_KEY --to $BASIC_USER_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_2_RPC_URL
+npx zksync-cli@latest bridge deposit --amount "100" --pk $DEPLOYER_PRIVATE_KEY --to $USER_2_CHAIN_B_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_2_RPC_URL
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $dai_address "mint(address,uint256)" $DEPLOYER_ADDRESS 10000000000000000000000 # 10,000 DAI
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $wbtc_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1000000000000000000000 # 1,000 WBTC
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdg_address "mint(address,uint256)" $DEPLOYER_ADDRESS 100000000000000000000000 # 100,000 USDG
@@ -234,13 +234,13 @@ cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdg_a
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $waapl_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 100000000000000000000 # 100 wAAPL
 #### 2. Request interop transaction with transfer
 echo "Requesting interop transfer for Basic user..."
-interop_transfer_dai_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $dai_asset_id 10000000000000000000000 $BASIC_USER_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
+interop_transfer_dai_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $dai_asset_id 10000000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
 wait_for_interop_tx_success $CHAIN_1_RPC_URL $interop_transfer_dai_tx_hash
-interop_transfer_wbtc_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $wbtc_asset_id 1000000000000000000000 $BASIC_USER_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
+interop_transfer_wbtc_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $wbtc_asset_id 1000000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
 wait_for_interop_tx_success $CHAIN_1_RPC_URL $interop_transfer_wbtc_tx_hash
-interop_transfer_usdg_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $usdg_asset_id 100000000000000000000000 $BASIC_USER_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
+interop_transfer_usdg_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $usdg_asset_id 100000000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
 wait_for_interop_tx_success $CHAIN_1_RPC_URL $interop_transfer_usdg_tx_hash
-interop_transfer_wappl_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $waapl_asset_id 100000000000000000000 $BASIC_USER_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
+interop_transfer_wappl_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $waapl_asset_id 100000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
 wait_for_interop_tx_success $CHAIN_1_RPC_URL $interop_transfer_wappl_tx_hash
 
 ## Get addresses of tokens on Chain2
@@ -256,19 +256,19 @@ cpamm_address=$(forge create --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_
 # Set user fee tiers
 echo "Setting user fee tiers..."
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $cpamm_address "setUserFeeTier(address,uint256)" $DEPLOYER_ADDRESS 2
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $cpamm_address "setUserFeeTier(address,uint256)" $PREMIUM_USER_ADDRESS 1
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $cpamm_address "setUserFeeTier(address,uint256)" $BASIC_USER_ADDRESS 0
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $cpamm_address "setUserFeeTier(address,uint256)" $USER_1_CHAIN_A_ADDRESS 1
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $cpamm_address "setUserFeeTier(address,uint256)" $USER_2_CHAIN_B_ADDRESS 0
 
 # Deploy TradeEscrow
 echo "Deploying TradeEscrow..."
 trade_escrow_address=$(forge create --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 3ether
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 100ether
 
 echo ""
 echo "Accounts:"
-echo "VIP user (deployer): $DEPLOYER_ADDRESS"
-echo "Premium user: $PREMIUM_USER_ADDRESS"
-echo "Basic user: $BASIC_USER_ADDRESS"
+echo "Deployer: $DEPLOYER_ADDRESS"
+echo "User 1 (Chain A): $USER_1_CHAIN_A_ADDRESS"
+echo "User 2 (Chain B): $USER_2_CHAIN_B_ADDRESS"
 echo ""
 echo "Contracts:"
 echo "CPAMM: $cpamm_address"

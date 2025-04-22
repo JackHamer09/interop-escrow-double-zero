@@ -14,8 +14,8 @@ DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY:-""}
 CHAIN_1_RPC_URL=${CHAIN_1_RPC_URL:-"http://127.0.0.1:3050"}
 CHAIN_2_RPC_URL=${CHAIN_2_RPC_URL:-"http://127.0.0.1:3150"}
 L1_RPC_URL=${L1_RPC_URL:-"http://127.0.0.1:8545"}
-PREMIUM_USER_ADDRESS=$PREMIUM_USER_ADDRESS
-BASIC_USER_ADDRESS=$BASIC_USER_ADDRESS
+USER_1_CHAIN_A_ADDRESS=$USER_1_CHAIN_A_ADDRESS
+USER_2_CHAIN_B_ADDRESS=$USER_2_CHAIN_B_ADDRESS
 
 # Some constants
 DEFAULT_DEPLOYER_PRIVATE_KEY="0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110" # Rich local wallet
@@ -32,13 +32,13 @@ if [ -z "$CHAIN_1_RPC_URL" ]; then
   exit 1
 fi
 
-if [ -z "$PREMIUM_USER_ADDRESS" ]; then
-  echo "PREMIUM_USER_ADDRESS is not set"
+if [ -z "$USER_1_CHAIN_A_ADDRESS" ]; then
+  echo "USER_1_CHAIN_A_ADDRESS is not set"
   exit 1
 fi
 
-if [ -z "$BASIC_USER_ADDRESS" ]; then
-  echo "BASIC_USER_ADDRESS is not set"
+if [ -z "$USER_2_CHAIN_B_ADDRESS" ]; then
+  echo "USER_2_CHAIN_B_ADDRESS is not set"
   exit 1
 fi
 
@@ -188,13 +188,13 @@ waapl_asset_id=$(cast call --rpc-url $CHAIN_1_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADD
 # Mint tokens
 ## Premium User
 echo "Minting tokens for Premium user..."
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdg_address "mint(address,uint256)" $PREMIUM_USER_ADDRESS 1000000000000000000 # 1 USDG
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $PREMIUM_USER_ADDRESS --value 1ether
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdg_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 1000000000000000000 # 1 USDG
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $USER_1_CHAIN_A_ADDRESS --value 1ether
 
 ## Basic User
 echo "Minting tokens for Basic user..."
 ### Mint for Deployer on Chain1
-npx zksync-cli@latest bridge deposit --amount "3" --pk $DEPLOYER_PRIVATE_KEY --to $BASIC_USER_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_2_RPC_URL
+npx zksync-cli@latest bridge deposit --amount "3" --pk $DEPLOYER_PRIVATE_KEY --to $USER_2_CHAIN_B_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_2_RPC_URL
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $waapl_address "mint(address,uint256)" $DEPLOYER_ADDRESS 5000000000000000000 # 5 wAAPL
 ### Then interop transfer these funds to Basic user on Chain2
 #### 1. Approve tokens for L2_NATIVE_TOKEN_VAULT_ADDRESS address
@@ -202,10 +202,10 @@ echo "Approving tokens for L2_NATIVE_TOKEN_VAULT_ADDRESS..."
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $waapl_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 5000000000000000000 # 5 wAAPL
 #### 2. Request interop transaction with transfer
 echo "Requesting interop transfer for Basic user..."
-interop_transfer_wappl_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $waapl_asset_id 5000000000000000000 $BASIC_USER_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
+interop_transfer_wappl_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_URL $waapl_asset_id 5000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
 wait_for_interop_tx_success $CHAIN_1_RPC_URL $interop_transfer_wappl_tx_hash
 
 echo ""
 echo "Accounts:"
-echo "Chain A: $PREMIUM_USER_ADDRESS"
-echo "Chain B: $BASIC_USER_ADDRESS"
+echo "Chain A: $USER_1_CHAIN_A_ADDRESS"
+echo "Chain B: $USER_2_CHAIN_B_ADDRESS"
