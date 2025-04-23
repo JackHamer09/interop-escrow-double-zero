@@ -54,7 +54,7 @@
     "viem": "^2.22.17",
     "winston": "^3.8.2",
     "zksync-ethers": "https://github.com/zksync-sdk/zksync-ethers#sb-use-new-encoding-in-sdk",
-    "zksync-ethers-interop-support": "git+https://github.com/zksync-sdk/zksync-ethers#kl/interop-ethers-support"
+    "zksync-ethers-interop-support": "git+https://github.com/zksync-sdk/zksync-ethers#kl/interop-for-jackhamer"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.3.2",
