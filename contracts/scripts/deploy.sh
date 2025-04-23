@@ -165,10 +165,8 @@ if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
   # Deployer L2 balance
   deployer_chain_1_balance=$(cast balance --rpc-url $CHAIN_1_RPC_URL $DEPLOYER_ADDRESS)
   # If less than min balance, fund the account
-  if [ "$deployer_chain_1_balance" -lt "$deployer_chain1_min_balance" ]; then
-    echo "Funding deployer L2 balance with $deployer_chain1_min_balance_decimal ETH..."
-    npx zksync-cli@latest bridge deposit --amount $deployer_chain1_min_balance_decimal --pk $DEPLOYER_PRIVATE_KEY --to $DEPLOYER_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_1_RPC_URL
-  fi
+  echo "Funding deployer L2 balance with $deployer_chain1_min_balance_decimal ETH..."
+  npx zksync-cli@latest bridge deposit --amount $deployer_chain1_min_balance_decimal --pk $DEPLOYER_PRIVATE_KEY --to $DEPLOYER_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_1_RPC_URL
 else
   DEPLOYER_ADDRESS=$(get_address_from_private_key $DEPLOYER_PRIVATE_KEY)
   echo "Deployer address: $DEPLOYER_ADDRESS"
