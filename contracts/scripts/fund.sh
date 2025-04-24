@@ -162,16 +162,9 @@ if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
   echo "Rich account address: $DEPLOYER_ADDRESS"
   echo "Rich account private key: $DEPLOYER_PRIVATE_KEY"
 
-  # Chain1 Min balance 7 ETH
-  deployer_chain1_min_balance=7000000000000000000
-  deployer_chain1_min_balance_decimal=$(echo "scale=18; $deployer_chain1_min_balance / 1000000000000000000" | bc)
-  # Deployer L2 balance
-  deployer_chain_1_balance=$(cast balance --rpc-url $CHAIN_1_RPC_URL $DEPLOYER_ADDRESS)
-  # If less than min balance, fund the account
-  if [ "$deployer_chain_1_balance" -lt "$deployer_chain1_min_balance" ]; then
-    echo "Funding deployer L2 balance with $deployer_chain1_min_balance_decimal ETH..."
-    npx zksync-cli@latest bridge deposit --amount $deployer_chain1_min_balance_decimal --pk $DEPLOYER_PRIVATE_KEY --to $DEPLOYER_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_1_RPC_URL
-  fi
+  deployer_chain1_deposit_amount_decimal=1000
+  echo "Funding deployer L2 balance with $deployer_chain1_deposit_amount_decimal ETH..."
+  npx zksync-cli@latest bridge deposit --amount $deployer_chain1_deposit_amount_decimal --pk $DEPLOYER_PRIVATE_KEY --to $DEPLOYER_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_1_RPC_URL
 else
   DEPLOYER_ADDRESS=$(get_address_from_private_key $DEPLOYER_PRIVATE_KEY)
   echo "Deployer address: $DEPLOYER_ADDRESS"
@@ -189,12 +182,12 @@ waapl_asset_id=$(cast call --rpc-url $CHAIN_1_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADD
 ## Premium User
 echo "Minting tokens for Premium user..."
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdg_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 1000000000000000000 # 1 USDG
-cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $USER_1_CHAIN_A_ADDRESS --value 1ether
+cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $USER_1_CHAIN_A_ADDRESS --value 100ether
 
 ## Basic User
 echo "Minting tokens for Basic user..."
 ### Mint for Deployer on Chain1
-npx zksync-cli@latest bridge deposit --amount "3" --pk $DEPLOYER_PRIVATE_KEY --to $USER_2_CHAIN_B_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_2_RPC_URL
+npx zksync-cli@latest bridge deposit --amount "100" --pk $DEPLOYER_PRIVATE_KEY --to $USER_2_CHAIN_B_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_2_RPC_URL
 cast send --rpc-url $CHAIN_1_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $waapl_address "mint(address,uint256)" $DEPLOYER_ADDRESS 5000000000000000000 # 5 wAAPL
 ### Then interop transfer these funds to Basic user on Chain2
 #### 1. Approve tokens for L2_NATIVE_TOKEN_VAULT_ADDRESS address
@@ -206,6 +199,6 @@ interop_transfer_wappl_tx_hash=$(request_interop $CHAIN_1_RPC_URL $CHAIN_2_RPC_U
 wait_for_interop_tx_success $CHAIN_1_RPC_URL $interop_transfer_wappl_tx_hash
 
 echo ""
-echo "Accounts:"
+echo "Funded Accounts:"
 echo "Chain A: $USER_1_CHAIN_A_ADDRESS"
 echo "Chain B: $USER_2_CHAIN_B_ADDRESS"
