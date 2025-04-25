@@ -6,8 +6,8 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-usdg_address="0x3731aAe6eD9FFfb5928A9e7084dAA55E506FD060"
-waapl_address="0xF259d4Ee301cf69548e40D68ED027F0B5e623460"
+usdg_address="your_usdg_address_here" # Replace with actual USDG address
+waapl_address="your_waapl_address_here" # Replace with actual wAAPL address
 
 # Set environment variables with defaults if not already set
 DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY:-""}

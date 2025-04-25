@@ -49,7 +49,7 @@ export default function AddEscrowedTrade() {
     refetchAll: refetchTrades,
     proposeTradeAsync,
     cancelTradeAsync,
-    acceptTradeAsync,
+    acceptTradeAndDepositAsync,
     depositTradeAsync,
   } = useTradeEscrow();
   const { address: myAddress } = useAccount();
@@ -208,11 +208,15 @@ export default function AddEscrowedTrade() {
     }
   };
 
-  const handleAcceptTrade = async (tradeId: bigint) => {
+  const handleAcceptTradeAndDeposit = async (trade: EscrowTrade) => {
     setIsAddingTrade(true);
 
+    const tokenA = trade.tokenA === USDG_TOKEN.address ? usdg : waapl;
+    const tokenB = trade.tokenB === USDG_TOKEN.address ? usdg : waapl;
+    const myExpectedChainId = trade.partyA === myAddress ? chain1.id : Number(trade.partyBChainId.toString());
+
     try {
-      const acceptTrade = await toast.promise(acceptTradeAsync(tradeId), {
+      const acceptTrade = await toast.promise(acceptTradeAndDepositAsync(trade.tradeId), {
         loading: "Accepting trade...",
         success: "Trade accepted!",
         error: err => {
@@ -221,14 +225,14 @@ export default function AddEscrowedTrade() {
         },
       });
 
-      await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
-        loading: "Waiting for accept confirmation...",
-        success: "Trade accept confirmed!",
-        error: err => {
-          console.error(err);
-          return "Failed to accept trade";
-        },
-      });
+      // await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
+      //   loading: "Waiting for accept confirmation...",
+      //   success: "Trade accept confirmed!",
+      //   error: err => {
+      //     console.error(err);
+      //     return "Failed to accept trade";
+      //   },
+      // });
     } finally {
       usdg.refetchAll();
       waapl.refetchAll();
@@ -265,7 +269,7 @@ export default function AddEscrowedTrade() {
             },
           });
         }
-  
+
         if (trade.partyB === myAddress && (tokenB.allowance ?? 0n) < trade.amountB) {
           const approveTokenB = await toast.promise(tokenB.approve(trade.amountB), {
             loading: `Approving use of ${tokenB.tokenSymbol} funds...`,
@@ -534,9 +538,9 @@ export default function AddEscrowedTrade() {
                           <Button
                             className="p-4"
                             loading={isAddingTrade}
-                            onClick={() => handleAcceptTrade(trade.tradeId)}
+                            onClick={() => handleAcceptTradeAndDeposit(trade)}
                           >
-                            Accept Trade
+                            Accept Trade and Deposit
                           </Button>
                         )}
                         {trade.status == EscrowTradeStatus.PendingFunds &&

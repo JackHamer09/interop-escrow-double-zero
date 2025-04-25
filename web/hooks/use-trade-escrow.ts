@@ -43,7 +43,11 @@ export default function useTradeEscrow() {
     }
   }
 
-  const { data: myTrades, isSuccess: successfullyReceivedSwaps, refetch: refetchMySwaps } = useReadContract({
+  const {
+    data: myTrades,
+    isSuccess: successfullyReceivedSwaps,
+    refetch: refetchMySwaps,
+  } = useReadContract({
     ...options,
     chainId: chain1.id,
     functionName: "getMySwaps",
@@ -80,7 +84,7 @@ export default function useTradeEscrow() {
       functionName: "proposeTrade",
       args: [partyB, BigInt(partyBChainId), tokenA, amountA, tokenB, amountB],
     });
-  }
+  };
 
   const cancelTradeAsync = async (tradeId: bigint) => {
     const trade = findTrade(tradeId);
@@ -94,20 +98,20 @@ export default function useTradeEscrow() {
     } else {
       return await interop.cancelTradeAsync(tradeId);
     }
-  }
+  };
 
-  const acceptTradeAsync = async (tradeId: bigint) => {
+  const acceptTradeAndDepositAsync = async (tradeId: bigint) => {
     const trade = findTrade(tradeId);
     await switchChainIfNotSet(Number(trade.myExpectedChainId));
     if (trade.myExpectedChainId === BigInt(chain1.id)) {
       return await writeContractAsync({
         ...options,
         chainId: chain1.id,
-        functionName: "acceptTrade",
+        functionName: "acceptAndDeposit",
         args: [tradeId],
       });
     } else {
-      return await interop.acceptTradeAsync(tradeId);
+      return await interop.acceptTradeAndDepositAsync(tradeId, trade.tokenB, trade.amountB);
     }
   };
 
@@ -123,7 +127,7 @@ export default function useTradeEscrow() {
     } else {
       return await interop.depositTradeAsync(tradeId, trade.tokenB, trade.amountB);
     }
-  }
+  };
 
   return {
     myTrades,
@@ -132,7 +136,7 @@ export default function useTradeEscrow() {
     refetchMySwaps,
     proposeTradeAsync,
     cancelTradeAsync,
-    acceptTradeAsync,
+    acceptTradeAndDepositAsync,
     depositTradeAsync,
   };
 }

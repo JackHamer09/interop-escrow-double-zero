@@ -152,6 +152,10 @@ wait_for_interop_tx_success() {
   done
 }
 
+# Build everything
+forge build --zksync
+
+# Check if the deployer private key is set and fund the deployer account if not
 if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
   echo "DEPLOYER_PRIVATE_KEY is not set. Using default rich account..."
   DEPLOYER_PRIVATE_KEY=$DEFAULT_DEPLOYER_PRIVATE_KEY
@@ -166,9 +170,6 @@ else
   DEPLOYER_ADDRESS=$(get_address_from_private_key $DEPLOYER_PRIVATE_KEY)
   echo "Deployer address: $DEPLOYER_ADDRESS"
 fi
-
-# Build everything
-forge build --zksync
 
 # Log deployer balance
 deployer_chain_1_balance=$(cast balance --rpc-url $CHAIN_1_RPC_URL $DEPLOYER_ADDRESS)
@@ -270,17 +271,17 @@ echo ""
 echo "Tokens:"
 echo "DAI: "
 echo "   AssetID - $dai_asset_id"
-echo "   Chain1 - $dai_address"
-echo "   Chain2 - $dai_address_chain2"
+echo "   Chain A - $dai_address"
+echo "   Chain B - $dai_address_chain2"
 echo "WBTC: "
 echo "   AssetID - $wbtc_asset_id"
-echo "   Chain1 - $wbtc_address"
-echo "   Chain2 - $wbtc_address_chain2"
+echo "   Chain A - $wbtc_address"
+echo "   Chain B - $wbtc_address_chain2"
 echo "USDG: "
 echo "   AssetID - $usdg_asset_id"
-echo "   Chain1 - $usdg_address"
-echo "   Chain2 - $usdg_address_chain2"
+echo "   Chain A - $usdg_address"
+echo "   Chain B - $usdg_address_chain2"
 echo "wAAPL: "
 echo "   AssetID - $waapl_asset_id"
-echo "   Chain1 - $waapl_address"
-echo "   Chain2 - $waapl_address_chain2"
+echo "   Chain A - $waapl_address"
+echo "   Chain B - $waapl_address_chain2"

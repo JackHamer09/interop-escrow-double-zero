@@ -129,8 +129,8 @@ export class InteropBroadcasterService {
   
       const hexTx = zksync.utils.serializeEip712(interopTx);
       const broadcastTx = await destinationProvider.broadcastTransaction(hexTx);
-      this.logger.debug(`[${senderChain.name}] Interop transaction sent to ${destinationChain.name}: ${broadcastTx.hash}`);
       await broadcastTx.wait();
+      this.logger.debug(`[${senderChain.name}] Interop transaction sent to ${destinationChain.name}: ${broadcastTx.hash}`);
   
       this.transactionStatusMap.set(transactionKey, {
         status: 'completed',

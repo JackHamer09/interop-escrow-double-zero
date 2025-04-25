@@ -22,6 +22,7 @@ contract TradeEscrow {
     uint160 constant USER_CONTRACTS_OFFSET = 0x10000; // 2^16
     address constant L2_NATIVE_TOKEN_VAULT_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x04);
     address constant L2_ASSET_ROUTER_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x03);
+    uint256 constant CROSS_CHAIN_FEE = 0.1 ether;
     
     /// @notice Trade status values.
     enum TradeStatus { PendingApproval, PendingFunds, Complete, Declined }
@@ -144,6 +145,33 @@ contract TradeEscrow {
             _settleTrade(_tradeId);
         }
     }
+
+    /// @notice Counterparty (Party B) accepts a proposed trade and deposits their tokens in one transaction.
+    /// @param _tradeId The identifier of the trade to accept and deposit for.
+    function acceptAndDeposit(uint256 _tradeId) external {
+        Trade storage trade = trades[_tradeId];
+        require(trade.status == TradeStatus.PendingApproval, "Trade is not pending");
+        address expectedSender = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
+        require(msg.sender == expectedSender, "Only the designated counterparty can accept");
+        
+        // First accept the trade
+        trade.status = TradeStatus.PendingFunds;
+        emit TradeAccepted(_tradeId, msg.sender);
+        
+        // Then deposit
+        require(!trade.depositedB, "Party B already deposited");
+        require(
+            IERC20(trade.tokenB).transferFrom(msg.sender, address(this), trade.amountB),
+            "TokenB transfer failed"
+        );
+        trade.depositedB = true;
+        emit DepositMade(_tradeId, msg.sender, trade.tokenB, trade.amountB);
+        
+        // If both parties have deposited, settle the trade
+        if (trade.depositedA && trade.depositedB) {
+            _settleTrade(_tradeId);
+        }
+    }
     
     /// @notice Internal function that settles the trade once both deposits are made.
     ///         It transfers Party A's tokens to Party B and vice versa.
@@ -155,74 +183,85 @@ contract TradeEscrow {
         trade.status = TradeStatus.Complete;
         
         // Transfer Party A's token to Party B.
-        if (block.chainid == trade.partyBChainId) {
-            require(
-                IERC20(trade.tokenA).transfer(trade.partyB, trade.amountA),
-                "Settlement transfer for tokenA failed"
-            );
-        } else {
-            // Approve token
-            IERC20(trade.tokenA).approve(L2_NATIVE_TOKEN_VAULT_ADDRESS, trade.amountA);
-            InteropCallStarter[] memory feePaymentCallStarters = new InteropCallStarter[](1);
-            InteropCallStarter[] memory executionCallStarters = new InteropCallStarter[](1);
-
-            feePaymentCallStarters[0] = InteropCallStarter(
-                true,
-                L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
-                "",
-                0,
-                1 ether
-            );
-
-            executionCallStarters[0] = InteropCallStarter(
-                false,
-                L2_ASSET_ROUTER_ADDRESS,
-                bytes.concat(
-                    bytes1(0x01),
-                    abi.encode(
-                        DataEncoding.encodeNTVAssetId(block.chainid, trade.tokenA),
-                        abi.encode(
-                            trade.amountA,
-                            trade.partyB,
-                            address(0)
-                        )
-                    )
-                ),
-                0,
-                0
-            );
-
-            GasFields memory gasFields = GasFields(
-                30000000,
-                1000,
-                trade.partyB,
-                address(0),
-                ""
-            );
-
-            // uint256 valueToSend = feePaymentCallStarters[0].requestedInteropCallValue +
-            //     executionCallStarters[0].requestedInteropCallValue;
-
-            require(address(this).balance >= 1 ether, "Insufficient ETH for interop call");
-
-            IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: 1 ether }(
-                trade.partyBChainId,
-                L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
-                feePaymentCallStarters,
-                executionCallStarters,
-                gasFields
-            );
-        }
+        _transferTokens(trade.tokenA, trade.amountA, trade.partyB, trade.partyBChainId);
 
         // Transfer Party B's token to Party A.
-        require(
-            IERC20(trade.tokenB).transfer(trade.partyA, trade.amountB),
-            "Settlement transfer for tokenB failed"
-        );
+        _transferTokens(trade.tokenB, trade.amountB, trade.partyA, block.chainid);
         
         emit TradeSettled(_tradeId);
     }
     
+    /// @notice Private function to transfer tokens to the recipient
+    /// @param _tokenAddress The address of the token to transfer
+    /// @param _amount The amount of tokens to transfer
+    /// @param _recipient The recipient address
+    /// @param _recipientChainId The chain ID of the recipient
+    function _transferTokens(
+        address _tokenAddress,
+        uint256 _amount,
+        address _recipient,
+        uint256 _recipientChainId
+    ) private {
+        // If same chain, do a normal transfer
+        if (block.chainid == _recipientChainId) {
+            require(
+                IERC20(_tokenAddress).transfer(_recipient, _amount),
+                "Token transfer failed"
+            );
+            return;
+        }
+        
+        // Approve token for cross-chain transfer
+        IERC20(_tokenAddress).approve(L2_NATIVE_TOKEN_VAULT_ADDRESS, _amount);
+        
+        InteropCallStarter[] memory feePaymentCallStarters = new InteropCallStarter[](1);
+        InteropCallStarter[] memory executionCallStarters = new InteropCallStarter[](1);
+
+        feePaymentCallStarters[0] = InteropCallStarter(
+            true,
+            L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
+            "",
+            0,
+            CROSS_CHAIN_FEE
+        );
+
+        executionCallStarters[0] = InteropCallStarter(
+            false,
+            L2_ASSET_ROUTER_ADDRESS,
+            bytes.concat(
+                bytes1(0x01),
+                abi.encode(
+                    DataEncoding.encodeNTVAssetId(block.chainid, _tokenAddress),
+                    abi.encode(
+                        _amount,
+                        _recipient,
+                        address(0)
+                    )
+                )
+            ),
+            0,
+            0
+        );
+
+        GasFields memory gasFields = GasFields(
+            30000000,
+            1000,
+            _recipient,
+            address(0),
+            ""
+        );
+
+        require(address(this).balance >= CROSS_CHAIN_FEE, "Insufficient ETH for interop call");
+
+        IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: CROSS_CHAIN_FEE }(
+            _recipientChainId,
+            L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
+            feePaymentCallStarters,
+            executionCallStarters,
+            gasFields
+        );
+    }
+
     /// @notice Allows either party to cancel a trade that has not been completed.
     /// @param _tradeId The trade identifier.
     function cancelTrade(uint256 _tradeId) external {
@@ -239,18 +278,13 @@ contract TradeEscrow {
 
         // Handle refunds.
         if (trade.depositedA) {
-            require(
-                IERC20(trade.tokenA).transfer(trade.partyA, trade.amountA),
-                "TokenA refund transfer failed"
-            );
+            _transferTokens(trade.tokenA, trade.amountA, trade.partyA, block.chainid);
             trade.depositedA = false;
             emit DepositRefunded(_tradeId, trade.partyA, trade.tokenA, trade.amountA);
-        } else if (trade.depositedB) {
-            /* TODO: this should interop transfer back (when party B is from a different chain */
-            require(
-                IERC20(trade.tokenB).transfer(trade.partyB, trade.amountB),
-                "TokenB refund transfer failed"
-            );
+        } 
+        
+        if (trade.depositedB) {
+            _transferTokens(trade.tokenB, trade.amountB, trade.partyB, trade.partyBChainId);
             trade.depositedB = false;
             emit DepositRefunded(_tradeId, trade.partyB, trade.tokenB, trade.amountB);
         }
