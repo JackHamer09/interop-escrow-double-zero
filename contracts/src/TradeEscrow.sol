@@ -98,6 +98,59 @@ contract TradeEscrow {
         emit TradeProposed(tradeId, msg.sender, _partyB);
     }
     
+    /// @notice Proposes a new trade and deposits funds in one transaction.
+    /// @param _partyB The counterparty (Party B) who will eventually accept the trade.
+    /// @param _partyBChainId The counterparty's (Party B) chain id.
+    /// @param _tokenA The token address that the proposer (Party A) will deposit.
+    /// @param _amountA The amount of tokenA Party A will deposit.
+    /// @param _tokenB The token address that the counterparty (Party B) will deposit.
+    /// @param _amountB The amount of tokenB Party B will deposit.
+    /// @return tradeId The unique identifier for the proposed trade.
+    function proposeTradeAndDeposit(
+        address _partyB,
+        uint256 _partyBChainId,
+        address _tokenA,
+        uint256 _amountA,
+        address _tokenB,
+        uint256 _amountB
+    ) external returns (uint256 tradeId) {
+        // First create the trade
+        tradeCounter++;
+        tradeId = tradeCounter;
+        
+        trades[tradeId] = Trade({
+            tradeId: tradeId,
+            partyA: msg.sender,
+            partyB: _partyB,
+            partyBChainId: _partyBChainId,
+            tokenA: _tokenA,
+            amountA: _amountA,
+            tokenB: _tokenB,
+            amountB: _amountB,
+            depositedA: false,
+            depositedB: false,
+            status: TradeStatus.PendingApproval
+        });
+        
+        // Record this trade for both participants
+        userTrades[msg.sender].push(tradeId);
+        userTrades[_partyB].push(tradeId);
+        
+        emit TradeProposed(tradeId, msg.sender, _partyB);
+        
+        // Update status immediately to PendingFunds as we're going to deposit
+        trades[tradeId].status = TradeStatus.PendingFunds;
+        
+        // Then deposit funds
+        require(
+            IERC20(_tokenA).transferFrom(msg.sender, address(this), _amountA),
+            "TokenA transfer failed"
+        );
+        trades[tradeId].depositedA = true;
+        
+        emit DepositMade(tradeId, msg.sender, _tokenA, _amountA);
+    }
+    
     /// @notice Counterparty (Party B) accepts a proposed trade.
     /// @param _tradeId The identifier of the trade to accept.
     function acceptTrade(uint256 _tradeId) external {

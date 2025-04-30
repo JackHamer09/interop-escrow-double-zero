@@ -72,6 +72,20 @@ export const TRADE_ESCROW_ABI = [
   },
   {
     type: "function",
+    name: "proposeTradeAndDeposit",
+    inputs: [
+      { name: "_partyB", type: "address", internalType: "address" },
+      { name: "_partyBChainId", type: "uint256", internalType: "uint256" },
+      { name: "_tokenA", type: "address", internalType: "address" },
+      { name: "_amountA", type: "uint256", internalType: "uint256" },
+      { name: "_tokenB", type: "address", internalType: "address" },
+      { name: "_amountB", type: "uint256", internalType: "uint256" },
+    ],
+    outputs: [{ name: "tradeId", type: "uint256", internalType: "uint256" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "tradeCounter",
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],

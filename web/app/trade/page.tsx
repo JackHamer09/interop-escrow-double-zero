@@ -128,6 +128,7 @@ export default function AddEscrowedTrade() {
   };
 
   const handleAddTrade = async () => {
+    // Check required fields
     if (tradeState.amountA === 0n || tradeState.amountB === 0n || !isAddress(tradeState.partyB)) {
       return;
     }
@@ -494,10 +495,17 @@ export default function AddEscrowedTrade() {
                 <Button
                   type="submit"
                   className="w-full mt-6 h-11"
-                  disabled={!tradeState.amountA || !tradeState.amountB || !isAddress(tradeState.partyB)}
+                  disabled={
+                    !tradeState.amountA ||
+                    !tradeState.amountB ||
+                    !isAddress(tradeState.partyB) ||
+                    tradeState.chainA !== chain1.id
+                  }
                   loading={isAddingTrade}
                 >
-                  Propose Trade
+                  {tradeState.chainA !== chain1.id
+                    ? `Please switch to ${chain1.name} to propose a trade`
+                    : "Propose Trade & Deposit Funds"}
                 </Button>
               </form>
             </div>

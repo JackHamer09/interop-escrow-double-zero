@@ -102,6 +102,7 @@ export default function useTradeEscrow() {
   // Refetch all when the address changes
   useEffect(() => {
     refetchMySwaps();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, refetchAll]);
 
   const findTrade = (tradeId: bigint) => {
@@ -119,30 +120,37 @@ export default function useTradeEscrow() {
     tokenB: Address,
     amountB: bigint,
   ) => {
-    await switchChainIfNotSet(chain1.id);
+    // Check if user is on Chain B and show toast error
+    if (walletChainId !== chain1.id) {
+      toast.error(`Trade proposals can only be submitted on ${chain1.name}. Please switch network in your wallet.`);
+      return;
+    }
+
+    // Check if we need to approve the token that Party A will deposit
+    await checkAndApproveToken(tokenA, amountA);
 
     const createTrade = await toast.promise(
       writeContractAsync({
         ...options,
-        functionName: "proposeTrade",
+        functionName: "proposeTradeAndDeposit",
         args: [partyB, BigInt(partyBChainId), tokenA, amountA, tokenB, amountB],
       }),
       {
-        loading: "Proposing trade...",
-        success: "Trade created successfully!",
+        loading: "Proposing trade and depositing funds...",
+        success: "Trade created and funds deposited successfully!",
         error: err => {
           console.error(err);
-          return "Failed to create trade";
+          return "Failed to create trade and deposit funds";
         },
       },
     );
 
     await toast.promise(waitForTransactionReceipt({ hash: createTrade }), {
-      loading: "Waiting for proposal confirmation...",
-      success: "Trade proposal confirmed!",
+      loading: "Waiting for confirmation...",
+      success: "Trade proposal and deposit confirmed!",
       error: err => {
         console.error(err);
-        return "Failed to create trade";
+        return "Failed to create trade and deposit funds";
       },
     });
 
@@ -244,25 +252,22 @@ export default function useTradeEscrow() {
       }
     }
 
-    const depositTrade = await toast.promise(
-      trade.myExpectedChainId === BigInt(chain1.id)
-        ? writeContractAsync({
-            ...options,
-            functionName: "deposit",
-            args: [tradeId],
-          })
-        : interop.depositTradeAsync(tradeId, trade.tokenB, trade.amountB),
-      {
-        loading: "Depositing funds for trade...",
-        success: "Trade funded!",
-        error: err => {
-          console.error(err);
-          return "Failed to deposit trade funds";
-        },
-      },
-    );
-
     if (trade.myExpectedChainId === BigInt(chain1.id)) {
+      const depositTrade = await toast.promise(
+        writeContractAsync({
+          ...options,
+          functionName: "deposit",
+          args: [tradeId],
+        }),
+        {
+          loading: "Depositing funds for trade...",
+          success: "Trade funded!",
+          error: err => {
+            console.error(err);
+            return "Failed to deposit trade funds";
+          },
+        },
+      );
       await toast.promise(waitForTransactionReceipt({ hash: depositTrade }), {
         loading: "Waiting for deposit confirmation...",
         success: "Trade funds deposited!",
@@ -271,9 +276,11 @@ export default function useTradeEscrow() {
           return "Failed to deposit trade funds";
         },
       });
+      return depositTrade;
+    } else {
+      const depositTrade = await interop.depositTradeAsync(tradeId, trade.tokenB, trade.amountB);
+      return depositTrade;
     }
-
-    return depositTrade;
   };
 
   const refetchTokenInfo = () => {

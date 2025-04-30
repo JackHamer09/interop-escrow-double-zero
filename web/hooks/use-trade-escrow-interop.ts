@@ -130,12 +130,7 @@ export default function useTradeEscrowInterop() {
 
     // 1. Approve NativeTokenVault if needed
     const tokenSymbol = token.symbol;
-    const needsApproval = await toast.promise(checkNeedsApproval(builder, token.address_chain2, amount), {
-      loading: `Checking ${tokenSymbol} allowance...`,
-      success: allowanceNeeded =>
-        allowanceNeeded ? `${tokenSymbol} approval needed` : `${tokenSymbol} already approved`,
-      error: "Failed to check token allowance",
-    });
+    const needsApproval = await checkNeedsApproval(builder, token.address_chain2, amount);
 
     if (needsApproval) {
       await toast.promise(builder.approveNativeTokenVault(token.address_chain2, amount), {
