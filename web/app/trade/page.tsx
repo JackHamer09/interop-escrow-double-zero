@@ -11,7 +11,6 @@ import {
   HandshakeIcon,
   XIcon,
 } from "lucide-react";
-import toast from "react-hot-toast";
 import { useBoolean } from "usehooks-ts";
 import { Address, Chain, isAddress, parseUnits } from "viem";
 import { useAccount } from "wagmi";
@@ -27,7 +26,6 @@ import useUsdcToken from "~~/hooks/use-usdc-token";
 import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
 import { formatTokenWithDecimals } from "~~/utils/currency";
-import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 interface TradeState {
   chainA: number;
@@ -47,6 +45,7 @@ export default function AddEscrowedTrade() {
   const {
     myTrades,
     refetchAll: refetchTrades,
+    refetchTokenInfo,
     proposeTradeAsync,
     cancelTradeAsync,
     acceptTradeAndDepositAsync,
@@ -135,33 +134,14 @@ export default function AddEscrowedTrade() {
 
     setIsAddingTrade(true);
     try {
-      const createTrade = await toast.promise(
-        proposeTradeAsync(
-          tradeState.partyB,
-          tradeState.chainB,
-          tradeState.tokenA.address,
-          tradeState.amountA,
-          tradeState.tokenB.address,
-          tradeState.amountB,
-        ),
-        {
-          loading: "Proposing trade...",
-          success: "Trade created successfully!",
-          error: err => {
-            console.error(err);
-            return "Failed to create trade";
-          },
-        },
+      await proposeTradeAsync(
+        tradeState.partyB,
+        tradeState.chainB,
+        tradeState.tokenA.address,
+        tradeState.amountA,
+        tradeState.tokenB.address,
+        tradeState.amountB,
       );
-
-      await toast.promise(waitForTransactionReceipt({ hash: createTrade }), {
-        loading: "Waiting for proposal confirmation...",
-        success: "Trade proposal confirmed!",
-        error: err => {
-          console.error(err);
-          return "Failed to create trade";
-        },
-      });
 
       // Reset everything
       setTradeState(prev => ({
@@ -172,8 +152,7 @@ export default function AddEscrowedTrade() {
         displayAmountB: "",
       }));
     } finally {
-      usdc.refetchAll();
-      ttbill.refetchAll();
+      refetchTokenInfo();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -183,26 +162,9 @@ export default function AddEscrowedTrade() {
     setIsAddingTrade(true);
 
     try {
-      const cancelTrade = await toast.promise(cancelTradeAsync(tradeId), {
-        loading: "Canceling trade...",
-        success: "Trade cancelled!",
-        error: err => {
-          console.error(err);
-          return "Failed to cancel trade";
-        },
-      });
-
-      await toast.promise(waitForTransactionReceipt({ hash: cancelTrade }), {
-        loading: "Waiting for cancel confirmation...",
-        success: "Trade cancel confirmed!",
-        error: err => {
-          console.error(err);
-          return "Failed to cancel trade";
-        },
-      });
+      await cancelTradeAsync(tradeId);
     } finally {
-      usdc.refetchAll();
-      ttbill.refetchAll();
+      refetchTokenInfo();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -211,31 +173,10 @@ export default function AddEscrowedTrade() {
   const handleAcceptTradeAndDeposit = async (trade: EscrowTrade) => {
     setIsAddingTrade(true);
 
-    const tokenA = trade.tokenA === USDC_TOKEN.address ? usdc : ttbill;
-    const tokenB = trade.tokenB === USDC_TOKEN.address ? usdc : ttbill;
-    const myExpectedChainId = trade.partyA === myAddress ? chain1.id : Number(trade.partyBChainId.toString());
-
     try {
-      const acceptTrade = await toast.promise(acceptTradeAndDepositAsync(trade.tradeId), {
-        loading: "Accepting trade...",
-        success: "Trade accepted!",
-        error: err => {
-          console.error(err);
-          return "Failed to accept trade";
-        },
-      });
-
-      // await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
-      //   loading: "Waiting for accept confirmation...",
-      //   success: "Trade accept confirmed!",
-      //   error: err => {
-      //     console.error(err);
-      //     return "Failed to accept trade";
-      //   },
-      // });
+      await acceptTradeAndDepositAsync(trade.tradeId);
     } finally {
-      usdc.refetchAll();
-      ttbill.refetchAll();
+      refetchTokenInfo();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -244,72 +185,10 @@ export default function AddEscrowedTrade() {
   const handleDepositTrade = async (trade: EscrowTrade) => {
     setIsAddingTrade(true);
 
-    const tokenA = trade.tokenA === USDC_TOKEN.address ? usdc : ttbill;
-    const tokenB = trade.tokenB === USDC_TOKEN.address ? usdc : ttbill;
-    const myExpectedChainId = trade.partyA === myAddress ? chain1.id : Number(trade.partyBChainId.toString());
-
     try {
-      if (myExpectedChainId === chain1.id) {
-        // Check allowances for both tokens
-        if (trade.partyA === myAddress && (tokenA.allowance ?? 0n) < trade.amountA) {
-          const approveTokenA = await toast.promise(tokenA.approve(trade.amountA), {
-            loading: `Approving use of ${tokenA.tokenSymbol} funds...`,
-            success: `${tokenA.tokenSymbol} approved!`,
-            error: err => {
-              console.error(err);
-              return `Failed to approve ${tokenA.tokenSymbol}`;
-            },
-          });
-          await toast.promise(waitForTransactionReceipt({ hash: approveTokenA }), {
-            loading: `Waiting for ${tokenA.tokenSymbol} approval confirmation...`,
-            success: `${tokenA.tokenSymbol} approval confirmed!`,
-            error: err => {
-              console.error(err);
-              return `Failed to approve ${tokenA.tokenSymbol}`;
-            },
-          });
-        }
-
-        if (trade.partyB === myAddress && (tokenB.allowance ?? 0n) < trade.amountB) {
-          const approveTokenB = await toast.promise(tokenB.approve(trade.amountB), {
-            loading: `Approving use of ${tokenB.tokenSymbol} funds...`,
-            success: `${tokenB.tokenSymbol} approved!`,
-            error: err => {
-              console.error(err);
-              return `Failed to approve ${tokenB.tokenSymbol}`;
-            },
-          });
-          await toast.promise(waitForTransactionReceipt({ hash: approveTokenB }), {
-            loading: `Waiting for ${tokenB.tokenSymbol} approval confirmation...`,
-            success: `${tokenB.tokenSymbol} approval confirmed!`,
-            error: err => {
-              console.error(err);
-              return `Failed to approve ${tokenB.tokenSymbol}`;
-            },
-          });
-        }
-      }
-
-      const acceptTrade = await toast.promise(depositTradeAsync(trade.tradeId), {
-        loading: "Despositing funds for trade...",
-        success: "Trade funded!",
-        error: err => {
-          console.error(err);
-          return "Failed to deposit trade funds";
-        },
-      });
-
-      await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
-        loading: "Waiting for deposit confirmation...",
-        success: "Trade funds deposited!",
-        error: err => {
-          console.error(err);
-          return "Failed to deposit trade funds";
-        },
-      });
+      await depositTradeAsync(trade.tradeId);
     } finally {
-      usdc.refetchAll();
-      ttbill.refetchAll();
+      refetchTokenInfo();
       refetchTrades();
       setIsAddingTrade(false);
     }

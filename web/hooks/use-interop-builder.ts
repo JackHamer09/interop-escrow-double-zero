@@ -64,14 +64,18 @@ export class InteropTransactionBuilder {
     });
   }
 
-  async approveNativeTokenVault(tokenAddress: Address, amount: bigint): Promise<void> {
-    const currentAllowance = await readContract(wagmiConfig, {
+  async checkAllowance(tokenAddress: Address): Promise<bigint> {
+    return await readContract(wagmiConfig, {
       chainId: this.fromChainId,
       address: tokenAddress,
       abi: ERC20_ABI,
       functionName: "allowance",
       args: [this.senderAddress, L2_NATIVE_TOKEN_VAULT_ADDRESS],
     });
+  }
+
+  async approveNativeTokenVault(tokenAddress: Address, amount: bigint): Promise<void> {
+    const currentAllowance = await this.checkAllowance(tokenAddress);
 
     if (currentAllowance >= amount) return;
 

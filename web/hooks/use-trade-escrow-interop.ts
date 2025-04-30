@@ -1,9 +1,20 @@
 import { InteropTransactionBuilder } from "./use-interop-builder";
 import { options } from "./use-trade-escrow";
+import toast from "react-hot-toast";
 import { type Address, Hash, encodeFunctionData, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { ERC20_ABI, TTBILL_TOKEN, USDC_TOKEN } from "~~/contracts/tokens";
 import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
+
+// Helper function to check if token approval is needed
+async function checkNeedsApproval(
+  builder: InteropTransactionBuilder,
+  tokenAddress: Address,
+  amount: bigint,
+): Promise<boolean> {
+  const allowance = await builder.checkAllowance(tokenAddress);
+  return allowance < amount;
+}
 
 export default function useTradeEscrowInterop() {
   const { address } = useAccount();
@@ -40,7 +51,14 @@ export default function useTradeEscrowInterop() {
       args: [tradeId],
     });
     builder.addTransaction({ contractAddress: options.address, data, value: 0n });
-    return await builder.send();
+    return await toast.promise(builder.send(), {
+      loading: "Processing cross-chain transaction...",
+      success: "Cross-chain transaction completed!",
+      error: err => {
+        console.error(err);
+        return "Failed to process cross-chain transaction";
+      },
+    });
   };
 
   const acceptTradeAndDepositAsync = async (tradeId: bigint, tokenAddress: Address, amount: bigint) => {
@@ -52,11 +70,28 @@ export default function useTradeEscrowInterop() {
     if (!token) throw new Error("Token not found");
 
     // 1. Approve NativeTokenVault if needed
-    await builder.approveNativeTokenVault(token.address_chain2, amount);
+    const tokenSymbol = token.symbol;
+    const needsApproval = await toast.promise(checkNeedsApproval(builder, token.address_chain2, amount), {
+      loading: `Checking ${tokenSymbol} allowance...`,
+      success: allowanceNeeded =>
+        allowanceNeeded ? `${tokenSymbol} approval needed` : `${tokenSymbol} already approved`,
+      error: "Failed to check token allowance",
+    });
+
+    if (needsApproval) {
+      await toast.promise(builder.approveNativeTokenVault(token.address_chain2, amount), {
+        loading: `Approving use of ${tokenSymbol} funds...`,
+        success: `${tokenSymbol} approved!`,
+        error: err => {
+          console.error(err);
+          return `Failed to approve ${tokenSymbol}`;
+        },
+      });
+    }
 
     // 2. Transfer funds to aliased address
     const aliasAddress = await builder.getAliasedAddress(address);
-    console.log("aliasAddress", aliasAddress);
+    console.log(`Alias of ${address} is ${aliasAddress}`);
     builder.addTransfer({ assetId: token.assetId as Hash, amount, to: aliasAddress });
 
     // 3. Approve allowance for token at Chain1
@@ -75,7 +110,14 @@ export default function useTradeEscrowInterop() {
     });
     builder.addTransaction({ contractAddress: options.address, data: depositData, value: 0n });
 
-    return await builder.send();
+    return await toast.promise(builder.send(), {
+      loading: "Processing cross-chain transaction...",
+      success: "Cross-chain transaction completed!",
+      error: err => {
+        console.error(err);
+        return "Failed to process cross-chain transaction";
+      },
+    });
   };
 
   const depositTradeAsync = async (tradeId: bigint, tokenAddress: Address, amount: bigint) => {
@@ -87,7 +129,24 @@ export default function useTradeEscrowInterop() {
     if (!token) throw new Error("Token not found");
 
     // 1. Approve NativeTokenVault if needed
-    await builder.approveNativeTokenVault(token.address_chain2, amount);
+    const tokenSymbol = token.symbol;
+    const needsApproval = await toast.promise(checkNeedsApproval(builder, token.address_chain2, amount), {
+      loading: `Checking ${tokenSymbol} allowance...`,
+      success: allowanceNeeded =>
+        allowanceNeeded ? `${tokenSymbol} approval needed` : `${tokenSymbol} already approved`,
+      error: "Failed to check token allowance",
+    });
+
+    if (needsApproval) {
+      await toast.promise(builder.approveNativeTokenVault(token.address_chain2, amount), {
+        loading: `Approving use of ${tokenSymbol} funds...`,
+        success: `${tokenSymbol} approved!`,
+        error: err => {
+          console.error(err);
+          return `Failed to approve ${tokenSymbol}`;
+        },
+      });
+    }
 
     // 2. Transfer funds to aliased address
     const aliasAddress = await builder.getAliasedAddress(address);
@@ -110,7 +169,14 @@ export default function useTradeEscrowInterop() {
     });
     builder.addTransaction({ contractAddress: options.address, data: depositData, value: 0n });
 
-    return await builder.send();
+    return await toast.promise(builder.send(), {
+      loading: "Processing cross-chain transaction...",
+      success: "Cross-chain transaction completed!",
+      error: err => {
+        console.error(err);
+        return "Failed to process cross-chain transaction";
+      },
+    });
   };
 
   return {

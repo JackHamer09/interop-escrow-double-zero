@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { $fetch } from "ofetch";
 import { SiweMessage } from "siwe";
 import { addChain } from "viem/actions";
-import { useAccount, useClient, useSignMessage, useSwitchChain } from "wagmi";
+import { useAccount, useClient, useSignMessage } from "wagmi";
 import { chain1 } from "~~/services/web3/wagmiConfig";
 import { env } from "~~/utils/env";
 
