@@ -23,7 +23,7 @@ export default function useTradeEscrowInterop() {
   const feeAmount = parseEther("0.1");
 
   // TODO: can not propose from chain b
-  // const proposeTradeAsync = async (
+  // const proposeTradeAndDepositAsync = async (
   //   partyB: Address,
   //   partyBChainId: number,
   //   tokenA: Address,
@@ -35,7 +35,7 @@ export default function useTradeEscrowInterop() {
   //   const builder = new InteropTransactionBuilder(chain2.id, chain1.id, feeAmount, address);
   //   const data = encodeFunctionData({
   //     abi: options.abi,
-  //     functionName: "proposeTrade",
+  //     functionName: "proposeTradeAndDeposit",
   //     args: [partyB, BigInt(partyBChainId), tokenA, amountA, tokenB, amountB],
   //   });
   //   builder.addTransaction({ contractAddress: options.address, data, value: 0n });
@@ -51,14 +51,17 @@ export default function useTradeEscrowInterop() {
       args: [tradeId],
     });
     builder.addTransaction({ contractAddress: options.address, data, value: 0n });
-    return await toast.promise(builder.send(), {
-      loading: "Processing cross-chain transaction...",
-      success: "Cross-chain transaction completed!",
+
+    const txHash = await toast.promise(builder.send(), {
+      loading: "Waiting for wallet approval...",
+      success: "Transaction approved! Processing cross-chain transfer...",
       error: err => {
         console.error(err);
-        return "Failed to process cross-chain transaction";
+        return "Failed to process transaction";
       },
     });
+
+    return txHash;
   };
 
   const acceptTradeAndDepositAsync = async (tradeId: bigint, tokenAddress: Address, amount: bigint) => {
@@ -71,12 +74,7 @@ export default function useTradeEscrowInterop() {
 
     // 1. Approve NativeTokenVault if needed
     const tokenSymbol = token.symbol;
-    const needsApproval = await toast.promise(checkNeedsApproval(builder, token.address_chain2, amount), {
-      loading: `Checking ${tokenSymbol} allowance...`,
-      success: allowanceNeeded =>
-        allowanceNeeded ? `${tokenSymbol} approval needed` : `${tokenSymbol} already approved`,
-      error: "Failed to check token allowance",
-    });
+    const needsApproval = await checkNeedsApproval(builder, token.address_chain2, amount);
 
     if (needsApproval) {
       await toast.promise(builder.approveNativeTokenVault(token.address_chain2, amount), {
@@ -110,73 +108,22 @@ export default function useTradeEscrowInterop() {
     });
     builder.addTransaction({ contractAddress: options.address, data: depositData, value: 0n });
 
-    return await toast.promise(builder.send(), {
-      loading: "Processing cross-chain transaction...",
-      success: "Cross-chain transaction completed!",
+    const txHash = await toast.promise(builder.send(), {
+      loading: "Waiting for wallet approval...",
+      success: "Transaction approved! Processing cross-chain transfer...",
       error: err => {
         console.error(err);
-        return "Failed to process cross-chain transaction";
+        return "Failed to process transaction";
       },
     });
+
+    return txHash;
   };
 
-  const depositTradeAsync = async (tradeId: bigint, tokenAddress: Address, amount: bigint) => {
-    if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(chain2.id, chain1.id, parseEther("1"), address);
-
-    const tokens = [USDC_TOKEN, TTBILL_TOKEN];
-    const token = tokens.find(e => [e.address, e.address_chain2].includes(tokenAddress));
-    if (!token) throw new Error("Token not found");
-
-    // 1. Approve NativeTokenVault if needed
-    const tokenSymbol = token.symbol;
-    const needsApproval = await checkNeedsApproval(builder, token.address_chain2, amount);
-
-    if (needsApproval) {
-      await toast.promise(builder.approveNativeTokenVault(token.address_chain2, amount), {
-        loading: `Approving use of ${tokenSymbol} funds...`,
-        success: `${tokenSymbol} approved!`,
-        error: err => {
-          console.error(err);
-          return `Failed to approve ${tokenSymbol}`;
-        },
-      });
-    }
-
-    // 2. Transfer funds to aliased address
-    const aliasAddress = await builder.getAliasedAddress(address);
-    console.log("aliasAddress", aliasAddress);
-    builder.addTransfer({ assetId: token.assetId as Hash, amount, to: aliasAddress });
-
-    // 3. Approve allowance for token at Chain1
-    const approvalData = encodeFunctionData({
-      abi: ERC20_ABI,
-      functionName: "approve",
-      args: [options.address, amount],
-    });
-    builder.addTransaction({ contractAddress: token.address, data: approvalData, value: 0n });
-
-    // 4. Deposit transaction
-    const depositData = encodeFunctionData({
-      abi: options.abi,
-      functionName: "deposit",
-      args: [tradeId],
-    });
-    builder.addTransaction({ contractAddress: options.address, data: depositData, value: 0n });
-
-    return await toast.promise(builder.send(), {
-      loading: "Processing cross-chain transaction...",
-      success: "Cross-chain transaction completed!",
-      error: err => {
-        console.error(err);
-        return "Failed to process cross-chain transaction";
-      },
-    });
-  };
+  // Removed depositTradeAsync to enforce strict 2-step process
 
   return {
     cancelTradeAsync,
     acceptTradeAndDepositAsync,
-    depositTradeAsync,
   };
 }

@@ -11,21 +11,7 @@ export const TRADE_ESCROW_ABI = [
   },
   {
     type: "function",
-    name: "acceptTrade",
-    inputs: [{ name: "_tradeId", type: "uint256", internalType: "uint256" }],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
     name: "cancelTrade",
-    inputs: [{ name: "_tradeId", type: "uint256", internalType: "uint256" }],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
-    name: "deposit",
     inputs: [{ name: "_tradeId", type: "uint256", internalType: "uint256" }],
     outputs: [],
     stateMutability: "nonpayable",
@@ -55,20 +41,6 @@ export const TRADE_ESCROW_ABI = [
       },
     ],
     stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "proposeTrade",
-    inputs: [
-      { name: "_partyB", type: "address", internalType: "address" },
-      { name: "_partyBChainId", type: "uint256", internalType: "uint256" },
-      { name: "_tokenA", type: "address", internalType: "address" },
-      { name: "_amountA", type: "uint256", internalType: "uint256" },
-      { name: "_tokenB", type: "address", internalType: "address" },
-      { name: "_amountB", type: "uint256", internalType: "uint256" },
-    ],
-    outputs: [{ name: "tradeId", type: "uint256", internalType: "uint256" }],
-    stateMutability: "nonpayable",
   },
   {
     type: "function",
@@ -139,15 +111,6 @@ export const TRADE_ESCROW_ABI = [
       { name: "party", type: "address", indexed: true, internalType: "address" },
       { name: "token", type: "address", indexed: false, internalType: "address" },
       { name: "amount", type: "uint256", indexed: false, internalType: "uint256" },
-    ],
-    anonymous: false,
-  },
-  {
-    type: "event",
-    name: "TradeAccepted",
-    inputs: [
-      { name: "tradeId", type: "uint256", indexed: true, internalType: "uint256" },
-      { name: "acceptor", type: "address", indexed: true, internalType: "address" },
     ],
     anonymous: false,
   },

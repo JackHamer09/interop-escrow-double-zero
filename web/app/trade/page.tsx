@@ -2,15 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import {
-  ArrowLeftRightIcon,
-  CheckIcon,
-  ClipboardCheckIcon,
-  CopyIcon,
-  DollarSignIcon,
-  HandshakeIcon,
-  XIcon,
-} from "lucide-react";
+import { ArrowLeftRightIcon, CheckIcon, CopyIcon, DollarSignIcon, XIcon } from "lucide-react";
 import { useBoolean } from "usehooks-ts";
 import { Address, Chain, isAddress, parseUnits } from "viem";
 import { useAccount } from "wagmi";
@@ -46,10 +38,9 @@ export default function AddEscrowedTrade() {
     myTrades,
     refetchAll: refetchTrades,
     refetchTokenInfo,
-    proposeTradeAsync,
+    proposeTradeAndDepositAsync,
     cancelTradeAsync,
     acceptTradeAndDepositAsync,
-    depositTradeAsync,
   } = useTradeEscrow();
   const { address: myAddress } = useAccount();
   const [tradeState, setTradeState] = useState<TradeState>({
@@ -135,7 +126,7 @@ export default function AddEscrowedTrade() {
 
     setIsAddingTrade(true);
     try {
-      await proposeTradeAsync(
+      await proposeTradeAndDepositAsync(
         tradeState.partyB,
         tradeState.chainB,
         tradeState.tokenA.address,
@@ -183,17 +174,7 @@ export default function AddEscrowedTrade() {
     }
   };
 
-  const handleDepositTrade = async (trade: EscrowTrade) => {
-    setIsAddingTrade(true);
-
-    try {
-      await depositTradeAsync(trade.tradeId);
-    } finally {
-      refetchTokenInfo();
-      refetchTrades();
-      setIsAddingTrade(false);
-    }
-  };
+  // Removed handleDepositTrade to enforce strict 2-step process
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center relative">
@@ -214,14 +195,9 @@ export default function AddEscrowedTrade() {
                         <div className="flex flex-col">
                           <div className="text-lg">
                             Trade #{trade.tradeId.toString()}
-                            {/* {trade.status == EscrowTradeStatus.PendingApproval && (
-                              <span className="float-right px-2 py-0.5 text-green-400 border-green-500 border bg-green-700 bg-opacity-30 rounded">
-                                Pending Approval
-                              </span>
-                            )}
-                            {trade.status == EscrowTradeStatus.PendingFunds && (
+                            {/* {trade.status == EscrowTradeStatus.PendingCounterpartyDeposit && (
                               <span className="float-right px-2 py-0.5 text-yellow-400 border-yellow-500 border bg-yellow-700 bg-opacity-30 rounded">
-                                Pending Funds
+                                Waiting for Deposit
                               </span>
                             )}
                             {trade.status == EscrowTradeStatus.Declined && (
@@ -236,117 +212,52 @@ export default function AddEscrowedTrade() {
                             )} */}
                           </div>
 
-                          <div className="flex justify-center w-full mt-3 mb-12">
+                          <div className="relative px-6 flex justify-center w-full mt-3 mb-12">
                             <ol className="flex items-center w-4/5">
                               <li
                                 className={cn(
                                   "flex w-full items-center after:content-[''] after:w-full after:h-1 after:border-b after:border-4 after:inline-block after:border-blue-800 relative",
-                                  trade.status === EscrowTradeStatus.PendingApproval && "after:border-gray-700",
                                   trade.status === EscrowTradeStatus.Declined && "after:border-red-700/50",
                                 )}
                               >
                                 <span
                                   className={cn(
                                     "flex items-center justify-center w-8 h-8 rounded-full bg-blue-800 shrink-0",
-                                    [EscrowTradeStatus.PendingFunds, EscrowTradeStatus.Complete].includes(
-                                      trade.status,
-                                    ) && "after:border-gray-700 bg-blue-800",
                                     trade.status === EscrowTradeStatus.Declined && "after:border-red-700 bg-red-800/50",
                                   )}
                                 >
-                                  {trade.status === EscrowTradeStatus.PendingApproval && (
-                                    <HandshakeIcon className="w-5 h-5 text-gray-100" />
-                                  )}
-                                  {[EscrowTradeStatus.PendingFunds, EscrowTradeStatus.Complete].includes(
+                                  {[EscrowTradeStatus.PendingCounterpartyDeposit, EscrowTradeStatus.Complete].includes(
                                     trade.status,
                                   ) && <CheckIcon className="w-5 h-5 text-gray-100" />}
                                   {trade.status === EscrowTradeStatus.Declined && (
                                     <XIcon className="w-5 h-5 text-red-500" />
                                   )}
                                 </span>
-                                {(trade.status === EscrowTradeStatus.PendingFunds ||
-                                  trade.status === EscrowTradeStatus.Complete) && (
-                                  <span className="absolute top-10 -left-7 italic">Trade Agreed</span>
-                                )}
-                                {trade.status === EscrowTradeStatus.PendingApproval && (
-                                  <span
-                                    className={cn(
-                                      "absolute top-9 -left-10 px-2 py-0.5 text-green-400 border-green-500 border bg-green-700 bg-opacity-30 rounded text-center",
-                                      trade.partyB == myAddress && "text-yellow-400 border-yellow-500 bg-yellow-700",
-                                    )}
-                                  >
-                                    Waiting for <br></br>
-                                    {trade.partyB == myAddress ? "Your" : "Party"} Approval
-                                  </span>
-                                )}
-                              </li>
-                              <li
-                                className={cn(
-                                  "flex w-full items-center after:content-[''] after:w-full after:h-1 after:border-b after:border-4 after:inline-block after:border-blue-800 relative",
-                                  [EscrowTradeStatus.PendingApproval, EscrowTradeStatus.PendingFunds].includes(
-                                    trade.status,
-                                  ) && "after:border-gray-700",
-                                  trade.status === EscrowTradeStatus.Declined && "after:border-red-700/50",
-                                )}
-                              >
-                                <span
-                                  className={cn(
-                                    "flex items-center justify-center w-8 h-8 rounded-full bg-blue-800 shrink-0",
-                                    trade.status === EscrowTradeStatus.PendingApproval && "bg-gray-700",
-                                    trade.status === EscrowTradeStatus.Complete && "after:border-gray-700 bg-blue-800",
-                                    trade.status === EscrowTradeStatus.Declined && "after:border-red-700 bg-red-800/50",
-                                  )}
-                                >
-                                  {trade.status === EscrowTradeStatus.PendingApproval && (
-                                    <DollarSignIcon className="w-5 h-5 text-gray-400" />
-                                  )}
-                                  {trade.status === EscrowTradeStatus.PendingFunds && (
-                                    <DollarSignIcon className="w-5 h-5 text-gray-100" />
-                                  )}
-                                  {trade.status === EscrowTradeStatus.Complete && (
-                                    <CheckIcon className="w-5 h-5 text-gray-100" />
-                                  )}
-                                  {trade.status === EscrowTradeStatus.Declined && (
-                                    <XIcon className="w-5 h-5 text-red-500" />
-                                  )}
-                                </span>
-                                {trade.status === EscrowTradeStatus.Complete && (
-                                  <span className="absolute top-10 -left-10 italic">Funds Submitted</span>
-                                )}
-                                {trade.status === EscrowTradeStatus.PendingApproval && (
-                                  <span className="absolute top-10 -left-8 italic">Submit Funds</span>
-                                )}
-                                {trade.status == EscrowTradeStatus.PendingFunds &&
-                                  ((trade.partyA == myAddress && trade.depositedA == false) ||
-                                    (trade.partyB == myAddress && trade.depositedB == false)) && (
-                                    <span className="absolute top-10 -left-10 px-2 py-0.5 text-yellow-400 border-yellow-500 border bg-yellow-700 bg-opacity-30 rounded text-center">
-                                      Submit Funds
-                                    </span>
-                                  )}
-                                {trade.status == EscrowTradeStatus.PendingFunds &&
-                                  ((trade.partyA == myAddress && trade.depositedA) ||
-                                    (trade.partyB == myAddress && trade.depositedB)) && (
-                                    <span className="absolute top-9 -left-8 px-2 py-0.5 text-green-400 border-green-500 border bg-green-700 bg-opacity-30 rounded text-center">
-                                      Waiting on <br></br> Party Funds
-                                    </span>
-                                  )}
-                                {trade.status == EscrowTradeStatus.Declined && (
-                                  <span className="absolute top-10 -left-5 px-2 py-0.5 text-red-400 border-red-500 border bg-red-700 bg-opacity-30 rounded">
+                                {trade.status === EscrowTradeStatus.Declined ? (
+                                  <span className="absolute top-10 -left-5 px-2 py-0.5 text-red-400 border-red-500 border bg-red-700 bg-opacity-30 rounded whitespace-nowrap">
                                     Declined
+                                  </span>
+                                ) : (
+                                  <span className="absolute top-10 -left-10 italic whitespace-nowrap">
+                                    Propose & Deposit
                                   </span>
                                 )}
                               </li>
                               <li className="flex items-center w-8 relative">
                                 <span
                                   className={cn(
-                                    "flex items-center justify-center w-8 h-8 rounded-full bg-gray-700 shrink-0",
+                                    "flex items-center justify-center w-8 h-8 rounded-full shrink-0",
                                     trade.status === EscrowTradeStatus.Complete && "bg-blue-800",
                                     trade.status === EscrowTradeStatus.Declined && "bg-red-800/50",
+                                    trade.status === EscrowTradeStatus.PendingCounterpartyDeposit && "bg-gray-700",
                                   )}
                                 >
-                                  {[EscrowTradeStatus.PendingApproval, EscrowTradeStatus.PendingFunds].includes(
-                                    trade.status,
-                                  ) && <ClipboardCheckIcon className="w-5 h-5 text-gray-400" />}
+                                  {trade.status === EscrowTradeStatus.PendingCounterpartyDeposit &&
+                                    (trade.partyB === myAddress && !trade.depositedB ? (
+                                      <DollarSignIcon className="w-5 h-5 text-yellow-400" />
+                                    ) : (
+                                      <DollarSignIcon className="w-5 h-5 text-gray-400" />
+                                    ))}
                                   {[EscrowTradeStatus.Complete].includes(trade.status) && (
                                     <CheckIcon className="w-5 h-5 text-gray-100" />
                                   )}
@@ -354,13 +265,28 @@ export default function AddEscrowedTrade() {
                                     <XIcon className="w-5 h-5 text-red-500" />
                                   )}
                                 </span>
-                                {(trade.status === EscrowTradeStatus.PendingApproval ||
-                                  trade.status === EscrowTradeStatus.PendingFunds) && (
-                                  <span className="absolute top-10 -left-4 text-right italic">Complete</span>
-                                )}
-                                {trade.status === EscrowTradeStatus.Complete && (
-                                  <span className="absolute top-10 -left-7 px-2 py-0.5 border-gray-500 border bg-gray-700 bg-opacity-30 rounded">
+                                {trade.status === EscrowTradeStatus.PendingCounterpartyDeposit &&
+                                trade.partyB === myAddress &&
+                                !trade.depositedB ? (
+                                  <span className="absolute top-10 left-1/2 transform -translate-x-1/2 px-2 py-0.5 text-yellow-400 border-yellow-500 border bg-yellow-700 bg-opacity-30 rounded text-center whitespace-nowrap">
+                                    Your Turn to Deposit
+                                  </span>
+                                ) : trade.status === EscrowTradeStatus.PendingCounterpartyDeposit &&
+                                  (trade.partyA === myAddress || (trade.partyB === myAddress && trade.depositedB)) ? (
+                                  <span className="absolute top-10 left-1/2 transform -translate-x-1/2 px-2 py-0.5 text-blue-400 border-blue-500 border bg-blue-700 bg-opacity-30 rounded text-center whitespace-nowrap">
+                                    Waiting for Counterparty
+                                  </span>
+                                ) : trade.status === EscrowTradeStatus.Complete ? (
+                                  <span className="absolute top-10 left-1/2 transform -translate-x-1/2 px-2 py-0.5 border-gray-500 border bg-gray-700 bg-opacity-30 rounded whitespace-nowrap">
                                     Completed
+                                  </span>
+                                ) : trade.status === EscrowTradeStatus.Declined ? (
+                                  <span className="absolute top-10 left-1/2 transform -translate-x-1/2 px-2 py-0.5 text-red-400 border-red-500 border bg-red-700 bg-opacity-30 rounded whitespace-nowrap">
+                                    Declined
+                                  </span>
+                                ) : (
+                                  <span className="absolute top-10 left-1/2 transform -translate-x-1/2 italic whitespace-nowrap">
+                                    Counterparty Deposit
                                   </span>
                                 )}
                               </li>
@@ -414,24 +340,18 @@ export default function AddEscrowedTrade() {
                       </div>
 
                       <div className="flex gap-4 items-center justify-center">
-                        {trade.status == EscrowTradeStatus.PendingApproval && trade.partyB == myAddress && (
-                          <Button
-                            className="p-4"
-                            loading={isAddingTrade}
-                            onClick={() => handleAcceptTradeAndDeposit(trade)}
-                          >
-                            Accept Trade and Deposit
-                          </Button>
-                        )}
-                        {trade.status == EscrowTradeStatus.PendingFunds &&
-                          ((trade.partyA == myAddress && trade.depositedA == false) ||
-                            (trade.partyB == myAddress && trade.depositedB == false)) && (
-                            <Button className="p-4" loading={isAddingTrade} onClick={() => handleDepositTrade(trade)}>
-                              Deposit Funds
+                        {trade.status == EscrowTradeStatus.PendingCounterpartyDeposit &&
+                          trade.partyB == myAddress &&
+                          !trade.depositedB && (
+                            <Button
+                              className="p-4"
+                              loading={isAddingTrade}
+                              onClick={() => handleAcceptTradeAndDeposit(trade)}
+                            >
+                              Deposit My Funds
                             </Button>
                           )}
-                        {(trade.status == EscrowTradeStatus.PendingApproval ||
-                          trade.status == EscrowTradeStatus.PendingFunds) && (
+                        {trade.status == EscrowTradeStatus.PendingCounterpartyDeposit && (
                           <Button
                             className="p-4"
                             variant="destructive"
@@ -505,7 +425,7 @@ export default function AddEscrowedTrade() {
                 >
                   {tradeState.chainA !== chain1.id
                     ? `Please switch to ${chain1.name} to propose a trade`
-                    : "Propose Trade & Deposit Funds"}
+                    : "Propose Trade & Deposit"}
                 </Button>
               </form>
             </div>

@@ -25,7 +25,7 @@ contract TradeEscrow {
     uint256 constant CROSS_CHAIN_FEE = 0.1 ether; // TODO: Fee can be much lower and actually should estimated, not hardcoded
     
     /// @notice Trade status values.
-    enum TradeStatus { PendingApproval, PendingFunds, Complete, Declined }
+    enum TradeStatus { PendingCounterpartyDeposit, Complete, Declined }
     
     /// @notice Data structure for a trade.
     struct Trade {
@@ -50,7 +50,6 @@ contract TradeEscrow {
     
     // --- Events ---
     event TradeProposed(uint256 indexed tradeId, address indexed proposer, address indexed counterparty);
-    event TradeAccepted(uint256 indexed tradeId, address indexed acceptor);
     event DepositMade(uint256 indexed tradeId, address indexed party, address token, uint256 amount);
     event DepositRefunded(uint256 indexed tradeId, address indexed party, address token, uint256 amount);
     event TradeSettled(uint256 indexed tradeId);
@@ -58,48 +57,10 @@ contract TradeEscrow {
     
     // --- Trade Lifecycle Functions ---
     
-    /// @notice Proposes a new trade.
-    /// @param _partyB The counterparty (Party B) who will eventually accept the trade.
-    /// @param _partyBChainId The counterparty's (Party B) chain id.
-    /// @param _tokenA The token address that the proposer (Party A) will deposit.
-    /// @param _amountA The amount of tokenA Party A will deposit.
-    /// @param _tokenB The token address that the counterparty (Party B) will deposit.
-    /// @param _amountB The amount of tokenB Party B will deposit.
-    /// @return tradeId The unique identifier for the proposed trade.
-    function proposeTrade(
-        address _partyB,
-        uint256 _partyBChainId,
-        address _tokenA,
-        uint256 _amountA,
-        address _tokenB,
-        uint256 _amountB
-    ) external returns (uint256 tradeId) {
-        tradeCounter++;
-        tradeId = tradeCounter;
-        
-        trades[tradeId] = Trade({
-            tradeId: tradeId,
-            partyA: msg.sender,
-            partyB: _partyB,
-            partyBChainId: _partyBChainId,
-            tokenA: _tokenA,
-            amountA: _amountA,
-            tokenB: _tokenB,
-            amountB: _amountB,
-            depositedA: false,
-            depositedB: false,
-            status: TradeStatus.PendingApproval
-        });
-        
-        // Record this trade for both participants.
-        userTrades[msg.sender].push(tradeId);
-        userTrades[_partyB].push(tradeId);
-        
-        emit TradeProposed(tradeId, msg.sender, _partyB);
-    }
+    // Removed proposeTrade function as it's no longer needed - we always use proposeTradeAndDeposit now
     
     /// @notice Proposes a new trade and deposits funds in one transaction.
-    /// @param _partyB The counterparty (Party B) who will eventually accept the trade.
+    /// @param _partyB The counterparty (Party B) who will eventually deposit.
     /// @param _partyBChainId The counterparty's (Party B) chain id.
     /// @param _tokenA The token address that the proposer (Party A) will deposit.
     /// @param _amountA The amount of tokenA Party A will deposit.
@@ -114,7 +75,7 @@ contract TradeEscrow {
         address _tokenB,
         uint256 _amountB
     ) external returns (uint256 tradeId) {
-        // First create the trade
+        // Create the trade
         tradeCounter++;
         tradeId = tradeCounter;
         
@@ -129,7 +90,7 @@ contract TradeEscrow {
             amountB: _amountB,
             depositedA: false,
             depositedB: false,
-            status: TradeStatus.PendingApproval
+            status: TradeStatus.PendingCounterpartyDeposit
         });
         
         // Record this trade for both participants
@@ -138,10 +99,7 @@ contract TradeEscrow {
         
         emit TradeProposed(tradeId, msg.sender, _partyB);
         
-        // Update status immediately to PendingFunds as we're going to deposit
-        trades[tradeId].status = TradeStatus.PendingFunds;
-        
-        // Then deposit funds
+        // Deposit funds immediately
         require(
             IERC20(_tokenA).transferFrom(msg.sender, address(this), _amountA),
             "TokenA transfer failed"
@@ -151,67 +109,19 @@ contract TradeEscrow {
         emit DepositMade(tradeId, msg.sender, _tokenA, _amountA);
     }
     
-    /// @notice Counterparty (Party B) accepts a proposed trade.
-    /// @param _tradeId The identifier of the trade to accept.
-    function acceptTrade(uint256 _tradeId) external {
-        Trade storage trade = trades[_tradeId];
-        require(trade.status == TradeStatus.PendingApproval, "Trade is not pending");
-        address expectedSender = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
-        require(msg.sender == expectedSender, "Only the designated counterparty can accept");
-        
-        trade.status = TradeStatus.PendingFunds;
-
-        emit TradeAccepted(_tradeId, msg.sender);
-    }
+    // Removed the acceptTrade function as it's no longer needed in the 2-step UX
     
-    /// @notice Deposits tokens into escrow. Must be called by Party A or Party B.
-    ///         The caller must have approved the escrow contract to transfer the tokens.
-    /// @param _tradeId The trade identifier.
-    function deposit(uint256 _tradeId) external {
-        Trade storage trade = trades[_tradeId];
-        require(trade.status == TradeStatus.PendingFunds, "Trade is not approved");
-        address expectedPartyB = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
-        
-        // Handle deposit based on caller's role.
-        if (msg.sender == trade.partyA) {
-            require(!trade.depositedA, "Party A already deposited");
-            require(
-                IERC20(trade.tokenA).transferFrom(msg.sender, address(this), trade.amountA),
-                "TokenA transfer failed"
-            );
-            trade.depositedA = true;
-            emit DepositMade(_tradeId, msg.sender, trade.tokenA, trade.amountA);
-        } else if (msg.sender == expectedPartyB) {
-            require(!trade.depositedB, "Party B already deposited");
-            require(
-                IERC20(trade.tokenB).transferFrom(msg.sender, address(this), trade.amountB),
-                "TokenB transfer failed"
-            );
-            trade.depositedB = true;
-            emit DepositMade(_tradeId, msg.sender, trade.tokenB, trade.amountB);
-        } else {
-            revert("Only designated parties can deposit");
-        }
-        
-        // If both parties have deposited, settle the trade.
-        if (trade.depositedA && trade.depositedB) {
-            _settleTrade(_tradeId);
-        }
-    }
-
-    /// @notice Counterparty (Party B) accepts a proposed trade and deposits their tokens in one transaction.
-    /// @param _tradeId The identifier of the trade to accept and deposit for.
+    // Removed deposit function to enforce strict 2-step process
+ 
+    /// @notice Counterparty (Party B) deposits their tokens to complete the trade.
+    /// @param _tradeId The identifier of the trade to deposit for.
     function acceptAndDeposit(uint256 _tradeId) external {
         Trade storage trade = trades[_tradeId];
-        require(trade.status == TradeStatus.PendingApproval, "Trade is not pending");
+        require(trade.status == TradeStatus.PendingCounterpartyDeposit, "Trade is not pending deposit");
         address expectedSender = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
-        require(msg.sender == expectedSender, "Only the designated counterparty can accept");
+        require(msg.sender == expectedSender, "Only the designated counterparty can deposit");
         
-        // First accept the trade
-        trade.status = TradeStatus.PendingFunds;
-        emit TradeAccepted(_tradeId, msg.sender);
-        
-        // Then deposit
+        // Deposit
         require(!trade.depositedB, "Party B already deposited");
         require(
             IERC20(trade.tokenB).transferFrom(msg.sender, address(this), trade.amountB),
@@ -320,7 +230,7 @@ contract TradeEscrow {
     function cancelTrade(uint256 _tradeId) external {
         Trade storage trade = trades[_tradeId];
         require(
-            trade.status == TradeStatus.PendingApproval || trade.status == TradeStatus.PendingFunds,
+            trade.status == TradeStatus.PendingCounterpartyDeposit,
             "Trade is not pending and cannot be cancelled"
         );
         address expectedSenderB = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);

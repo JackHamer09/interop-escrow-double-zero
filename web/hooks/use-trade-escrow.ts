@@ -30,10 +30,9 @@ export type EscrowTrade = {
 };
 
 export enum EscrowTradeStatus {
-  PendingApproval = 0,
-  PendingFunds = 1,
-  Complete = 2,
-  Declined = 3,
+  PendingCounterpartyDeposit = 0,
+  Complete = 1,
+  Declined = 2,
 }
 
 export default function useTradeEscrow() {
@@ -112,7 +111,7 @@ export default function useTradeEscrow() {
     return { ...trade, myExpectedChainId };
   };
 
-  const proposeTradeAsync = async (
+  const proposeTradeAndDepositAsync = async (
     partyB: Address,
     partyBChainId: number,
     tokenA: Address,
@@ -136,18 +135,18 @@ export default function useTradeEscrow() {
         args: [partyB, BigInt(partyBChainId), tokenA, amountA, tokenB, amountB],
       }),
       {
-        loading: "Proposing trade and depositing funds...",
-        success: "Trade created and funds deposited successfully!",
+        loading: "Waiting for wallet approval...",
+        success: "Transaction approved!",
         error: err => {
           console.error(err);
-          return "Failed to create trade and deposit funds";
+          return "Failed to approve transaction";
         },
       },
     );
 
     await toast.promise(waitForTransactionReceipt({ hash: createTrade }), {
-      loading: "Waiting for confirmation...",
-      success: "Trade proposal and deposit confirmed!",
+      loading: "Creating trade and depositing funds...",
+      success: "Trade created and funds deposited successfully!",
       error: err => {
         console.error(err);
         return "Failed to create trade and deposit funds";
@@ -170,19 +169,19 @@ export default function useTradeEscrow() {
           })
         : interop.cancelTradeAsync(tradeId),
       {
-        loading: "Canceling trade...",
-        success: "Trade cancelled!",
+        loading: "Waiting for wallet approval...",
+        success: "Transaction approved!",
         error: err => {
           console.error(err);
-          return "Failed to cancel trade";
+          return "Failed to approve transaction";
         },
       },
     );
 
     if (trade.myExpectedChainId === BigInt(chain1.id)) {
       await toast.promise(waitForTransactionReceipt({ hash: cancelTrade }), {
-        loading: "Waiting for cancel confirmation...",
-        success: "Trade cancel confirmed!",
+        loading: "Canceling trade...",
+        success: "Trade cancelled successfully!",
         error: err => {
           console.error(err);
           return "Failed to cancel trade";
@@ -203,85 +202,39 @@ export default function useTradeEscrow() {
       await checkAndApproveToken(trade.tokenB, trade.amountB);
     }
 
-    const acceptTrade = await toast.promise(
-      trade.myExpectedChainId === BigInt(chain1.id)
-        ? writeContractAsync({
-            ...options,
-            chainId: chain1.id,
-            functionName: "acceptAndDeposit",
-            args: [tradeId],
-          })
-        : interop.acceptTradeAndDepositAsync(tradeId, trade.tokenB, trade.amountB),
-      {
-        loading: "Accepting trade...",
-        success: "Trade accepted!",
-        error: err => {
-          console.error(err);
-          return "Failed to accept trade";
-        },
-      },
-    );
-
     if (trade.myExpectedChainId === BigInt(chain1.id)) {
-      await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
-        loading: "Waiting for accept confirmation...",
-        success: "Trade accept confirmed!",
-        error: err => {
-          console.error(err);
-          return "Failed to accept trade";
-        },
-      });
-    }
-
-    return acceptTrade;
-  };
-
-  const depositTradeAsync = async (tradeId: bigint) => {
-    const trade = findTrade(tradeId);
-    await switchChainIfNotSet(Number(trade.myExpectedChainId));
-
-    // Handle token approvals for chain1 case
-    if (trade.myExpectedChainId === BigInt(chain1.id)) {
-      // Check if we need to approve tokens based on which party we are
-      if (trade.partyA === address && !trade.depositedA) {
-        await checkAndApproveToken(trade.tokenA, trade.amountA);
-      }
-
-      if (trade.partyB === address && !trade.depositedB) {
-        await checkAndApproveToken(trade.tokenB, trade.amountB);
-      }
-    }
-
-    if (trade.myExpectedChainId === BigInt(chain1.id)) {
-      const depositTrade = await toast.promise(
+      const acceptTrade = await toast.promise(
         writeContractAsync({
           ...options,
-          functionName: "deposit",
+          chainId: chain1.id,
+          functionName: "acceptAndDeposit",
           args: [tradeId],
         }),
         {
-          loading: "Depositing funds for trade...",
-          success: "Trade funded!",
+          loading: "Waiting for wallet approval...",
+          success: "Transaction approved!",
           error: err => {
             console.error(err);
-            return "Failed to deposit trade funds";
+            return "Failed to approve transaction";
           },
         },
       );
-      await toast.promise(waitForTransactionReceipt({ hash: depositTrade }), {
-        loading: "Waiting for deposit confirmation...",
-        success: "Trade funds deposited!",
+      await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
+        loading: "Processing transaction...",
+        success: "Transaction confirmed! Funds deposited successfully.",
         error: err => {
           console.error(err);
-          return "Failed to deposit trade funds";
+          return "Failed to process transaction";
         },
       });
-      return depositTrade;
+      return acceptTrade;
     } else {
-      const depositTrade = await interop.depositTradeAsync(tradeId, trade.tokenB, trade.amountB);
-      return depositTrade;
+      const acceptTrade = await interop.acceptTradeAndDepositAsync(tradeId, trade.tokenB, trade.amountB);
+      return acceptTrade;
     }
   };
+
+  // Removed depositTradeAsync to enforce strict 2-step process
 
   const refetchTokenInfo = () => {
     usdcToken.refetchAll();
@@ -294,9 +247,8 @@ export default function useTradeEscrow() {
     refetchAll,
     refetchMySwaps,
     refetchTokenInfo,
-    proposeTradeAsync,
+    proposeTradeAndDepositAsync,
     cancelTradeAsync,
     acceptTradeAndDepositAsync,
-    depositTradeAsync,
   };
 }
