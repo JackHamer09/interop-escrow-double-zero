@@ -163,12 +163,13 @@ export class InteropTransactionBuilder {
     while (true) {
       const data = await fetch(
         `http://localhost:3030/api/interop-transaction-status/?transactionHash=${transactionHash}&senderChainId=${this.fromChainId}`,
-      )
-        .then(res => res.json());
+      ).then(res => res.json());
       if (data.status === "not_found") {
         throw new Error(`Interop transaction not found: ${transactionHash}`);
       } else if (data.status === "broadcasting_failed") {
-        throw new Error(`Transaction broadcast failed, likely transaction failed on the destination chain. Hash: ${data.broadcastTransactionHash}`);
+        throw new Error(
+          `Transaction broadcast failed, likely transaction failed on the destination chain. Hash: ${data.broadcastTransactionHash}`,
+        );
       }
       if (data.status === "completed") {
         break;

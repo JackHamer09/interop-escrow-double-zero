@@ -2,11 +2,13 @@ import { InteropTransactionBuilder } from "./use-interop-builder";
 import { options } from "./use-trade-escrow";
 import { type Address, Hash, encodeFunctionData, parseEther } from "viem";
 import { useAccount } from "wagmi";
-import { ERC20_ABI, USDG_TOKEN, WAAPL_TOKEN } from "~~/contracts/tokens";
+import { ERC20_ABI, TTBILL_TOKEN, USDC_TOKEN } from "~~/contracts/tokens";
 import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 
 export default function useTradeEscrowInterop() {
   const { address } = useAccount();
+
+  // TODO: fee can be much lower, and in perfect implementation should be estimated instead of being hardcoded
   const feeAmount = parseEther("0.1");
 
   // TODO: can not propose from chain b
@@ -45,7 +47,7 @@ export default function useTradeEscrowInterop() {
     if (!address) throw new Error("No address available");
     const builder = new InteropTransactionBuilder(chain2.id, chain1.id, feeAmount, address);
 
-    const tokens = [USDG_TOKEN, WAAPL_TOKEN];
+    const tokens = [USDC_TOKEN, TTBILL_TOKEN];
     const token = tokens.find(e => [e.address, e.address_chain2].includes(tokenAddress));
     if (!token) throw new Error("Token not found");
 
@@ -80,7 +82,7 @@ export default function useTradeEscrowInterop() {
     if (!address) throw new Error("No address available");
     const builder = new InteropTransactionBuilder(chain2.id, chain1.id, parseEther("1"), address);
 
-    const tokens = [USDG_TOKEN, WAAPL_TOKEN];
+    const tokens = [USDC_TOKEN, TTBILL_TOKEN];
     const token = tokens.find(e => [e.address, e.address_chain2].includes(tokenAddress));
     if (!token) throw new Error("Token not found");
 

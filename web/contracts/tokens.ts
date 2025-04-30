@@ -99,44 +99,24 @@ export const ERC20_ABI = [
   },
 ] as const;
 
-export const DAI_TOKEN = {
-  symbol: "DAI",
-  name: "DAI",
-  assetId: env.NEXT_PUBLIC_DAI_ASSET_ID,
-  address: env.NEXT_PUBLIC_DAI_ADDRESS,
-  address_chain2: env.NEXT_PUBLIC_DAI_CHAIN_2_ADDRESS,
-  logo: "/dai-badge.webp",
+export const USDC_TOKEN = {
+  symbol: "USDC",
+  name: "USD Coin",
+  assetId: env.NEXT_PUBLIC_USDC_ASSET_ID,
+  address: env.NEXT_PUBLIC_USDC_CHAIN_A_ADDRESS,
+  address_chain2: env.NEXT_PUBLIC_USDC_CHAIN_B_ADDRESS,
+  logo: "/usdc.webp",
   decimals: 18,
 };
 
-export const WBTC_TOKEN = {
-  symbol: "WBTC",
-  name: "Wrapped Bitcoin",
-  assetId: env.NEXT_PUBLIC_WBTC_ASSET_ID,
-  address: env.NEXT_PUBLIC_WBTC_ADDRESS,
-  address_chain2: env.NEXT_PUBLIC_WBTC_CHAIN_2_ADDRESS,
-  logo: "/wbtc-badge.webp",
+export const TTBILL_TOKEN = {
+  symbol: "TTBILL",
+  name: "Tokenized Treasury Bill",
+  assetId: env.NEXT_PUBLIC_TTBILL_ASSET_ID,
+  address: env.NEXT_PUBLIC_TTBILL_CHAIN_A_ADDRESS,
+  address_chain2: env.NEXT_PUBLIC_TTBILL_CHAIN_B_ADDRESS,
+  logo: "/ttbill.png",
   decimals: 18,
 };
 
-export const USDG_TOKEN = {
-  symbol: "USDG",
-  name: "Global Dollar",
-  assetId: env.NEXT_PUBLIC_USDG_ASSET_ID,
-  address: env.NEXT_PUBLIC_USDG_ADDRESS,
-  address_chain2: env.NEXT_PUBLIC_USDG_CHAIN_2_ADDRESS,
-  logo: "/usdg-badge.png",
-  decimals: 18,
-};
-
-export const WAAPL_TOKEN = {
-  symbol: "wAAPL",
-  name: "Wrapped AAPL",
-  assetId: env.NEXT_PUBLIC_WAAPL_ASSET_ID,
-  address: env.NEXT_PUBLIC_WAAPL_ADDRESS,
-  address_chain2: env.NEXT_PUBLIC_WAAPL_CHAIN_2_ADDRESS,
-  logo: "/waapl-badge.webp",
-  decimals: 18,
-};
-
-export type Token = typeof DAI_TOKEN | typeof WBTC_TOKEN | typeof USDG_TOKEN | typeof WAAPL_TOKEN;
+export type Token = typeof USDC_TOKEN | typeof TTBILL_TOKEN;

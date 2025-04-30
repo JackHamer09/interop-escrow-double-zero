@@ -1,8 +1,8 @@
-import { ArrowLeftOnRectangleIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-import { useDisconnect } from "wagmi";
-import { useRpcLogin } from "~~/hooks/use-rpc-login";
 import { Button } from "../ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { useDisconnect } from "wagmi";
+import { ArrowLeftOnRectangleIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { useRpcLogin } from "~~/hooks/use-rpc-login";
 
 export const WrongNetworkDropdown = () => {
   const { disconnect } = useDisconnect();
@@ -10,7 +10,7 @@ export const WrongNetworkDropdown = () => {
   const logout = () => {
     rpcLogout();
     disconnect();
-  }
+  };
 
   return (
     <DropdownMenu>

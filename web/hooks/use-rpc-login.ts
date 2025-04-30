@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { $fetch } from "ofetch";
 import { SiweMessage } from "siwe";
-import { useAccount, useSignMessage, useSwitchChain, useClient } from "wagmi";
+import { addChain } from "viem/actions";
+import { useAccount, useClient, useSignMessage, useSwitchChain } from "wagmi";
 import { chain1 } from "~~/services/web3/wagmiConfig";
 import { env } from "~~/utils/env";
-import { addChain } from "viem/actions";
 
 const STORAGE_KEY = "rpc_auth";
-const AUTH_API_URL = env.NEXT_PUBLIC_AUTH_API_URL;
-const CHAIN1_BASE_RPC_URL = env.NEXT_PUBLIC_CHAIN1_BASE_RPC_URL;
+const AUTH_API_URL = env.NEXT_PUBLIC_CHAIN_A_AUTH_API_URL;
+const CHAIN1_BASE_RPC_URL = env.NEXT_PUBLIC_CHAIN_A_BASE_RPC_URL;
 
 type AuthData = {
   address: string;
@@ -150,10 +150,10 @@ export function useRpcLogin() {
         blockExplorers: {
           default: {
             name: "Block Explorer",
-            url: "http://localhost:3010"
+            url: "http://localhost:3010",
           },
         },
-      }
+      },
     });
   };
 

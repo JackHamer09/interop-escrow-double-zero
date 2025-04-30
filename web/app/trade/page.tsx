@@ -20,10 +20,10 @@ import HiddenContent from "~~/components/HiddenContent";
 import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
-import { Token, USDG_TOKEN, WAAPL_TOKEN } from "~~/contracts/tokens";
+import { TTBILL_TOKEN, Token, USDC_TOKEN } from "~~/contracts/tokens";
 import useTradeEscrow, { EscrowTrade, EscrowTradeStatus } from "~~/hooks/use-trade-escrow";
-import useUsdgToken from "~~/hooks/use-usdg-token";
-import useWaaplToken from "~~/hooks/use-waapl-token";
+import useTtbillToken from "~~/hooks/use-ttbill-token";
+import useUsdcToken from "~~/hooks/use-usdc-token";
 import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
 import { formatTokenWithDecimals } from "~~/utils/currency";
@@ -42,8 +42,8 @@ interface TradeState {
 }
 
 export default function AddEscrowedTrade() {
-  const usdg = useUsdgToken();
-  const waapl = useWaaplToken();
+  const usdc = useUsdcToken();
+  const ttbill = useTtbillToken();
   const {
     myTrades,
     refetchAll: refetchTrades,
@@ -56,8 +56,8 @@ export default function AddEscrowedTrade() {
   const [tradeState, setTradeState] = useState<TradeState>({
     chainA: chain1.id,
     chainB: chain1.id,
-    tokenA: USDG_TOKEN,
-    tokenB: WAAPL_TOKEN,
+    tokenA: USDC_TOKEN,
+    tokenB: TTBILL_TOKEN,
     amountA: 0n,
     amountB: 0n,
     displayAmountA: "",
@@ -66,12 +66,12 @@ export default function AddEscrowedTrade() {
   });
   const { value: isAddingTrade, setValue: setIsAddingTrade } = useBoolean(false);
 
-  const tokenABalance = tradeState.tokenA.symbol === USDG_TOKEN.symbol ? usdg.balance : waapl.balance;
-  const tokenBBalance = tradeState.tokenB.symbol === USDG_TOKEN.symbol ? usdg.balance : waapl.balance;
+  const tokenABalance = tradeState.tokenA.symbol === USDC_TOKEN.symbol ? usdc.balance : ttbill.balance;
+  const tokenBBalance = tradeState.tokenB.symbol === USDC_TOKEN.symbol ? usdc.balance : ttbill.balance;
 
   const handleTokenSelect = (value: string, tokenType: "tokenA" | "tokenB") => {
-    const selected = value === USDG_TOKEN.symbol ? USDG_TOKEN : WAAPL_TOKEN;
-    const nonSelected = selected === USDG_TOKEN ? WAAPL_TOKEN : USDG_TOKEN;
+    const selected = value === USDC_TOKEN.symbol ? USDC_TOKEN : TTBILL_TOKEN;
+    const nonSelected = selected === USDC_TOKEN ? TTBILL_TOKEN : USDC_TOKEN;
     const otherTokenType = tokenType === "tokenA" ? "tokenB" : "tokenA";
 
     setTradeState(prev => ({
@@ -172,8 +172,8 @@ export default function AddEscrowedTrade() {
         displayAmountB: "",
       }));
     } finally {
-      usdg.refetchAll();
-      waapl.refetchAll();
+      usdc.refetchAll();
+      ttbill.refetchAll();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -201,8 +201,8 @@ export default function AddEscrowedTrade() {
         },
       });
     } finally {
-      usdg.refetchAll();
-      waapl.refetchAll();
+      usdc.refetchAll();
+      ttbill.refetchAll();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -211,8 +211,8 @@ export default function AddEscrowedTrade() {
   const handleAcceptTradeAndDeposit = async (trade: EscrowTrade) => {
     setIsAddingTrade(true);
 
-    const tokenA = trade.tokenA === USDG_TOKEN.address ? usdg : waapl;
-    const tokenB = trade.tokenB === USDG_TOKEN.address ? usdg : waapl;
+    const tokenA = trade.tokenA === USDC_TOKEN.address ? usdc : ttbill;
+    const tokenB = trade.tokenB === USDC_TOKEN.address ? usdc : ttbill;
     const myExpectedChainId = trade.partyA === myAddress ? chain1.id : Number(trade.partyBChainId.toString());
 
     try {
@@ -234,8 +234,8 @@ export default function AddEscrowedTrade() {
       //   },
       // });
     } finally {
-      usdg.refetchAll();
-      waapl.refetchAll();
+      usdc.refetchAll();
+      ttbill.refetchAll();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -244,8 +244,8 @@ export default function AddEscrowedTrade() {
   const handleDepositTrade = async (trade: EscrowTrade) => {
     setIsAddingTrade(true);
 
-    const tokenA = trade.tokenA === USDG_TOKEN.address ? usdg : waapl;
-    const tokenB = trade.tokenB === USDG_TOKEN.address ? usdg : waapl;
+    const tokenA = trade.tokenA === USDC_TOKEN.address ? usdc : ttbill;
+    const tokenB = trade.tokenB === USDC_TOKEN.address ? usdc : ttbill;
     const myExpectedChainId = trade.partyA === myAddress ? chain1.id : Number(trade.partyBChainId.toString());
 
     try {
@@ -308,8 +308,8 @@ export default function AddEscrowedTrade() {
         },
       });
     } finally {
-      usdg.refetchAll();
-      waapl.refetchAll();
+      usdc.refetchAll();
+      ttbill.refetchAll();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -496,14 +496,14 @@ export default function AddEscrowedTrade() {
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-x-2 mr-2">
                               <Image
-                                src={USDG_TOKEN.logo}
-                                alt={USDG_TOKEN.symbol}
+                                src={USDC_TOKEN.logo}
+                                alt={USDC_TOKEN.symbol}
                                 width={20}
                                 height={20}
                                 className="rounded-xl"
                               />
                               <span>{formatTokenWithDecimals(trade.amountA, 18)}</span>
-                              <span>{USDG_TOKEN.symbol}</span>
+                              <span>{USDC_TOKEN.symbol}</span>
                             </div>
                             {myAddress == trade.partyA && <span className="text-sm text-muted-foreground">You</span>}
                             {myAddress != trade.partyA && <ShortAddress address={trade.partyA} isRight={false} />}
@@ -516,14 +516,14 @@ export default function AddEscrowedTrade() {
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center justify-end gap-x-2">
                               <Image
-                                src={WAAPL_TOKEN.logo}
-                                alt={WAAPL_TOKEN.symbol}
+                                src={TTBILL_TOKEN.logo}
+                                alt={TTBILL_TOKEN.symbol}
                                 width={20}
                                 height={20}
                                 className="rounded-xl"
                               />
                               <span>{formatTokenWithDecimals(trade.amountB, 18)}</span>
-                              <span>{WAAPL_TOKEN.symbol}</span>
+                              <span>{TTBILL_TOKEN.symbol}</span>
                             </div>
                             {myAddress == trade.partyB && (
                               <span className="text-sm text-muted-foreground text-right">You</span>
@@ -726,28 +726,28 @@ function PoolCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USDG">
+                <SelectItem value="USDC">
                   <div className="flex items-center gap-x-2 mr-2">
                     <Image
-                      src={USDG_TOKEN.logo}
-                      alt={USDG_TOKEN.symbol}
+                      src={USDC_TOKEN.logo}
+                      alt={USDC_TOKEN.symbol}
                       width={20}
                       height={20}
                       className="rounded-xl"
                     />
-                    {USDG_TOKEN.symbol}
+                    {USDC_TOKEN.symbol}
                   </div>
                 </SelectItem>
-                <SelectItem value="wAAPL">
+                <SelectItem value="TTBILL">
                   <div className="flex items-center gap-x-2 mr-2">
                     <Image
-                      src={WAAPL_TOKEN.logo}
-                      alt={WAAPL_TOKEN.symbol}
+                      src={TTBILL_TOKEN.logo}
+                      alt={TTBILL_TOKEN.symbol}
                       width={20}
                       height={20}
                       className="rounded-xl"
                     />
-                    {WAAPL_TOKEN.symbol}
+                    {TTBILL_TOKEN.symbol}
                   </div>
                 </SelectItem>
               </SelectContent>
