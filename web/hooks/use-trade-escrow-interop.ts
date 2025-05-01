@@ -54,7 +54,16 @@ export default function useTradeEscrowInterop() {
 
     const txHash = await toast.promise(builder.send(), {
       loading: "Waiting for wallet approval...",
-      success: "Transaction approved! Processing cross-chain transfer...",
+      success: "Transaction approved!",
+      error: err => {
+        console.error(err);
+        return "Failed to process transaction";
+      },
+    });
+
+    await toast.promise(builder.waitUntilInteropTxProcessed(txHash), {
+      loading: "Processing cross-chain transaction...",
+      success: "Transaction processed successfully!",
       error: err => {
         console.error(err);
         return "Failed to process transaction";
@@ -110,7 +119,16 @@ export default function useTradeEscrowInterop() {
 
     const txHash = await toast.promise(builder.send(), {
       loading: "Waiting for wallet approval...",
-      success: "Transaction approved! Processing cross-chain transfer...",
+      success: "Transaction approved!",
+      error: err => {
+        console.error(err);
+        return "Failed to process transaction";
+      },
+    });
+
+    await toast.promise(builder.waitUntilInteropTxProcessed(txHash), {
+      loading: "Processing cross-chain transaction...",
+      success: "Transaction processed successfully!",
       error: err => {
         console.error(err);
         return "Failed to process transaction";

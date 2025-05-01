@@ -9,6 +9,7 @@ export default function waitForTransactionReceipt(
 ) {
   const defaultOptions = {
     confirmations: 0,
+    pollingInterval: 500,
   } satisfies Partial<
     WaitForTransactionReceiptParameters<typeof wagmiConfig, (typeof wagmiConfig.chains)[number]["id"]>
   >;

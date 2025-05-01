@@ -6,8 +6,8 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-usdc_address="your_usdc_address_here" # Replace with actual USDC address
-ttbill_address="your_ttbill_address_here" # Replace with actual TTBILL address
+usdc_address="your_usdc_address_here" # Replace with actual Chain A USDC address
+ttbill_address="your_ttbill_address_here" # Replace with actual Chain A TTBILL address
 
 # Set environment variables with defaults if not already set
 DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY:-""}

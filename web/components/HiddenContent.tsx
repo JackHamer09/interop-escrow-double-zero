@@ -4,11 +4,9 @@ import { useAccount } from "wagmi";
 import { Button } from "~~/components/ui/button";
 import { useConnectionStatus } from "~~/hooks/use-connection-status";
 import { useRpcLogin } from "~~/hooks/use-rpc-login";
-import { chain1 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
 
 export default function HiddenContent({ children, className }: { children: React.ReactNode; className?: string }) {
-  const { chainId } = useAccount();
   const { isConnected, canSuccessfullyRequestThroughWallet } = useConnectionStatus();
   const { isRpcAuthenticated, login, fullRpcUrl, saveChainToWallet } = useRpcLogin();
 

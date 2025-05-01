@@ -123,9 +123,6 @@ export class InteropTransactionBuilder {
     if (receipt.status !== "success") throw new Error("Interop transaction failed");
     console.log(`Interop transaction processed on chain ${this.fromChainId}`);
 
-    await this.waitUntilInteropTxProcessed(transactionHash);
-    console.log(`Interop transaction completed on chain ${this.toChainId}`);
-
     return transactionHash;
   }
 
@@ -163,7 +160,7 @@ export class InteropTransactionBuilder {
     ]);
   }
 
-  private async waitUntilInteropTxProcessed(transactionHash: Hash, pollingInterval = 250) {
+  public async waitUntilInteropTxProcessed(transactionHash: Hash, pollingInterval = 250) {
     while (true) {
       const data = await fetch(
         `http://localhost:3030/api/interop-transaction-status/?transactionHash=${transactionHash}&senderChainId=${this.fromChainId}`,

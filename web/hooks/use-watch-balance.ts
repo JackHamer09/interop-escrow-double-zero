@@ -7,7 +7,7 @@ import { UseBalanceParameters, useBalance, useBlockNumber } from "wagmi";
  */
 export const useWatchBalance = (useBalanceParameters: UseBalanceParameters) => {
   const queryClient = useQueryClient();
-  const { data: blockNumber } = useBlockNumber({ watch: true, cacheTime: 1_000 });
+  const { data: blockNumber } = useBlockNumber({ watch: true, cacheTime: 500 });
   const { queryKey, ...restUseBalanceReturn } = useBalance(useBalanceParameters);
 
   useEffect(() => {

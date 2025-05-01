@@ -38,6 +38,7 @@ export const wagmiConfig = createConfig({
   client: ({ chain }) => {
     return createWalletClient({
       chain,
+      pollingInterval: 500,
       transport: custom({
         async request({ method, params }) {
           // console.log({ chain: chain.id, method, params });
