@@ -176,7 +176,9 @@ echo "Deployer balance: $deployer_chain_1_balance"
 # Deploy ERC20 tokens
 echo "Deploying ERC20 tokens..."
 usdc_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "USD Coin" "USDC" 18 | extract_deployed_address)
+echo "USDC deployed at: $usdc_address"
 ttbill_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Tokenized Treasury Bill" "TTBILL" 18 | extract_deployed_address)
+echo "TTBILL deployed at: $ttbill_address"
 
 # Register tokens in Native Token Vault
 echo "Registering tokens in Native Token Vault..."
@@ -185,7 +187,9 @@ cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $L2_NAT
 
 # Get token Asset IDs
 usdc_asset_id=$(cast call --rpc-url $CHAIN_A_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADDRESS "assetId(address)" $usdc_address)
+echo "USDC Asset ID: $usdc_asset_id"
 ttbill_asset_id=$(cast call --rpc-url $CHAIN_A_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADDRESS "assetId(address)" $ttbill_address)
+echo "TTBILL Asset ID: $ttbill_asset_id"
 
 # Mint tokens
 ## User 1 Chain A
