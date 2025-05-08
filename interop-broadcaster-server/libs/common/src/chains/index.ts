@@ -13,7 +13,7 @@ export const chain1 = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['http://127.0.0.1:3050'],
+      http: [process.env.CHAIN_A_RPC_URL || "http://127.0.0.1:3050"],
     },
   },
 });
@@ -29,7 +29,7 @@ export const chain2 = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['http://127.0.0.1:3150'],
+      http: [process.env.CHAIN_B_RPC_URL || "http://127.0.0.1:3150"],
     },
   },
 });
