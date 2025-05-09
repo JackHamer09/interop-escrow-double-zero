@@ -1,4 +1,3 @@
-import "@rainbow-me/rainbowkit/styles.css";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import { Metadata } from "next";

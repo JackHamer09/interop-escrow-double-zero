@@ -1,11 +1,9 @@
 "use client";
 
-import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
-import { BlockieAvatar } from "~~/components/BlockieAvatar";
 import { Header } from "~~/components/Header";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
@@ -34,9 +32,7 @@ export const AppWithProviders = ({ children }: { children: React.ReactNode }) =>
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <ProgressBar height="3px" color="#2299dd" />
-        <RainbowKitProvider avatar={BlockieAvatar} theme={darkTheme()}>
-          <App>{children}</App>
-        </RainbowKitProvider>
+        <App>{children}</App>
       </QueryClientProvider>
     </WagmiProvider>
   );

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RainbowKitCustomConnectButton } from "./RainbowKitCustomConnectButton";
+import { MetaMaskConnectButton } from "./MetaMaskConnectButton";
 
 type HeaderMenuLink = {
   label: string;
@@ -22,7 +22,7 @@ export const Header = () => {
       </Link>
       <nav suppressHydrationWarning className="hidden md:flex lg:flex-nowrap px-1 gap-2"></nav>
       <div className="mr-4">
-        <RainbowKitCustomConnectButton />
+        <MetaMaskConnectButton />
       </div>
     </div>
   );

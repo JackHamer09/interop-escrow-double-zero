@@ -1,4 +1,3 @@
-import "@rainbow-me/rainbowkit/styles.css";
 import { Metadata } from "next";
 import { Footer } from "~~/components/Footer";
 import "~~/styles/globals.css";
