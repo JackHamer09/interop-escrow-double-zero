@@ -75,16 +75,21 @@ export default function AddEscrowedTrade() {
     }));
   };
 
-  const handleAmountChange = async (e: React.ChangeEvent<HTMLInputElement>, tokenType: "tokenA" | "tokenB") => {
-    const newDisplayAmount = e.target.value.replace(/,/g, "");
-
-    // Handle non-numbers
-    if (isNaN(+newDisplayAmount)) {
-      return;
+  const isValidNumber = (value: string): boolean => {
+    try {
+      parseUnits(value, 18);
+      return true;
+    } catch (error) {
+      return false;
     }
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, tokenType: "tokenA" | "tokenB") => {
+    const amount = e.target.value.replace(/,/g, "");
+    if (!isValidNumber(amount)) return;
 
     // If input is empty, reset both amounts
-    if (!newDisplayAmount) {
+    if (!amount) {
       setTradeState(prev => ({
         ...prev,
         amountA: 0n,
@@ -97,8 +102,8 @@ export default function AddEscrowedTrade() {
 
     setTradeState(prev => ({
       ...prev,
-      [tokenType === "tokenA" ? "amountA" : "amountB"]: parseUnits(newDisplayAmount, 18),
-      [tokenType === "tokenA" ? "displayAmountA" : "displayAmountB"]: newDisplayAmount,
+      [tokenType === "tokenA" ? "amountA" : "amountB"]: parseUnits(amount, 18),
+      [tokenType === "tokenA" ? "displayAmountA" : "displayAmountB"]: amount,
     }));
   };
 
