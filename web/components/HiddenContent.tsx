@@ -1,5 +1,5 @@
 import { ConnectWalletButton } from "./ConnectWalletButton";
-import { CheckCircleIcon, CircleDotIcon, NetworkIcon, XCircleIcon } from "lucide-react";
+import { CheckCircleIcon, CircleDotIcon, XCircleIcon } from "lucide-react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { Button } from "~~/components/ui/button";
 import { useConnectionStatus } from "~~/hooks/use-connection-status";
@@ -12,7 +12,7 @@ type ContentState = "connected" | "wallet-disconnected" | "connection-issues";
 export default function HiddenContent({ children, className }: { children: React.ReactNode; className?: string }) {
   const { isWalletConnected, isAbleToRequestWalletChain, hasChain1RpcConnection, isSupportedChainSelected } =
     useConnectionStatus();
-  const { isRpcAuthenticated, login, fullRpcUrl, saveChainToWallet } = useRpcLogin();
+  const { isRpcAuthenticated, login, saveChainToWallet } = useRpcLogin();
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
 
@@ -135,19 +135,6 @@ export default function HiddenContent({ children, className }: { children: React
                   </Button>
                 )}
               </div>
-
-              {isRpcAuthenticated && (
-                <div className="flex flex-col items-center gap-2 w-full">
-                  <div className="flex items-center gap-2">
-                    <NetworkIcon className="w-4 h-4" />
-                    <span className="text-sm">RPC Authorized:</span>
-                  </div>
-                  <div className="text-xs font-mono text-center">{fullRpcUrl}</div>
-                  <Button variant="secondary" onClick={() => saveChainToWallet()} className="h-10 w-full mt-2">
-                    Add chain to wallet
-                  </Button>
-                </div>
-              )}
             </>
           )}
         </div>
