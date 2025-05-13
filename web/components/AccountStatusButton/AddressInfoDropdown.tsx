@@ -1,18 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useDisconnect } from "wagmi";
-import { Button } from "../ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
 import { BlockieAvatar } from "../BlockieAvatar";
-import { Address as AddressDisplay } from "../Address/Address";
-import { Address } from "viem";
+import { Button } from "../ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import CopyToClipboard from "react-copy-to-clipboard";
+import { Address } from "viem";
+import { useDisconnect } from "wagmi";
 
 interface AddressInfoDropdownProps {
   address: Address;
@@ -31,9 +25,7 @@ const CopyAddressButton = ({ address }: { address: Address }) => {
         }, 800);
       }}
     >
-      <div className="flex items-center cursor-pointer w-full">
-        {copied ? "Copied!" : "Copy address"}
-      </div>
+      <div className="flex items-center cursor-pointer w-full">{copied ? "Copied!" : "Copy address"}</div>
     </CopyToClipboard>
   );
 };
@@ -44,15 +36,8 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          className="min-h-[42px] h-[42px] pl-2 pr-3 flex items-center gap-2"
-        >
-          <BlockieAvatar
-            address={address}
-            size={24}
-            className="rounded-full"
-          />
+        <Button variant="outline" className="min-h-[42px] h-[42px] pl-2 pr-3 flex items-center gap-2">
+          <BlockieAvatar address={address} size={24} className="rounded-full" />
           <span className="ml-1.5 text-base font-normal">
             {address.slice(0, 6)}...{address.slice(-4)}
           </span>
@@ -62,9 +47,7 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
         <DropdownMenuItem>
           <CopyAddressButton address={address} />
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => disconnect()}>
-          Disconnect
-        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => disconnect()}>Disconnect</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

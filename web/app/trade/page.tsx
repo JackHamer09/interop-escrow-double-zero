@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import { AlertCircle } from "lucide-react";
 import { useBoolean } from "usehooks-ts";
 import { Address, isAddress, parseUnits } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
 import { TradeForm, TradeList } from "~~/components/Trade";
+import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { TTBILL_TOKEN, Token, USDC_TOKEN } from "~~/contracts/tokens";
 import useTradeEscrow, { EscrowTrade } from "~~/hooks/use-trade-escrow";
 import useTtbillToken from "~~/hooks/use-ttbill-token";
@@ -36,9 +38,10 @@ export default function AddEscrowedTrade() {
     acceptTradeAndDepositAsync,
   } = useTradeEscrow();
   const { address: myAddress } = useAccount();
+  const walletChainId = useChainId();
   const [tradeState, setTradeState] = useState<TradeState>({
     chainA: chain1.id,
-    chainB: chain1.id,
+    chainB: chain2.id,
     tokenA: USDC_TOKEN,
     tokenB: TTBILL_TOKEN,
     amountA: 0n,
@@ -57,14 +60,12 @@ export default function AddEscrowedTrade() {
     const nonSelected = selected === USDC_TOKEN ? TTBILL_TOKEN : USDC_TOKEN;
     const otherTokenType = tokenType === "tokenA" ? "tokenB" : "tokenA";
 
+    // Only update the token types without swapping amounts
     setTradeState(prev => ({
       ...prev,
       [tokenType]: selected,
       [otherTokenType]: nonSelected,
-      amountA: prev.amountB,
-      amountB: prev.amountA,
-      displayAmountA: prev.displayAmountB,
-      displayAmountB: prev.displayAmountA,
+      // No amount swapping
     }));
   };
 
@@ -79,19 +80,18 @@ export default function AddEscrowedTrade() {
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, tokenType: "tokenA" | "tokenB") => {
     const amount = e.target.value.replace(/,/g, "");
-    if (!isValidNumber(amount)) return;
 
-    // If input is empty, reset both amounts
+    // Just update the specific input field, even if empty
     if (!amount) {
       setTradeState(prev => ({
         ...prev,
-        amountA: 0n,
-        amountB: 0n,
-        displayAmountA: "",
-        displayAmountB: "",
+        [tokenType === "tokenA" ? "amountA" : "amountB"]: 0n,
+        [tokenType === "tokenA" ? "displayAmountA" : "displayAmountB"]: "",
       }));
       return;
     }
+
+    if (!isValidNumber(amount)) return;
 
     setTradeState(prev => ({
       ...prev,
@@ -173,12 +173,12 @@ export default function AddEscrowedTrade() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center relative">
-      <div className="flex flex-col">
-        <h2 className="mb-4 font-medium text-2xl">My Escrowed Trades</h2>
+    <div className="flex-1 flex flex-col items-center justify-center relative w-full">
+      <div className="flex flex-col items-center w-full mt-10">
+        <h2 className="mb-4 font-medium text-2xl text-center">My Escrowed Trades</h2>
 
         <HiddenContent>
-          <div className="card min-w-[450px]">
+          <div className="card w-full max-w-[550px]">
             <TradeList
               trades={myTrades}
               myAddress={myAddress}
@@ -187,21 +187,31 @@ export default function AddEscrowedTrade() {
               onCancelTrade={handleCancelTrade}
             />
 
-            <h2 className="mt-12 mb-4 font-medium text-2xl">Propose Trade</h2>
+            <h2 className="mt-12 mb-4 font-medium text-2xl text-center">Propose Trade</h2>
 
-            <div>
-              <TradeForm
-                tradeState={tradeState}
-                tokenABalance={tokenABalance ?? 0n}
-                tokenBBalance={tokenBBalance ?? 0n}
-                isAddingTrade={isAddingTrade}
-                onTokenSelect={handleTokenSelect}
-                onAmountChange={handleAmountChange}
-                onPartyBChange={handlePartyBChange}
-                onChainChange={handleChainChange}
-                onSubmit={handleAddTrade}
-              />
-            </div>
+            {walletChainId === chain1.id ? (
+              <div>
+                <TradeForm
+                  tradeState={tradeState}
+                  tokenABalance={tokenABalance ?? 0n}
+                  tokenBBalance={tokenBBalance ?? 0n}
+                  isAddingTrade={isAddingTrade}
+                  onTokenSelect={handleTokenSelect}
+                  onAmountChange={handleAmountChange}
+                  onPartyBChange={handlePartyBChange}
+                  onChainChange={handleChainChange}
+                  onSubmit={handleAddTrade}
+                />
+              </div>
+            ) : (
+              <Alert variant="warning" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  In this demo, you can only propose trades from the {chain1.name} network. If you wish to propose a
+                  trade from your current wallet, switch it in your MetaMask wallet to continue.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </HiddenContent>
       </div>

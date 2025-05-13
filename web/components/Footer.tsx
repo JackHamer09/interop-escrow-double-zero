@@ -1,7 +1,5 @@
 import React from "react";
-import Image from "next/image";
 import { HeartIcon } from "@heroicons/react/24/solid";
-import MslLogo from "~~/assets/msl.svg";
 import { cn } from "~~/utils/cn";
 
 /**

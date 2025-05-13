@@ -79,14 +79,14 @@ export const createMetaMaskClient = ({ chain }: { chain: typeof chain1 | typeof 
         }
 
         const auth = getStoredAuth();
-        if (!auth) {
+        if (!auth || !auth.activeAddress || !auth.tokens[auth.activeAddress]) {
           throw {
             code: -32001,
             message: "User is not authenticated",
           };
         }
         const rpcUrl = env.NEXT_PUBLIC_CHAIN_A_BASE_RPC_URL;
-        const fullRpcUrl = `${rpcUrl}/${auth.rpcToken}`;
+        const fullRpcUrl = `${rpcUrl}/${auth.tokens[auth.activeAddress]}`;
         const provider = http(fullRpcUrl)({ chain });
         const response = await provider.request({ method, params });
         return response;

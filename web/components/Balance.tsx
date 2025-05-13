@@ -20,24 +20,8 @@ export const Balance = ({ address, className = "" }: BalanceProps) => {
     address,
   });
 
-  if (!address || isLoading || balance === null) {
-    return (
-      <div className="animate-pulse flex space-x-4">
-        <div className="rounded-md bg-slate-300 h-6 w-6"></div>
-        <div className="flex items-center space-y-6">
-          <div className="h-2 w-28 bg-slate-300 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="border-2 border-base-content/30 rounded-md px-2 flex flex-col items-center max-w-fit cursor-pointer">
-        <div className="text-warning">Error</div>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="text-xs">Loading...</div>;
+  if (isError) return null;
 
   const formattedBalance = balance ? Number(formatEther(balance.value)) : 0;
 
