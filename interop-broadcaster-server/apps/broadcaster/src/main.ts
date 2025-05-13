@@ -3,7 +3,6 @@ import { ValidationPipe, } from "@nestjs/common";
 import { ConfigService, } from "@nestjs/config";
 import { NestFactory, } from "@nestjs/core";
 import helmet from "helmet";
-import * as bodyParser from 'body-parser';
 
 import { AppModule, } from "./app.module";
 import { MetricsModule, } from "./metrics/metrics.module";
@@ -35,10 +34,6 @@ async function bootstrap() {
     preflightContinue: false,
     optionsSuccessStatus: 204,
   },);
-  
-  // Explicitly configure body parsers before other middleware
-  app.use(bodyParser.json({ limit: '1mb' }));
-  app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }));
   
   app.setGlobalPrefix("api",);
   app.use(helmet(),);
