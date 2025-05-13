@@ -40,6 +40,8 @@ export default function useMintTestFunds() {
         throw new Error(data.message || "Failed to mint test funds");
       }
 
+      await new Promise(resolve => setTimeout(resolve, 500)); // Timeout for balances to update
+
       // Show success toast
       toast.success("Test funds have been minted to your wallet successfully!");
 

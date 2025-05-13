@@ -10,6 +10,7 @@ import MintFundsButton from "~~/components/MintFundsButton";
 import { TradeForm, TradeList } from "~~/components/Trade";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { TTBILL_TOKEN, Token, USDC_TOKEN } from "~~/contracts/tokens";
+import { useInterval } from "~~/hooks/use-interval";
 import useTradeEscrow, { EscrowTrade } from "~~/hooks/use-trade-escrow";
 import useTtbillToken from "~~/hooks/use-ttbill-token";
 import useUsdcToken from "~~/hooks/use-usdc-token";
@@ -38,6 +39,13 @@ export default function AddEscrowedTrade() {
     cancelTradeAsync,
     acceptTradeAndDepositAsync,
   } = useTradeEscrow();
+
+  // Set up auto-refresh for token balances
+  useInterval(() => {
+    usdc.refetchBalance();
+    ttbill.refetchBalance();
+  }, 500);
+
   const { address: myAddress } = useAccount();
   const walletChainId = useChainId();
   const [tradeState, setTradeState] = useState<TradeState>({
