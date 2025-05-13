@@ -56,12 +56,16 @@ export const createMetaMaskClient = ({ chain }: { chain: typeof chain1 | typeof 
 
         if (params?.from || chain.id !== chain1.id || method === "wallet_addEthereumChain") {
           // Signature request or non-chain1-requests
-          console.log("Sending request to wallet", { method, params });
           const response = await window.ethereum!.request({ method, params });
           return response;
         }
 
-        if (chain.id === chain1.id) {
+        const walletChainId: number =
+          (await window.ethereum
+            ?.request({ method: "eth_chainId" })
+            .then((res: string) => parseInt(res, 16))
+            .catch(() => 0)) || 0;
+        if (walletChainId === chain1.id) {
           try {
             const response = await window.ethereum!.request({ method, params });
             return response;
@@ -76,7 +80,6 @@ export const createMetaMaskClient = ({ chain }: { chain: typeof chain1 | typeof 
 
         const auth = getStoredAuth();
         if (!auth) {
-          console.warn("User is not authenticated");
           throw {
             code: -32001,
             message: "User is not authenticated",
