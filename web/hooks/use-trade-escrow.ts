@@ -95,13 +95,11 @@ export default function useTradeEscrow() {
   });
 
   const refetchAll = useCallback(() => {
-    console.log("Refetching 1");
     refetchMySwaps();
   }, [refetchMySwaps]);
 
   // Refetch all when the address changes
   useEffect(() => {
-    console.log("Refetching 2");
     refetchMySwaps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, refetchAll]);

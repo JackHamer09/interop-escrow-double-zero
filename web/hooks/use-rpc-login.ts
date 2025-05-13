@@ -137,24 +137,28 @@ export function useRpcLogin() {
     if (!isRpcAuthenticated || !fullRpcUrl) {
       throw new Error("User is not authenticated");
     }
-    return await addChain(client as any, {
-      chain: {
-        id: chain1.id,
-        name: chain1.name,
-        nativeCurrency: chain1.nativeCurrency,
-        rpcUrls: {
-          default: {
-            http: [fullRpcUrl],
+    try {
+      await addChain(client as any, {
+        chain: {
+          id: chain1.id,
+          name: chain1.name,
+          nativeCurrency: chain1.nativeCurrency,
+          rpcUrls: {
+            default: {
+              http: [fullRpcUrl],
+            },
+          },
+          blockExplorers: {
+            default: {
+              name: "Block Explorer",
+              url: env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL,
+            },
           },
         },
-        blockExplorers: {
-          default: {
-            name: "Block Explorer",
-            url: "http://localhost:3010",
-          },
-        },
-      },
-    });
+      });
+    } catch (error) {
+      console.warn(`Add network to wallet error: ${error}`);
+    }
   };
 
   return {
