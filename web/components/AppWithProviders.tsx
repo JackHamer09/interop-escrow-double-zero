@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
 import { Header } from "~~/components/Header";
 import { MobileBlocker } from "~~/components/MobileBlocker";
+import { PageLoader } from "~~/components/PageLoader";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
 const App = ({ children }: { children: React.ReactNode }) => {
@@ -15,6 +16,7 @@ const App = ({ children }: { children: React.ReactNode }) => {
         <Header />
         <main className="relative flex flex-col flex-1">{children}</main>
       </div>
+      <PageLoader />
       <MobileBlocker />
       <Toaster position="bottom-center" />
     </>

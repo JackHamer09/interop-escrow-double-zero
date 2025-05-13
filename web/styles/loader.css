@@ -1,0 +1,54 @@
+/* Custom animations for loader */
+@keyframes initialLoad {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 70%;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes progressPulse {
+  0% {
+    opacity: 0.8;
+    background-position: 0% 50%;
+  }
+  50% {
+    opacity: 1;
+    background-position: 100% 50%;
+  }
+  100% {
+    opacity: 0.8;
+    background-position: 0% 50%;
+  }
+}
+
+.initial-progress {
+  animation: initialLoad 1.5s ease-out forwards;
+}
+
+.progress-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.progress-bar-pulse {
+  animation: progressPulse 2s ease-in-out infinite;
+  background-size: 200% 200%;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-500 {
+  animation-delay: 500ms;
+}
