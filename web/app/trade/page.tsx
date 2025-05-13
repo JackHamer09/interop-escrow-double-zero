@@ -6,6 +6,7 @@ import { useBoolean } from "usehooks-ts";
 import { Address, isAddress, parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
+import MintFundsButton from "~~/components/MintFundsButton";
 import { TradeForm, TradeList } from "~~/components/Trade";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { TTBILL_TOKEN, Token, USDC_TOKEN } from "~~/contracts/tokens";
@@ -187,7 +188,10 @@ export default function AddEscrowedTrade() {
               onCancelTrade={handleCancelTrade}
             />
 
-            <h2 className="mt-12 mb-4 font-medium text-2xl text-center">Propose Trade</h2>
+            <div className="flex justify-between items-center mt-12 mb-4">
+              <h2 className="font-medium text-2xl">Propose Trade</h2>
+              <MintFundsButton variant="outline" size="sm" onMintSuccess={refetchTokenInfo} />
+            </div>
 
             {walletChainId === chain1.id ? (
               <div>
@@ -207,8 +211,9 @@ export default function AddEscrowedTrade() {
               <Alert variant="warning" className="mb-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  In this demo, you can only propose trades from the {chain1.name} network. If you wish to propose a
-                  trade from your current wallet, switch it in your MetaMask wallet to continue.
+                  In current implementation of the demo, you can only propose trades from the {chain1.name} network. If
+                  you wish to propose a trade from your current wallet, switch network in your MetaMask wallet to
+                  continue.
                 </AlertDescription>
               </Alert>
             )}

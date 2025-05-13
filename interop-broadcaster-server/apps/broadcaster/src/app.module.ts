@@ -11,6 +11,8 @@ import { MetricsMiddleware, } from "./middlewares/metrics.middleware";
 import { ClientService } from "./client";
 import { TransactionWatchService } from "./transaction-watch";
 import { InteropBroadcasterService, InteropTransactionStatusController } from "./interop-broadcaster";
+import { MintTestFundsService, MintTestFundsController } from "./mint-test-funds";
+import { json } from "express";
 
 @Module({
   imports: [
@@ -29,16 +31,20 @@ import { InteropBroadcasterService, InteropTransactionStatusController } from ".
     ClientService,
     TransactionWatchService,
     InteropBroadcasterService,
+    MintTestFundsService,
   ],
   controllers: [
     HealthController,
-
     InteropTransactionStatusController,
+    MintTestFundsController,
   ],
 },)
 export class AppModule implements NestModule, OnModuleInit {
   configure(consumer: MiddlewareConsumer,) {
-    consumer.apply(MetricsMiddleware,).forRoutes("*",);
+    // Apply JSON body parser middleware for all routes with a larger size limit
+    consumer
+      .apply(json({ limit: '50mb' }), MetricsMiddleware)
+      .forRoutes("*");
   }
 
   constructor(
