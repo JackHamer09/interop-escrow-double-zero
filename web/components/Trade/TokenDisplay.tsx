@@ -1,0 +1,30 @@
+import React from "react";
+import Image from "next/image";
+import { ShortAddress } from "./ShortAddress";
+import { Address } from "viem";
+import { Token } from "~~/contracts/tokens";
+import { formatTokenWithDecimals } from "~~/utils/currency";
+
+interface TokenDisplayProps {
+  token: Token;
+  amount: bigint;
+  party: Address;
+  myAddress?: Address;
+  isRight?: boolean;
+}
+
+export const TokenDisplay: React.FC<TokenDisplayProps> = ({ token, amount, party, myAddress, isRight = false }) => {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className={`flex items-center gap-x-2 ${isRight ? "justify-end" : ""} ${isRight ? "" : "mr-2"}`}>
+        <Image src={token.logo} alt={token.symbol} width={20} height={20} className="rounded-xl" />
+        <span>{formatTokenWithDecimals(amount, 18)}</span>
+        <span>{token.symbol}</span>
+      </div>
+      {myAddress === party && (
+        <span className={`text-sm text-muted-foreground ${isRight ? "text-right" : ""}`}>You</span>
+      )}
+      {myAddress !== party && <ShortAddress address={party} isRight={isRight} />}
+    </div>
+  );
+};

@@ -12,6 +12,7 @@ import {
   L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
   REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
 } from "~~/utils/constants";
+import { env } from "~~/utils/env";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 interface InteropCallStarter {
@@ -163,7 +164,7 @@ export class InteropTransactionBuilder {
   public async waitUntilInteropTxProcessed(transactionHash: Hash, pollingInterval = 250) {
     while (true) {
       const data = await fetch(
-        `http://localhost:3030/api/interop-transaction-status/?transactionHash=${transactionHash}&senderChainId=${this.fromChainId}`,
+        `${env.NEXT_PUBLIC_INTEROP_BROADCASTER_API}/api/interop-transaction-status/?transactionHash=${transactionHash}&senderChainId=${this.fromChainId}`,
       ).then(res => res.json());
       if (data.status === "not_found") {
         throw new Error(`Interop transaction not found: ${transactionHash}`);
