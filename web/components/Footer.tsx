@@ -1,6 +1,9 @@
 import React from "react";
 import { HeartIcon } from "@heroicons/react/24/solid";
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { cn } from "~~/utils/cn";
+import { env } from "~~/utils/env";
+import { chain1 } from "~~/services/web3/wagmiConfig";
 
 /**
  * Site footer
@@ -27,6 +30,16 @@ export const Footer = ({ className }: { className?: string }) => {
         rel="noreferrer"
       >
         <span className="hover:underline">Moonsong Labs</span>
+      </a>
+      <div className="mx-2">|</div>
+      <a
+        className="flex justify-center items-center gap-1"
+        href={env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <span className="hover:underline">{chain1.name} Explorer</span>
+        <ArrowTopRightOnSquareIcon className="h-3 w-3" />
       </a>
     </div>
   );

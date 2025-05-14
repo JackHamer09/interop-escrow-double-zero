@@ -7,6 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import CopyToClipboard from "react-copy-to-clipboard";
 import { Address } from "viem";
 import { useDisconnect } from "wagmi";
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import { env } from "~~/utils/env";
 
 interface AddressInfoDropdownProps {
   address: Address;
@@ -32,6 +34,7 @@ const CopyAddressButton = ({ address }: { address: Address }) => {
 
 export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
   const { disconnect } = useDisconnect();
+  const explorerAddressUrl = `${env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL}/address/${address}`;
 
   return (
     <DropdownMenu>
@@ -46,6 +49,17 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
       <DropdownMenuContent align="end" sideOffset={4}>
         <DropdownMenuItem>
           <CopyAddressButton address={address} />
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a
+            href={explorerAddressUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1 cursor-pointer w-full"
+          >
+            View on Explorer
+            <ArrowTopRightOnSquareIcon className="h-3 w-3 ml-1" />
+          </a>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => disconnect()}>Disconnect</DropdownMenuItem>
       </DropdownMenuContent>

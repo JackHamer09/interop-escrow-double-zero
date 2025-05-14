@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { $fetch } from "ofetch";
 import { SiweMessage } from "siwe";
