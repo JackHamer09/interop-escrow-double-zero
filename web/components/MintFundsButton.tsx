@@ -1,10 +1,9 @@
 "use client";
 
+import { GiftIcon } from "lucide-react";
+import { useAccount } from "wagmi";
 import { Button } from "~~/components/ui/button";
 import useMintTestFunds from "~~/hooks/use-mint-test-funds";
-import { GiftIcon } from "lucide-react";
-import { useAccount, useChainId } from "wagmi";
-import { chain1 } from "~~/services/web3/wagmiConfig";
 
 interface MintFundsButtonProps {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
@@ -20,7 +19,6 @@ export default function MintFundsButton({
   onMintSuccess,
 }: MintFundsButtonProps) {
   const { isConnected } = useAccount();
-  const chainId = useChainId();
   const { isMinting, mintTestFunds } = useMintTestFunds();
 
   const handleMint = async () => {
@@ -31,7 +29,7 @@ export default function MintFundsButton({
   };
 
   // Only show on Chain A (chain1)
-  if (!isConnected || chainId !== chain1.id) {
+  if (!isConnected) {
     return null;
   }
 

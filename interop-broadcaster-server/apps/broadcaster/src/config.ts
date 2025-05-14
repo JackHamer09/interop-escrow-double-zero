@@ -11,6 +11,8 @@ const {
   MINTER_PRIVATE_KEY,
   USDC_CHAIN_A_ADDRESS,
   TTBILL_CHAIN_A_ADDRESS,
+  USDC_ASSET_ID,
+  TTBILL_ASSET_ID,
   ETH_MINT_AMOUNT,
   USDC_MINT_AMOUNT,
   TTBILL_MINT_AMOUNT,
@@ -28,6 +30,8 @@ export default {
   tokens: {
     usdcChainA: USDC_CHAIN_A_ADDRESS,
     ttbillChainA: TTBILL_CHAIN_A_ADDRESS,
+    usdcAssetId: USDC_ASSET_ID,
+    ttbillAssetId: TTBILL_ASSET_ID,
   },
   mintAmounts: {
     eth: ETH_MINT_AMOUNT ? parseUnits(ETH_MINT_AMOUNT, 18) : parseUnits("10", 18),

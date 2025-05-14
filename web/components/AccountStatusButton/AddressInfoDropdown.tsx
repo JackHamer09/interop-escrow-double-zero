@@ -4,11 +4,12 @@ import { useState } from "react";
 import { BlockieAvatar } from "../BlockieAvatar";
 import { Button } from "../ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { ChevronDownIcon } from "lucide-react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import { Address } from "viem";
 import { useDisconnect } from "wagmi";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
-import { ChevronDownIcon } from "lucide-react";
+import { chain1 } from "~~/services/web3/wagmiConfig";
 import { env } from "~~/utils/env";
 
 interface AddressInfoDropdownProps {
@@ -59,7 +60,7 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
             rel="noreferrer"
             className="flex items-center gap-1 cursor-pointer w-full"
           >
-            View on Explorer
+            View on {chain1.name} Explorer
             <ArrowTopRightOnSquareIcon className="h-3 w-3 ml-1" />
           </a>
         </DropdownMenuItem>

@@ -1,4 +1,4 @@
-import { getAddress, Hash, PublicClient, type TransactionReceipt } from "viem";
+import { getAddress, Hash, keccak256, PublicClient, toBytes, type TransactionReceipt } from "viem";
 import * as ethers from "ethers";
 import * as zksync from "zksync-ethers-interop-support";
 import { Injectable, Logger } from "@nestjs/common";
@@ -127,17 +127,16 @@ export class InteropBroadcasterService {
         transactionHash: receipt.transactionHash,
       });
   
-      const hexTx = zksync.utils.serializeEip712(interopTx);
-      const broadcastTx = await destinationProvider.broadcastTransaction(hexTx);
-      await broadcastTx.wait();
-      this.logger.debug(`[${senderChain.name}] Interop transaction sent to ${destinationChain.name}: ${broadcastTx.hash}`);
+      const serializedTransaction = zksync.utils.serializeEip712(interopTx) as Hash;
+      const transactionHash = await this.broadcastTransaction(destinationProvider, serializedTransaction);
+      this.logger.debug(`[${senderChain.name}] Interop transaction sent to ${destinationChain.name}: ${transactionHash}`);
   
       this.transactionStatusMap.set(transactionKey, {
         status: 'completed',
         senderChainId: chainId,
         destinationChainId,
         transactionHash: receipt.transactionHash,
-        broadcastTransactionHash: broadcastTx.hash as Hash,
+        broadcastTransactionHash: transactionHash,
       });
     } catch (err) {
       this.logger.error(`Interop transaction processing failed for chain ${chainId}, transaction: ${receipt.transactionHash}`);
@@ -149,6 +148,27 @@ export class InteropBroadcasterService {
         destinationChainId: currentTx?.destinationChainId,
         transactionHash: receipt.transactionHash,
       });
+    }
+  }
+
+  private async broadcastTransaction(
+    destinationProvider: zksync.Provider,
+    serializedTransaction: Hash
+  ): Promise<Hash | null> {
+    try {
+      const broadcastTx = await destinationProvider.broadcastTransaction(serializedTransaction);
+      await broadcastTx.wait();
+      return broadcastTx.hash as Hash;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("known transaction")) {
+        // TODO: this produces incorrect hash for some reason
+        // const txHash = keccak256(toBytes(serializedTransaction));
+        // this.logger.warn(`Transaction already known: ${txHash}`);
+        // await destinationProvider.waitForTransaction(txHash);
+        // return txHash;
+        return null;
+      }
+      throw error;
     }
   }
   
