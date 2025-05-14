@@ -26,7 +26,7 @@ export const MobileBlocker = () => {
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col items-center justify-center p-6 text-center">
       <div className="mb-6 relative w-20 h-20">
-        <Image alt="Double Zero Swap logo" fill src="/logo-dark.svg" />
+        <Image alt="ZKsync Prividium logo" fill src="/logo-dark.svg" />
       </div>
       <h2 className="text-2xl font-semibold mb-3">Desktop Only</h2>
       <p className="text-gray-400 max-w-xs">Sorry, this demo is currently supported only on desktop devices.</p>

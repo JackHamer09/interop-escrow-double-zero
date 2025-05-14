@@ -9,7 +9,7 @@ export const Header = () => {
     <div className="flex h-[74px] justify-between z-20 w-full p-4">
       <Link href="/trade" passHref className="flex items-center gap-2 ml-4 mr-6 shrink-0">
         <div className="flex relative w-10 h-10">
-          <Image alt="Double Zero Swap logo" className="cursor-pointer" fill src="/logo-dark.svg" />
+          <Image alt="ZKsync Prividium logo" className="cursor-pointer" fill src="/logo-dark.svg" />
         </div>
         <span className="text-xl font-normal">Escrow Trade</span>
       </Link>

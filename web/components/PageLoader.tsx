@@ -69,7 +69,7 @@ export const PageLoader = () => {
       className={`fixed inset-0 z-50 bg-gradient-to-b from-gray-900 to-black flex flex-col items-center justify-center p-6 text-center transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}
     >
       <div className="relative w-28 h-28 mb-8">
-        <Image alt="Double Zero Swap logo" fill src="/logo-dark.svg" />
+        <Image alt="ZKsync Prividium logo" fill src="/logo-dark.svg" />
       </div>
       <div className="mb-8">
         <h2 className="text-3xl font-bold mb-2 text-white">ZKsync Prividium Escrow Trade</h2>
