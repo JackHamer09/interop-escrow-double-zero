@@ -17,42 +17,38 @@ export default function useMintTestFunds() {
 
     setIsMinting(true);
 
-    // Show loading toast that we'll dismiss manually
-    const loadingToast = toast.loading("Minting tokens for you. This may take a minute...");
-
     try {
-      // Make a POST request but use query parameters instead of JSON body
-      const response = await fetch(
-        `${env.NEXT_PUBLIC_INTEROP_BROADCASTER_API}/api/mint-test-funds?address=${address}`,
+      // Complete minting process with a single toast.promise
+      await toast.promise(
+        (async () => {
+          const response = await fetch(
+            `${env.NEXT_PUBLIC_INTEROP_BROADCASTER_API}/api/mint-test-funds?address=${address}`,
+            {
+              method: "POST",
+            },
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to mint test funds");
+          }
+
+          // Wait for balances to update
+          await new Promise(resolve => setTimeout(resolve, 5000));
+
+          return true;
+        })(),
         {
-          method: "POST",
+          loading: "Minting tokens for you. This may take a minute...",
+          success: "Test funds have been minted to your wallet successfully!",
+          error: err => (err instanceof Error ? err.message : "Failed to mint test funds"),
         },
       );
 
-      // Parse the JSON response
-      const data = await response.json();
-
-      // Dismiss the loading toast
-      toast.dismiss(loadingToast);
-
-      // Check if the request was successful
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to mint test funds");
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Timeout for balances to update
-
-      // Show success toast
-      toast.success("Test funds have been minted to your wallet successfully!");
-
-      // Return the success status
       return true;
     } catch (error) {
       console.error("Error minting test funds:", error);
-      // Dismiss the loading toast if it's still showing
-      toast.dismiss(loadingToast);
-      // Show error toast
-      toast.error(error instanceof Error ? error.message : "Failed to mint test funds");
       return false;
     } finally {
       setIsMinting(false);
