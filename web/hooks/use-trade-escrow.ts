@@ -8,6 +8,7 @@ import { useAccount, useReadContract, useSwitchChain, useWriteContract } from "w
 import { USDC_TOKEN } from "~~/contracts/tokens";
 import { TRADE_ESCROW_ABI, TRADE_ESCROW_ADDRESS } from "~~/contracts/trade-escrow";
 import { chain1 } from "~~/services/web3/wagmiConfig";
+import { formatTokenWithDecimals } from "~~/utils/currency";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 export const options = {
@@ -125,6 +126,16 @@ export default function useTradeEscrow() {
       return;
     }
 
+    // Check if the user has sufficient balance to propose the trade
+    const tokenInfo =
+      tokenA === USDC_TOKEN.address ? { token: usdcToken, symbol: "USDC" } : { token: ttbillToken, symbol: "TTBILL" };
+
+    // Check if we have enough balance
+    if ((tokenInfo.token.balance ?? 0n) < amountA) {
+      toast.error(`Insufficient ${tokenInfo.symbol} balance for this trade.`);
+      return false;
+    }
+
     // Check if we need to approve the token that Party A will deposit
     await checkAndApproveToken(tokenA, amountA);
 
@@ -195,6 +206,23 @@ export default function useTradeEscrow() {
   const acceptTradeAndDepositAsync = async (tradeId: bigint) => {
     const trade = findTrade(tradeId);
     await switchChainIfNotSet(Number(trade.myExpectedChainId));
+
+    // Check if the user has sufficient balance to accept the trade
+    if (trade.partyB === address) {
+      // Determine which token will be deposited by Party B
+      const tokenInfo =
+        trade.tokenB === USDC_TOKEN.address
+          ? { token: usdcToken, symbol: "USDC" }
+          : { token: ttbillToken, symbol: "TTBILL" };
+
+      // Check if we have enough balance
+      if ((tokenInfo.token.balance ?? 0n) < trade.amountB) {
+        toast.error(
+          `Insufficient ${tokenInfo.symbol} balance for this trade. You need ${formatTokenWithDecimals(trade.amountB, 18)} ${tokenInfo.symbol}.`,
+        );
+        return false;
+      }
+    }
 
     // Handle token approvals for chain1 case
     if (trade.myExpectedChainId === BigInt(chain1.id) && trade.partyB === address) {

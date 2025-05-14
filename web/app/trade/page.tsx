@@ -147,7 +147,7 @@ export default function AddEscrowedTrade() {
 
     setIsAddingTrade(true);
     try {
-      await proposeTradeAndDepositAsync(
+      const result = await proposeTradeAndDepositAsync(
         tradeState.partyB,
         tradeState.chainB,
         tradeState.tokenA.address,
@@ -156,14 +156,16 @@ export default function AddEscrowedTrade() {
         tradeState.amountB,
       );
 
-      // Reset amount fields after successful trade
-      setTradeState(prev => ({
-        ...prev,
-        amountA: 0n,
-        amountB: 0n,
-        displayAmountA: "",
-        displayAmountB: "",
-      }));
+      // Only reset amount fields if the trade was successful (not false)
+      if (result !== false) {
+        setTradeState(prev => ({
+          ...prev,
+          amountA: 0n,
+          amountB: 0n,
+          displayAmountA: "",
+          displayAmountB: "",
+        }));
+      }
     } finally {
       refetchTokenInfo();
       refetchTrades();

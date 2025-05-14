@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { CheckCircle, InfoIcon, WalletIcon, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, InfoIcon, WalletIcon, XCircle } from "lucide-react";
 import { Chain, isAddress } from "viem";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
@@ -42,6 +42,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({
   disabled,
 }) => {
   const [isMaxSelected, setIsMaxSelected] = React.useState(false);
+  const [hasInsufficientBalance, setHasInsufficientBalance] = React.useState(false);
 
   const handleMaxClick = () => {
     if (disabled || !balance) return;
@@ -57,12 +58,29 @@ export const PoolCard: React.FC<PoolCardProps> = ({
     setIsMaxSelected(true);
   };
 
-  // Reset max selected state when amount changes manually
+  // Check if the entered amount exceeds the user's balance
   React.useEffect(() => {
+    if (displayAmount && displayBalance) {
+      try {
+        // Convert both to numeric values for comparison
+        const amountValue = parseFloat(displayAmount);
+        const balanceValue = parseFloat(formatTokenWithDecimals(balance, token.decimals));
+
+        // Set insufficient balance flag
+        setHasInsufficientBalance(amountValue > balanceValue);
+      } catch (error) {
+        // If there's an error in parsing, reset the insufficient balance flag
+        setHasInsufficientBalance(false);
+      }
+    } else {
+      setHasInsufficientBalance(false);
+    }
+
+    // Reset max selected state when amount changes manually
     if (displayAmount !== formatTokenWithDecimals(balance, token.decimals)) {
       setIsMaxSelected(false);
     }
-  }, [displayAmount, balance, token.decimals]);
+  }, [displayAmount, balance, token.decimals, displayBalance]);
 
   return (
     <Card>
@@ -142,27 +160,40 @@ export const PoolCard: React.FC<PoolCardProps> = ({
           <div className="flex flex-col w-full">
             <input
               placeholder="0"
-              className={cn("bg-transparent appearance-none focus:outline-none text-3xl", disabled && "opacity-50")}
+              className={cn(
+                "bg-transparent appearance-none focus:outline-none text-3xl",
+                disabled && "opacity-50",
+                hasInsufficientBalance && "text-red-500",
+              )}
               value={displayAmount}
               onChange={onAmountChange}
               disabled={disabled}
             />
 
             {displayBalance && (
-              <button
-                type="button"
-                className={cn(
-                  "flex items-center gap-x-1 text-sm self-start mt-1 px-2 py-0.5",
-                  isMaxSelected
-                    ? "bg-blue-500/20 rounded text-blue-400 font-medium cursor-default"
-                    : "text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded cursor-pointer",
+              <div className="flex items-center gap-x-2 mt-1">
+                <button
+                  type="button"
+                  className={cn(
+                    "flex items-center gap-x-1 text-sm self-start px-2 py-0.5",
+                    isMaxSelected
+                      ? "bg-blue-500/20 rounded text-blue-400 font-medium cursor-default"
+                      : "text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded cursor-pointer",
+                  )}
+                  onClick={handleMaxClick}
+                  disabled={disabled || isMaxSelected}
+                >
+                  <WalletIcon className="h-3 w-3" />
+                  <span>Max: {formatTokenWithDecimals(balance, token.decimals)}</span>
+                </button>
+
+                {hasInsufficientBalance && (
+                  <div className="flex items-center gap-x-1 text-sm text-red-500">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>Insufficient balance</span>
+                  </div>
                 )}
-                onClick={handleMaxClick}
-                disabled={disabled || isMaxSelected}
-              >
-                <WalletIcon className="h-3 w-3" />
-                <span>Max: {formatTokenWithDecimals(balance, token.decimals)}</span>
-              </button>
+              </div>
             )}
           </div>
 
