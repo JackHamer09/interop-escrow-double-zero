@@ -8,6 +8,7 @@ import CopyToClipboard from "react-copy-to-clipboard";
 import { Address } from "viem";
 import { useDisconnect } from "wagmi";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon } from "lucide-react";
 import { env } from "~~/utils/env";
 
 interface AddressInfoDropdownProps {
@@ -44,6 +45,7 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
           <span className="ml-1.5 text-base font-normal">
             {address.slice(0, 6)}...{address.slice(-4)}
           </span>
+          <ChevronDownIcon className="h-4 w-4 ml-1" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={4}>

@@ -7,7 +7,7 @@ import { Address, isAddress, parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
 import MintFundsButton from "~~/components/MintFundsButton";
-import { TradeForm, TradeList } from "~~/components/Trade";
+import { TokenBalances, TradeForm, TradeList } from "~~/components/Trade";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { TTBILL_TOKEN, Token, USDC_TOKEN } from "~~/contracts/tokens";
 import { useInterval } from "~~/hooks/use-interval";
@@ -29,6 +29,7 @@ interface TradeState {
 }
 
 export default function AddEscrowedTrade() {
+  const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
   const usdc = useUsdcToken();
   const ttbill = useTtbillToken();
   const {
@@ -63,6 +64,19 @@ export default function AddEscrowedTrade() {
 
   const tokenABalance = tradeState.tokenA.symbol === USDC_TOKEN.symbol ? usdc.balance : ttbill.balance;
   const tokenBBalance = tradeState.tokenB.symbol === USDC_TOKEN.symbol ? usdc.balance : ttbill.balance;
+
+  const handleRefreshBalances = async () => {
+    setIsRefreshingBalances(true);
+    try {
+      await Promise.all([
+        new Promise(resolve => setTimeout(resolve, 500)), // Simulate a delay
+        usdc.refetchBalance(),
+        ttbill.refetchBalance(),
+      ]);
+    } finally {
+      setIsRefreshingBalances(false);
+    }
+  };
 
   const handleTokenSelect = (value: string, tokenType: "tokenA" | "tokenB") => {
     const selected = value === USDC_TOKEN.symbol ? USDC_TOKEN : TTBILL_TOKEN;
@@ -226,6 +240,14 @@ export default function AddEscrowedTrade() {
               </Alert>
             )}
           </div>
+
+          {/* Token Balances Section */}
+          <TokenBalances
+            usdcBalance={usdc.balance ?? 0n}
+            ttbillBalance={ttbill.balance ?? 0n}
+            isRefreshing={isRefreshingBalances}
+            onRefresh={handleRefreshBalances}
+          />
         </HiddenContent>
       </div>
     </div>

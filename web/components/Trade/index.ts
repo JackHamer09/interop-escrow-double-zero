@@ -5,3 +5,5 @@ export * from "./TradeForm";
 export * from "./TradeItem";
 export * from "./TradeList";
 export * from "./TradeProgress";
+export * from "./TokenBalances";
+export * from "./RefreshBalancesButton";
