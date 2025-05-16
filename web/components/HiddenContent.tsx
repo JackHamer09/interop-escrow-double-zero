@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { ConnectWalletButton } from "./ConnectWalletButton";
-import { CheckCircleIcon, CircleDotIcon, XCircleIcon } from "lucide-react";
+import { ExplanationScreen } from "./ExplanationScreen";
+import { CheckCircleIcon, CircleDotIcon, HelpCircleIcon, InfoIcon, XCircleIcon } from "lucide-react";
 import { useAccount, useSwitchChain } from "wagmi";
+import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { Button } from "~~/components/ui/button";
 import { useConnectionStatus } from "~~/hooks/use-connection-status";
 import { useRpcLogin } from "~~/hooks/use-rpc-login";
@@ -15,6 +18,7 @@ export default function HiddenContent({ children, className }: { children: React
   const { isRpcAuthenticated, login, saveChainToWallet } = useRpcLogin();
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
+  const [showExplanation, setShowExplanation] = useState(false);
 
   const handleAuthorize = async () => {
     await login();
@@ -70,11 +74,15 @@ export default function HiddenContent({ children, className }: { children: React
     return null;
   };
 
+  const handleExplanationClose = () => {
+    setShowExplanation(false);
+  };
+
   return (
     <div className="relative">
       <div className="opacity-50">{children}</div>
       <div className={cn("fixed -inset-4 flex items-center justify-center backdrop-blur-sm z-10", className)}>
-        <div className="rounded-lg bg-black px-6 py-4 text-lg font-medium text-neutral-50 shadow-lg flex flex-col items-center gap-4">
+        <div className="w-[29rem] rounded-lg bg-black px-6 py-4 text-lg font-medium text-neutral-50 shadow-lg flex flex-col items-center gap-4">
           {/* Wallet Disconnected State */}
           {contentState === "wallet-disconnected" && (
             <>
@@ -84,6 +92,15 @@ export default function HiddenContent({ children, className }: { children: React
                   <ConnectWalletButton />
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-1 mt-2 text-sm text-muted-foreground"
+                onClick={() => setShowExplanation(true)}
+              >
+                <HelpCircleIcon className="h-4 w-4" />
+                Need help setting up?
+              </Button>
             </>
           )}
 
@@ -134,11 +151,67 @@ export default function HiddenContent({ children, className }: { children: React
                     Use {chain1.name} in connected MetaMask
                   </Button>
                 )}
+
+                {/* Context-specific tip */}
+                {(!isSupportedChainSelected || !isAbleToRequestWalletChain) && (
+                  <Alert variant="info">
+                    <InfoIcon className="h-4 w-4" />
+                    <AlertDescription>
+                      <ul className="text-xs">
+                        <li>For User 1 - Click Authorize button and then &apos;Use Chain A&apos; button</li>
+                        <li>
+                          For User 2 - After{" "}
+                          <a
+                            href="https://chain-b-block-explorer.zksync.dev/login"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold underline"
+                          >
+                            authorizing
+                          </a>{" "}
+                          via Block Explorer, ensure &apos;Chain B&apos; is selected in MetaMask
+                        </li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {isSupportedChainSelected &&
+                  isAbleToRequestWalletChain &&
+                  !hasChain1RpcConnection &&
+                  chainId === chain1.id && (
+                    <Alert variant="info">
+                      <InfoIcon className="h-4 w-4" />
+                      <AlertDescription>
+                        {chainId === chain1.id ? (
+                          <span className="text-xs">
+                            Add or switch MetaMask network by clicking &quot;Use Chain A&quot; button below
+                          </span>
+                        ) : (
+                          <span className="text-xs">
+                            Authorize in-app RPC connection by clicking Authorize button below
+                          </span>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-1 text-sm text-muted-foreground"
+                  onClick={() => setShowExplanation(true)}
+                >
+                  <HelpCircleIcon className="h-4 w-4" />
+                  See detailed setup instructions
+                </Button>
               </div>
             </>
           )}
         </div>
       </div>
+
+      {showExplanation && <ExplanationScreen onClose={handleExplanationClose} isFirstVisit={false} />}
     </div>
   );
 }

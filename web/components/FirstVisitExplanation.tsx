@@ -10,12 +10,16 @@ interface FirstVisitExplanationProps {
 export const FirstVisitExplanation: React.FC<FirstVisitExplanationProps> = ({ children }) => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
 
   useEffect(() => {
     setIsMounted(true);
     const hasSeenExplanation = localStorage.getItem("explanationShown");
     if (!hasSeenExplanation) {
       setShowExplanation(true);
+      setIsFirstVisit(true);
+    } else {
+      setIsFirstVisit(false);
     }
   }, []);
 
@@ -32,7 +36,7 @@ export const FirstVisitExplanation: React.FC<FirstVisitExplanationProps> = ({ ch
   return (
     <>
       {children}
-      {showExplanation && <ExplanationScreen onClose={handleClose} />}
+      {showExplanation && <ExplanationScreen onClose={handleClose} isFirstVisit={isFirstVisit} />}
     </>
   );
 };
