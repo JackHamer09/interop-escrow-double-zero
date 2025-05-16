@@ -185,11 +185,11 @@ export default function HiddenContent({ children, className }: { children: React
                       <AlertDescription>
                         {chainId === chain1.id ? (
                           <span className="text-xs">
-                            Add or switch MetaMask network by clicking &quot;Use Chain A&quot; button below
+                            Add or switch MetaMask network by clicking &quot;Use Chain A&quot; button above
                           </span>
                         ) : (
                           <span className="text-xs">
-                            Authorize in-app RPC connection by clicking Authorize button below
+                            Authorize in-app RPC connection by clicking Authorize button above
                           </span>
                         )}
                       </AlertDescription>
