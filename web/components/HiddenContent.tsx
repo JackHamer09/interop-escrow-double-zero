@@ -78,7 +78,7 @@ export default function HiddenContent({ children, className }: { children: React
           {/* Wallet Disconnected State */}
           {contentState === "wallet-disconnected" && (
             <>
-              <div className="text-center">Connect MetaMask wallet to start</div>
+              <div className="text-center">Connect MetaMask wallet</div>
               <div className="w-full flex justify-center">
                 <div className="w-full max-w-xs">
                   <ConnectWalletButton />

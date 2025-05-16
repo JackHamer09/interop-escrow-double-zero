@@ -24,7 +24,7 @@ export const MobileBlocker = () => {
   if (!isMobile) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col items-center justify-center p-6 text-center">
+    <div className="fixed inset-0 z-[100] bg-black bg-opacity-95 flex flex-col items-center justify-center p-6 text-center">
       <div className="mb-6 relative w-20 h-20">
         <Image alt="ZKsync Prividium logo" fill src="/logo-dark.svg" />
       </div>

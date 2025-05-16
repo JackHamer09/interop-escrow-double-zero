@@ -1,9 +1,12 @@
+"use client";
+
 import React from "react";
-import { HeartIcon } from "@heroicons/react/24/solid";
+import { ExplanationButton } from "./ExplanationScreen";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import { HeartIcon } from "@heroicons/react/24/solid";
+import { chain1 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
 import { env } from "~~/utils/env";
-import { chain1 } from "~~/services/web3/wagmiConfig";
 
 /**
  * Site footer
@@ -31,6 +34,8 @@ export const Footer = ({ className }: { className?: string }) => {
       >
         <span className="hover:underline">Moonsong Labs</span>
       </a>
+      <div className="mx-2">|</div>
+      <ExplanationButton />
       <div className="mx-2">|</div>
       <a
         className="flex justify-center items-center gap-1"

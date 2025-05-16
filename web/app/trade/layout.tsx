@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { Footer } from "~~/components/Footer";
+import { FirstVisitExplanation } from "~~/components/FirstVisitExplanation";
 import "~~/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -9,10 +10,10 @@ export const metadata: Metadata = {
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <>
+    <FirstVisitExplanation>
       {children}
       <Footer />
-    </>
+    </FirstVisitExplanation>
   );
 };
 
