@@ -7,9 +7,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ChevronDownIcon } from "lucide-react";
 import CopyToClipboard from "react-copy-to-clipboard";
 import { Address } from "viem";
-import { useDisconnect } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
-import { chain1 } from "~~/services/web3/wagmiConfig";
+import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { env } from "~~/utils/env";
 
 interface AddressInfoDropdownProps {
@@ -36,7 +36,16 @@ const CopyAddressButton = ({ address }: { address: Address }) => {
 
 export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
   const { disconnect } = useDisconnect();
-  const explorerAddressUrl = `${env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL}/address/${address}`;
+  const { chainId } = useAccount();
+
+  // Determine which explorer URL to use based on chainId
+  const explorerUrl =
+    chainId === chain2.id ? env.NEXT_PUBLIC_CHAIN_B_BLOCK_EXPLORER_URL : env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL;
+
+  // Determine which chain name to display
+  const chainName = chainId === chain2.id ? chain2.name : chain1.name;
+
+  const explorerAddressUrl = `${explorerUrl}/address/${address}`;
 
   return (
     <DropdownMenu>
@@ -60,7 +69,7 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
             rel="noreferrer"
             className="flex items-center gap-1 cursor-pointer w-full"
           >
-            View on {chain1.name} Explorer
+            View on {chainName} Explorer
             <ArrowTopRightOnSquareIcon className="h-3 w-3 ml-1" />
           </a>
         </DropdownMenuItem>

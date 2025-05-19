@@ -9,6 +9,7 @@ import { useConnectionStatus } from "~~/hooks/use-connection-status";
 import { useRpcLogin } from "~~/hooks/use-rpc-login";
 import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
+import { env } from "~~/utils/env";
 
 type ContentState = "connected" | "wallet-disconnected" | "connection-issues";
 
@@ -162,7 +163,7 @@ export default function HiddenContent({ children, className }: { children: React
                         <li>
                           For User 2 - After{" "}
                           <a
-                            href="https://chain-b-block-explorer.zksync.dev/login"
+                            href={`${env.NEXT_PUBLIC_CHAIN_B_BLOCK_EXPLORER_URL}/login`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-semibold underline"

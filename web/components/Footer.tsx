@@ -4,7 +4,7 @@ import React from "react";
 import { ExplanationButton } from "./ExplanationScreen";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { HeartIcon } from "@heroicons/react/24/solid";
-import { chain1 } from "~~/services/web3/wagmiConfig";
+import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
 import { env } from "~~/utils/env";
 
@@ -13,7 +13,7 @@ import { env } from "~~/utils/env";
  */
 export const Footer = ({ className }: { className?: string }) => {
   return (
-    <div className={cn("flex justify-center items-center gap-2 py-5 w-full text-sm", className)}>
+    <div className={cn("flex justify-center flex-wrap items-center gap-2 py-5 w-full text-sm", className)}>
       <p className="m-0 text-center">
         Built with <HeartIcon className="inline-block h-4 w-4 text-red-500" /> at
       </p>
@@ -38,12 +38,22 @@ export const Footer = ({ className }: { className?: string }) => {
       <ExplanationButton />
       <div className="mx-2">|</div>
       <a
-        className="flex justify-center items-center gap-1"
+        className="flex justify-center items-center gap-1 whitespace-nowrap"
         href={env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL}
         target="_blank"
         rel="noreferrer"
       >
         <span className="hover:underline">{chain1.name} Explorer</span>
+        <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+      </a>
+      <div className="mx-2">|</div>
+      <a
+        className="flex justify-center items-center gap-1 whitespace-nowrap"
+        href={env.NEXT_PUBLIC_CHAIN_B_BLOCK_EXPLORER_URL}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <span className="hover:underline">{chain2.name} Explorer</span>
         <ArrowTopRightOnSquareIcon className="h-3 w-3" />
       </a>
     </div>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
+import { env } from "~~/utils/env";
 
 interface ExplanationScreenProps {
   onClose: () => void;
@@ -89,7 +90,7 @@ export const ExplanationScreen: React.FC<ExplanationScreenProps> = ({ onClose, i
               </li>
               <li>
                 <a
-                  href="https://chain-b-block-explorer.zksync.dev/login"
+                  href={`${env.NEXT_PUBLIC_CHAIN_B_BLOCK_EXPLORER_URL}/login`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:underline"
