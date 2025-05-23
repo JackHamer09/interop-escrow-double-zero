@@ -102,9 +102,8 @@ export const ERC20_ABI = [
 export const USDC_TOKEN = {
   symbol: "USDC",
   name: "USD Coin",
-  assetId: env.NEXT_PUBLIC_USDC_ASSET_ID,
-  address: env.NEXT_PUBLIC_USDC_CHAIN_A_ADDRESS,
-  address_chain2: env.NEXT_PUBLIC_USDC_CHAIN_B_ADDRESS,
+  address: env.NEXT_PUBLIC_USDC_ADDRESS,
+  address_chain2: env.NEXT_PUBLIC_TTBILL_ADDRESS,
   logo: "/usdc.webp",
   decimals: 18,
 };
@@ -112,9 +111,8 @@ export const USDC_TOKEN = {
 export const TTBILL_TOKEN = {
   symbol: "TTBILL",
   name: "Tokenized Treasury Bill",
-  assetId: env.NEXT_PUBLIC_TTBILL_ASSET_ID,
-  address: env.NEXT_PUBLIC_TTBILL_CHAIN_A_ADDRESS,
-  address_chain2: env.NEXT_PUBLIC_TTBILL_CHAIN_B_ADDRESS,
+  address: env.NEXT_PUBLIC_TTBILL_ADDRESS,
+  address_chain2: env.NEXT_PUBLIC_TTBILL_ADDRESS,
   logo: "/ttbill.png",
   decimals: 18,
 };

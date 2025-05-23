@@ -9,8 +9,8 @@ import { chain1 } from "~~/services/web3/wagmiConfig";
 import { env } from "~~/utils/env";
 
 const STORAGE_KEY = "rpc_auth";
-const AUTH_API_URL = env.NEXT_PUBLIC_CHAIN_A_AUTH_API_URL;
-const CHAIN1_BASE_RPC_URL = env.NEXT_PUBLIC_CHAIN_A_BASE_RPC_URL;
+const AUTH_API_URL = env.NEXT_PUBLIC_AUTH_API_URL;
+const CHAIN1_BASE_RPC_URL = env.NEXT_PUBLIC_BASE_RPC_URL;
 
 type AuthRecord = Record<string, string>; // address -> rpcToken
 
@@ -211,7 +211,7 @@ export function useRpcLogin() {
           blockExplorers: {
             default: {
               name: "Block Explorer",
-              url: env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL,
+              url: env.NEXT_PUBLIC_BLOCK_EXPLORER_URL,
             },
           },
         },

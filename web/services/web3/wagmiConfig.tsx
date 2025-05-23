@@ -5,8 +5,8 @@ import { getStoredAuth } from "~~/hooks/use-rpc-login";
 import { env } from "~~/utils/env";
 
 export const chain1 = {
-  id: env.NEXT_PUBLIC_CHAIN_A_ID,
-  name: env.NEXT_PUBLIC_CHAIN_A_NAME,
+  id: env.NEXT_PUBLIC_CHAIN_ID,
+  name: env.NEXT_PUBLIC_CHAIN_NAME,
   nativeCurrency: {
     name: "Ethereum",
     symbol: "ETH",
@@ -20,8 +20,8 @@ export const chain1 = {
 } as const;
 
 export const chain2 = {
-  id: env.NEXT_PUBLIC_CHAIN_B_ID,
-  name: env.NEXT_PUBLIC_CHAIN_B_NAME,
+  id: 500,
+  name: "Chain B",
   nativeCurrency: {
     name: "Ethereum",
     symbol: "ETH",
@@ -85,7 +85,7 @@ export const createMetaMaskClient = ({ chain }: { chain: typeof chain1 | typeof 
             message: "User is not authenticated",
           };
         }
-        const rpcUrl = env.NEXT_PUBLIC_CHAIN_A_BASE_RPC_URL;
+        const rpcUrl = env.NEXT_PUBLIC_BASE_RPC_URL;
         const fullRpcUrl = `${rpcUrl}/${auth.tokens[auth.activeAddress]}`;
         const provider = http(fullRpcUrl)({ chain });
         const response = await provider.request({ method, params });

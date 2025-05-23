@@ -1,29 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IInteropCenter} from "era-contracts/l1-contracts/contracts/bridgehub/IInteropCenter.sol";
-import {IInteropHandler} from "era-contracts/l1-contracts/contracts/bridgehub/IInteropHandler.sol";
-import {L2_INTEROP_CENTER, L2_STANDARD_TRIGGER_ACCOUNT_ADDR, L2_INTEROP_HANDLER} from "era-contracts/system-contracts/contracts/Constants.sol";
-import {InteropCallStarter, GasFields} from "era-contracts/l1-contracts/contracts/common/Messaging.sol";
-import {DataEncoding} from "era-contracts/l1-contracts/contracts/common/libraries/DataEncoding.sol";
-
 /// @notice Minimal ERC20 interface needed for transfers.
 interface IERC20 {
     function transferFrom(address from, address to, uint256 value) external returns (bool);
     function transfer(address to, uint256 value) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
 }
 
 /// @title TradeEscrow
 /// @notice A demo escrow contract for inter-custodial settlements.
 ///         This version uses a simplified status system and only exposes swap details
 ///         (including their status) to the involved counterparties.
-contract TradeEscrow {
-    uint160 constant USER_CONTRACTS_OFFSET = 0x10000; // 2^16
-    address constant L2_NATIVE_TOKEN_VAULT_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x04);
-    address constant L2_ASSET_ROUTER_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x03);
-    uint256 constant CROSS_CHAIN_FEE = 0.1 ether; // TODO: Fee can be much lower and actually should estimated, not hardcoded
-    
+contract TradeEscrow {    
     /// @notice Trade status values.
     enum TradeStatus { PendingCounterpartyDeposit, Complete, Declined }
     
@@ -118,7 +106,7 @@ contract TradeEscrow {
     function acceptAndDeposit(uint256 _tradeId) external {
         Trade storage trade = trades[_tradeId];
         require(trade.status == TradeStatus.PendingCounterpartyDeposit, "Trade is not pending deposit");
-        address expectedSender = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
+        address expectedSender = trade.partyB;
         require(msg.sender == expectedSender, "Only the designated counterparty can deposit");
         
         // Deposit
@@ -173,56 +161,7 @@ contract TradeEscrow {
             );
             return;
         }
-        
-        // Approve token for cross-chain transfer
-        IERC20(_tokenAddress).approve(L2_NATIVE_TOKEN_VAULT_ADDRESS, _amount);
-        
-        InteropCallStarter[] memory feePaymentCallStarters = new InteropCallStarter[](1);
-        InteropCallStarter[] memory executionCallStarters = new InteropCallStarter[](1);
-
-        feePaymentCallStarters[0] = InteropCallStarter(
-            true,
-            L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
-            "",
-            0,
-            CROSS_CHAIN_FEE
-        );
-
-        executionCallStarters[0] = InteropCallStarter(
-            false,
-            L2_ASSET_ROUTER_ADDRESS,
-            bytes.concat(
-                bytes1(0x01),
-                abi.encode(
-                    DataEncoding.encodeNTVAssetId(block.chainid, _tokenAddress),
-                    abi.encode(
-                        _amount,
-                        _recipient,
-                        address(0)
-                    )
-                )
-            ),
-            0,
-            0
-        );
-
-        GasFields memory gasFields = GasFields(
-            30000000,
-            1000,
-            _recipient,
-            address(0),
-            ""
-        );
-
-        require(address(this).balance >= CROSS_CHAIN_FEE, "Insufficient ETH for interop call");
-
-        IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: CROSS_CHAIN_FEE }(
-            _recipientChainId,
-            L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
-            feePaymentCallStarters,
-            executionCallStarters,
-            gasFields
-        );
+        revert("Cross-chain transfer not supported in this version");
     }
 
     /// @notice Allows either party to cancel a trade that has not been completed.
@@ -233,7 +172,7 @@ contract TradeEscrow {
             trade.status == TradeStatus.PendingCounterpartyDeposit,
             "Trade is not pending and cannot be cancelled"
         );
-        address expectedSenderB = block.chainid == trade.partyBChainId ? trade.partyB : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(trade.partyB, trade.partyBChainId);
+        address expectedSenderB = trade.partyB;
         require(
             msg.sender == trade.partyA || msg.sender == expectedSenderB,
             "Not authorized to cancel"

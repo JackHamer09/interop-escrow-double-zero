@@ -7,7 +7,6 @@ import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { TTBILL_TOKEN, USDC_TOKEN } from "~~/contracts/tokens";
 import { EscrowTrade, EscrowTradeStatus } from "~~/hooks/use-trade-escrow";
-import { env } from "~~/utils/env";
 
 interface TradeItemProps {
   trade: EscrowTrade;
@@ -51,7 +50,6 @@ export const TradeItem: React.FC<TradeItemProps> = ({
               party={trade.partyA}
               myAddress={myAddress}
               isRight={false}
-              chainName={env.NEXT_PUBLIC_CHAIN_A_NAME}
             />
           </div>
 
@@ -64,11 +62,6 @@ export const TradeItem: React.FC<TradeItemProps> = ({
               party={trade.partyB}
               myAddress={myAddress}
               isRight={true}
-              chainName={
-                Number(trade.partyBChainId) === env.NEXT_PUBLIC_CHAIN_A_ID
-                  ? env.NEXT_PUBLIC_CHAIN_A_NAME
-                  : env.NEXT_PUBLIC_CHAIN_B_NAME
-              }
             />
           </div>
         </div>

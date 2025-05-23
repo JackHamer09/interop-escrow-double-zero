@@ -14,14 +14,7 @@ interface TokenDisplayProps {
   chainName?: string;
 }
 
-export const TokenDisplay: React.FC<TokenDisplayProps> = ({
-  token,
-  amount,
-  party,
-  myAddress,
-  isRight = false,
-  chainName,
-}) => {
+export const TokenDisplay: React.FC<TokenDisplayProps> = ({ token, amount, party, myAddress, isRight = false }) => {
   return (
     <div className="flex flex-col gap-1">
       <div className={`flex items-center gap-x-2 ${isRight ? "justify-end" : ""} ${isRight ? "" : "mr-2"}`}>
@@ -33,9 +26,6 @@ export const TokenDisplay: React.FC<TokenDisplayProps> = ({
         <span className={`text-sm text-muted-foreground ${isRight ? "text-right" : ""}`}>You</span>
       )}
       {myAddress !== party && <ShortAddress address={party} isRight={isRight} />}
-      {chainName && (
-        <span className={`text-xs text-muted-foreground ${isRight ? "text-right" : ""}`}>on {chainName}</span>
-      )}
     </div>
   );
 };
