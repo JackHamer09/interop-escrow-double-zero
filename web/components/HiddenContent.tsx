@@ -153,17 +153,6 @@ export default function HiddenContent({ children, className }: { children: React
                 )}
 
                 {/* Context-specific tip */}
-                {(!isSupportedChainSelected || !isAbleToRequestWalletChain) && (
-                  <Alert variant="info">
-                    <InfoIcon className="h-4 w-4" />
-                    <AlertDescription>
-                      <ul className="text-xs">
-                        <li>For User 1 - Click Authorize button and then &apos;Use Chain A&apos; button</li>
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 {isSupportedChainSelected &&
                   isAbleToRequestWalletChain &&
                   !hasChain1RpcConnection &&
