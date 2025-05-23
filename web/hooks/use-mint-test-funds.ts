@@ -3,7 +3,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useAccount } from "wagmi";
-import { env } from "~~/utils/env";
 
 export default function useMintTestFunds() {
   const { address } = useAccount();
@@ -21,18 +20,18 @@ export default function useMintTestFunds() {
       // Complete minting process with a single toast.promise
       await toast.promise(
         (async () => {
-          const response = await fetch(
-            `${env.NEXT_PUBLIC_INTEROP_BROADCASTER_API}/api/mint-test-funds?address=${address}`,
-            {
-              method: "POST",
-            },
-          );
+          // const response = await fetch(
+          //   `${env.NEXT_PUBLIC_INTEROP_BROADCASTER_API}/api/mint-test-funds?address=${address}`,
+          //   {
+          //     method: "POST",
+          //   },
+          // );
 
-          const data = await response.json();
+          // const data = await response.json();
 
-          if (!response.ok) {
-            throw new Error(data.message || "Failed to mint test funds");
-          }
+          // if (!response.ok) {
+          //   throw new Error(data.message || "Failed to mint test funds");
+          // }
 
           // Wait for balances to update
           await new Promise(resolve => setTimeout(resolve, 5000));

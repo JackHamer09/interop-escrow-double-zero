@@ -39,8 +39,7 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
   const { chainId } = useAccount();
 
   // Determine which explorer URL to use based on chainId
-  const explorerUrl =
-    chainId === chain2.id ? env.NEXT_PUBLIC_CHAIN_B_BLOCK_EXPLORER_URL : env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL;
+  const explorerUrl = env.NEXT_PUBLIC_BLOCK_EXPLORER_URL;
 
   // Determine which chain name to display
   const chainName = chainId === chain2.id ? chain2.name : chain1.name;
