@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~~/components/ui/tooltip";
 import { TTBILL_TOKEN, Token, USDC_TOKEN } from "~~/contracts/tokens";
-import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
 import { formatTokenWithDecimals } from "~~/utils/currency";
 
@@ -37,7 +36,6 @@ export const PoolCard: React.FC<PoolCardProps> = ({
   selectedToken,
   onAmountChange,
   onPartyBChange,
-  onChainChange,
   onTokenChange,
   disabled,
 }) => {
@@ -138,19 +136,6 @@ export const PoolCard: React.FC<PoolCardProps> = ({
                   </div>
                 )}
               </div>
-              <Select
-                value={chain.id.toString()}
-                onValueChange={value => onChainChange(parseInt(value))}
-                disabled={disabled}
-              >
-                <SelectTrigger className="bg-secondary text-secondary-foreground shadow hover:bg-secondary/80 text-base w-48">
-                  <SelectValue placeholder="Select Chain" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={chain1.id.toString()}>{chain1.name}</SelectItem>
-                  <SelectItem value={chain2.id.toString()}>{chain2.name}</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           )}
         </CardTitle>

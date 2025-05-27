@@ -51,7 +51,7 @@ export default function AddEscrowedTrade() {
   const walletChainId = useChainId();
   const [tradeState, setTradeState] = useState<TradeState>({
     chainA: chain1.id,
-    chainB: chain2.id,
+    chainB: chain1.id,
     tokenA: USDC_TOKEN,
     tokenB: TTBILL_TOKEN,
     amountA: 0n,

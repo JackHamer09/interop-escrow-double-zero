@@ -9,7 +9,6 @@ import { useConnectionStatus } from "~~/hooks/use-connection-status";
 import { useRpcLogin } from "~~/hooks/use-rpc-login";
 import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
-import { env } from "~~/utils/env";
 
 type ContentState = "connected" | "wallet-disconnected" | "connection-issues";
 
@@ -154,29 +153,6 @@ export default function HiddenContent({ children, className }: { children: React
                 )}
 
                 {/* Context-specific tip */}
-                {(!isSupportedChainSelected || !isAbleToRequestWalletChain) && (
-                  <Alert variant="info">
-                    <InfoIcon className="h-4 w-4" />
-                    <AlertDescription>
-                      <ul className="text-xs">
-                        <li>For User 1 - Click Authorize button and then &apos;Use Chain A&apos; button</li>
-                        <li>
-                          For User 2 - After{" "}
-                          <a
-                            href={`${env.NEXT_PUBLIC_CHAIN_B_BLOCK_EXPLORER_URL}/login`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-semibold underline"
-                          >
-                            authorizing
-                          </a>{" "}
-                          via Block Explorer, ensure &apos;Chain B&apos; is selected in MetaMask
-                        </li>
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 {isSupportedChainSelected &&
                   isAbleToRequestWalletChain &&
                   !hasChain1RpcConnection &&

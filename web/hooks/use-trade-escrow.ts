@@ -1,5 +1,4 @@
 import { useCallback, useEffect } from "react";
-import useTradeEscrowInterop from "./use-trade-escrow-interop";
 import useTtbillToken from "./use-ttbill-token";
 import useUsdcToken from "./use-usdc-token";
 import toast from "react-hot-toast";
@@ -38,7 +37,6 @@ export enum EscrowTradeStatus {
 
 export default function useTradeEscrow() {
   const { address, chainId: walletChainId } = useAccount();
-  const interop = useTradeEscrowInterop();
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
   const usdcToken = useUsdcToken();
@@ -172,13 +170,11 @@ export default function useTradeEscrow() {
     await switchChainIfNotSet(Number(trade.myExpectedChainId));
 
     const cancelTrade = await toast.promise(
-      trade.myExpectedChainId === BigInt(chain1.id)
-        ? writeContractAsync({
-            ...options,
-            functionName: "cancelTrade",
-            args: [tradeId],
-          })
-        : interop.cancelTradeAsync(tradeId),
+      writeContractAsync({
+        ...options,
+        functionName: "cancelTrade",
+        args: [tradeId],
+      }),
       {
         loading: "Waiting for wallet approval...",
         success: "Transaction approved!",
@@ -230,36 +226,31 @@ export default function useTradeEscrow() {
       await checkAndApproveToken(trade.tokenB, trade.amountB);
     }
 
-    if (trade.myExpectedChainId === BigInt(chain1.id)) {
-      const acceptTrade = await toast.promise(
-        writeContractAsync({
-          ...options,
-          chainId: chain1.id,
-          functionName: "acceptAndDeposit",
-          args: [tradeId],
-        }),
-        {
-          loading: "Waiting for wallet approval...",
-          success: "Transaction approved!",
-          error: err => {
-            console.error(err);
-            return "Failed to approve transaction";
-          },
-        },
-      );
-      await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
-        loading: "Processing transaction...",
-        success: "Transaction confirmed! Funds deposited successfully.",
+    const acceptTrade = await toast.promise(
+      writeContractAsync({
+        ...options,
+        chainId: chain1.id,
+        functionName: "acceptAndDeposit",
+        args: [tradeId],
+      }),
+      {
+        loading: "Waiting for wallet approval...",
+        success: "Transaction approved!",
         error: err => {
           console.error(err);
-          return "Failed to process transaction";
+          return "Failed to approve transaction";
         },
-      });
-      return acceptTrade;
-    } else {
-      const acceptTrade = await interop.acceptTradeAndDepositAsync(tradeId, trade.tokenB, trade.amountB);
-      return acceptTrade;
-    }
+      },
+    );
+    await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
+      loading: "Processing transaction...",
+      success: "Transaction confirmed! Funds deposited successfully.",
+      error: err => {
+        console.error(err);
+        return "Failed to process transaction";
+      },
+    });
+    return acceptTrade;
   };
 
   // Removed depositTradeAsync to enforce strict 2-step process
