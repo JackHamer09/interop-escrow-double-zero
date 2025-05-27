@@ -66,9 +66,9 @@ echo "Deployer balance: $deployer_chain_1_balance"
 
 # Deploy ERC20 tokens
 echo "Deploying ERC20 tokens..."
-usdc_address=$(forge create --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "USD Coin" "USDC" 18 | extract_deployed_address)
+usdc_address=$(forge create --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "10000" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "USD Coin" "USDC" 18 | extract_deployed_address)
 echo "USDC deployed at: $usdc_address"
-ttbill_address=$(forge create --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Tokenized Treasury Bill" "TTBILL" 18 | extract_deployed_address)
+ttbill_address=$(forge create --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "10000" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Tokenized Treasury Bill" "TTBILL" 18 | extract_deployed_address)
 echo "TTBILL deployed at: $ttbill_address"
 
 # Mint tokens
@@ -86,7 +86,7 @@ cast send --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $USER_2_ADDRESS
 
 # Deploy TradeEscrow contract
 echo "Deploying TradeEscrow contract..."
-trade_escrow_address=$(forge create --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
+trade_escrow_address=$(forge create --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "10000" src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
 cast send --rpc-url $RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 100ether
 
 echo ""

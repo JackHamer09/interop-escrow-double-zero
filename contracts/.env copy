@@ -1,0 +1,6 @@
+USER_1_CHAIN_A_ADDRESS=0xa1F4Bc08A36946718855deac045465C23AcB3d1f
+USER_2_CHAIN_B_ADDRESS=0x07939529f98c5eCaD3C9b6A69De4bBCA747BF6EA
+CHAIN_A_RPC_URL=https://chain-a-rpc.zksync.dev
+CHAIN_B_RPC_URL=https://chain-b-rpc.zksync.dev
+L1_RPC_URL=https://l1-rpc-intdm.zksync.dev
+INTEROP_BROADCASTER_API_URL=https://interop-broadcaster-server.zksync.dev
