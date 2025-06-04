@@ -2,11 +2,11 @@ import React from "react";
 import Image from "next/image";
 import { ShortAddress } from "./ShortAddress";
 import { Address } from "viem";
-import { Token } from "~~/contracts/tokens";
+import { TokenConfig } from "~~/config/tokens-config";
 import { formatTokenWithDecimals } from "~~/utils/currency";
 
 interface TokenDisplayProps {
-  token: Token;
+  token: TokenConfig;
   amount: bigint;
   party: Address;
   myAddress?: Address;

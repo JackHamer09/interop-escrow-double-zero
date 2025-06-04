@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import useTradeEscrow from "./use-trade-escrow";
 import { useAccount } from "wagmi";
-import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
+import { chain1, chain2 } from "~~/config/chains-config";
 
 export function useConnectionStatus() {
   const account = useAccount();

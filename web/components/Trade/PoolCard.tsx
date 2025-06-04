@@ -5,8 +5,8 @@ import { Chain, isAddress } from "viem";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~~/components/ui/tooltip";
-import { TTBILL_TOKEN, Token, USDC_TOKEN } from "~~/contracts/tokens";
-import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
+import { escrowSupportedChains, escrowSupportedTokens } from "~~/config/escrow-trade-config";
+import { TokenConfig } from "~~/config/tokens-config";
 import { cn } from "~~/utils/cn";
 import { formatTokenWithDecimals } from "~~/utils/currency";
 
@@ -17,8 +17,8 @@ interface PoolCardProps {
   displayBalance: boolean;
   displayAmount: string;
   chain: Chain;
-  token: Token;
-  selectedToken: Token["symbol"];
+  token: TokenConfig;
+  selectedToken: string;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPartyBChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onChainChange: (value: number) => void;
@@ -147,8 +147,11 @@ export const PoolCard: React.FC<PoolCardProps> = ({
                   <SelectValue placeholder="Select Chain" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={chain1.id.toString()}>{chain1.name}</SelectItem>
-                  <SelectItem value={chain2.id.toString()}>{chain2.name}</SelectItem>
+                  {escrowSupportedChains.map(chainConfig => (
+                    <SelectItem key={chainConfig.id} value={chainConfig.id.toString()}>
+                      {chainConfig.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -203,43 +206,27 @@ export const PoolCard: React.FC<PoolCardProps> = ({
                 <SelectValue>
                   {selectedToken && (
                     <div className="flex items-center gap-x-2">
-                      <Image
-                        src={selectedToken === "USDC" ? USDC_TOKEN.logo : TTBILL_TOKEN.logo}
-                        alt={selectedToken}
-                        width={20}
-                        height={20}
-                        className="rounded-xl"
-                      />
-                      <span className="w-max">{selectedToken}</span>
+                      <Image src={token.logo} alt={token.symbol} width={20} height={20} className="rounded-xl" />
+                      <span className="w-max">{token.assetId}</span>
                     </div>
                   )}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USDC">
-                  <div className="flex items-center gap-x-2">
-                    <Image
-                      src={USDC_TOKEN.logo}
-                      alt={USDC_TOKEN.symbol}
-                      width={20}
-                      height={20}
-                      className="rounded-xl"
-                    />
-                    <span className="truncate">{USDC_TOKEN.symbol}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="TTBILL">
-                  <div className="flex items-center gap-x-2">
-                    <Image
-                      src={TTBILL_TOKEN.logo}
-                      alt={TTBILL_TOKEN.symbol}
-                      width={20}
-                      height={20}
-                      className="rounded-xl"
-                    />
-                    <span className="truncate">{TTBILL_TOKEN.symbol}</span>
-                  </div>
-                </SelectItem>
+                {escrowSupportedTokens.map(tokenConfig => (
+                  <SelectItem key={tokenConfig.symbol} value={tokenConfig.symbol}>
+                    <div className="flex items-center gap-x-2">
+                      <Image
+                        src={tokenConfig.logo}
+                        alt={tokenConfig.symbol}
+                        width={20}
+                        height={20}
+                        className="rounded-xl"
+                      />
+                      <span className="truncate">{tokenConfig.symbol}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

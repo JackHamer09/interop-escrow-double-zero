@@ -9,8 +9,7 @@ import CopyToClipboard from "react-copy-to-clipboard";
 import { Address } from "viem";
 import { useAccount, useDisconnect } from "wagmi";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
-import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
-import { env } from "~~/utils/env";
+import { getChainById } from "~~/config/chains-config";
 
 interface AddressInfoDropdownProps {
   address: Address;
@@ -39,13 +38,10 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
   const { chainId } = useAccount();
 
   // Determine which explorer URL to use based on chainId
-  const explorerUrl =
-    chainId === chain2.id ? env.NEXT_PUBLIC_CHAIN_B_BLOCK_EXPLORER_URL : env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL;
+  const chain = chainId ? getChainById(chainId) : undefined;
+  const explorerUrl = chain?.blockExplorers?.default.url;
 
-  // Determine which chain name to display
-  const chainName = chainId === chain2.id ? chain2.name : chain1.name;
-
-  const explorerAddressUrl = `${explorerUrl}/address/${address}`;
+  const explorerAddressUrl = explorerUrl && `${explorerUrl}/address/${address}`;
 
   return (
     <DropdownMenu>
@@ -62,17 +58,19 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
         <DropdownMenuItem>
           <CopyAddressButton address={address} />
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a
-            href={explorerAddressUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1 cursor-pointer w-full"
-          >
-            View on {chainName} Explorer
-            <ArrowTopRightOnSquareIcon className="h-3 w-3 ml-1" />
-          </a>
-        </DropdownMenuItem>
+        {explorerAddressUrl && (
+          <DropdownMenuItem asChild>
+            <a
+              href={explorerAddressUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 cursor-pointer w-full"
+            >
+              View on {chain.name} Explorer
+              <ArrowTopRightOnSquareIcon className="h-3 w-3 ml-1" />
+            </a>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => disconnect()}>Disconnect</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

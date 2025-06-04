@@ -9,18 +9,21 @@ import HiddenContent from "~~/components/HiddenContent";
 import MintFundsButton from "~~/components/MintFundsButton";
 import { TokenBalances, TradeForm, TradeList } from "~~/components/Trade";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
-import { TTBILL_TOKEN, Token, USDC_TOKEN } from "~~/contracts/tokens";
-import { useInterval } from "~~/hooks/use-interval";
+import {
+  escrowMainChain,
+  escrowSupportedChains,
+  getEscrowChainById,
+  isEscrowMainChain,
+} from "~~/config/escrow-trade-config";
+import { escrowSupportedTokens } from "~~/config/escrow-trade-config";
+import { TokenConfig, getTokenByAssetId } from "~~/config/tokens-config";
 import useTradeEscrow, { EscrowTrade } from "~~/hooks/use-trade-escrow";
-import useTtbillToken from "~~/hooks/use-ttbill-token";
-import useUsdcToken from "~~/hooks/use-usdc-token";
-import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 
 interface TradeState {
   chainA: number;
   chainB: number;
-  tokenA: Token;
-  tokenB: Token;
+  tokenA: TokenConfig;
+  tokenB: TokenConfig;
   amountA: bigint;
   amountB: bigint;
   displayAmountA: string;
@@ -30,30 +33,40 @@ interface TradeState {
 
 export default function AddEscrowedTrade() {
   const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
-  const usdc = useUsdcToken();
-  const ttbill = useTtbillToken();
   const {
     myTrades,
     refetchAll: refetchTrades,
-    refetchTokenInfo,
+    refetchTokens,
     proposeTradeAndDepositAsync,
     cancelTradeAsync,
     acceptTradeAndDepositAsync,
+    tokens,
   } = useTradeEscrow();
-
-  // Set up auto-refresh for token balances
-  useInterval(() => {
-    usdc.refetchBalance();
-    ttbill.refetchBalance();
-  }, 500);
 
   const { address: myAddress } = useAccount();
   const walletChainId = useChainId();
+
+  // Get supported tokens from configuration
+  if (escrowSupportedTokens.length < 2) {
+    throw new Error("At least two supported tokens are required");
+  }
+
+  // Default to first two tokens if available
+  const defaultTokenA = escrowSupportedTokens[0];
+  const defaultTokenB = escrowSupportedTokens[1];
+
+  const mainChain = escrowMainChain;
+  const supportedChain = escrowSupportedChains.find(chain => chain.id !== mainChain.id);
+
+  if (!supportedChain) {
+    throw new Error("No secondary chain configured");
+  }
+
   const [tradeState, setTradeState] = useState<TradeState>({
-    chainA: chain1.id,
-    chainB: chain2.id,
-    tokenA: USDC_TOKEN,
-    tokenB: TTBILL_TOKEN,
+    chainA: mainChain.id,
+    chainB: supportedChain.id,
+    tokenA: defaultTokenA,
+    tokenB: defaultTokenB,
     amountA: 0n,
     amountB: 0n,
     displayAmountA: "",
@@ -62,16 +75,19 @@ export default function AddEscrowedTrade() {
   });
   const { value: isAddingTrade, setValue: setIsAddingTrade } = useBoolean(false);
 
-  const tokenABalance = tradeState.tokenA.symbol === USDC_TOKEN.symbol ? usdc.balance : ttbill.balance;
-  const tokenBBalance = tradeState.tokenB.symbol === USDC_TOKEN.symbol ? usdc.balance : ttbill.balance;
+  // Find token balances for the selected tokens
+  const tokenAWithBalance = tokens.find(token => token.symbol === tradeState.tokenA.symbol);
+  const tokenBWithBalance = tokens.find(token => token.symbol === tradeState.tokenB.symbol);
+
+  const tokenABalance = tokenAWithBalance?.balance || 0n;
+  const tokenBBalance = tokenBWithBalance?.balance || 0n;
 
   const handleRefreshBalances = async () => {
     setIsRefreshingBalances(true);
     try {
       await Promise.all([
         new Promise(resolve => setTimeout(resolve, 500)), // Simulate a delay
-        usdc.refetchBalance(),
-        ttbill.refetchBalance(),
+        refetchTokens(),
       ]);
     } finally {
       setIsRefreshingBalances(false);
@@ -79,15 +95,29 @@ export default function AddEscrowedTrade() {
   };
 
   const handleTokenSelect = (value: string, tokenType: "tokenA" | "tokenB") => {
-    const selected = value === USDC_TOKEN.symbol ? USDC_TOKEN : TTBILL_TOKEN;
-    const nonSelected = selected === USDC_TOKEN ? TTBILL_TOKEN : USDC_TOKEN;
+    const selectedToken = getTokenByAssetId(value);
+    if (!selectedToken) return;
+
+    // Get the token that would be the opposite (to ensure we don't use the same token twice)
     const otherTokenType = tokenType === "tokenA" ? "tokenB" : "tokenA";
+    const currentOtherToken = tradeState[otherTokenType];
+
+    // If the selected token is the same as the other token, find a different token
+    let otherToken = currentOtherToken;
+
+    if (selectedToken.symbol === currentOtherToken.symbol) {
+      // Find the first token that isn't the selected one
+      const differentToken = escrowSupportedTokens.find(t => t.symbol !== selectedToken.symbol);
+      if (differentToken) {
+        otherToken = differentToken;
+      }
+    }
 
     // Only update the token types without swapping amounts
     setTradeState(prev => ({
       ...prev,
-      [tokenType]: selected,
-      [otherTokenType]: nonSelected,
+      [tokenType]: selectedToken,
+      [otherTokenType]: otherToken,
       // No amount swapping
     }));
   };
@@ -131,7 +161,8 @@ export default function AddEscrowedTrade() {
   };
 
   const handleChainChange = async (value: number, chainType: "chainA" | "chainB") => {
-    const selectedChain = value === chain1.id ? chain1 : chain2;
+    const selectedChain = getEscrowChainById(value);
+    if (!selectedChain) return;
 
     setTradeState(prev => ({
       ...prev,
@@ -147,12 +178,20 @@ export default function AddEscrowedTrade() {
 
     setIsAddingTrade(true);
     try {
+      // Get the token addresses for the respective chains
+      const tokenAAddress = tradeState.tokenA.addresses[tradeState.chainA];
+      const tokenBAddress = tradeState.tokenB.addresses[tradeState.chainB];
+
+      if (!tokenAAddress || !tokenBAddress) {
+        throw new Error("Token not supported on selected chain");
+      }
+
       const result = await proposeTradeAndDepositAsync(
         tradeState.partyB,
         tradeState.chainB,
-        tradeState.tokenA.address,
+        tokenAAddress,
         tradeState.amountA,
-        tradeState.tokenB.address,
+        tokenBAddress,
         tradeState.amountB,
       );
 
@@ -167,7 +206,7 @@ export default function AddEscrowedTrade() {
         }));
       }
     } finally {
-      refetchTokenInfo();
+      refetchTokens();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -179,7 +218,7 @@ export default function AddEscrowedTrade() {
     try {
       await cancelTradeAsync(tradeId);
     } finally {
-      refetchTokenInfo();
+      refetchTokens();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -191,7 +230,7 @@ export default function AddEscrowedTrade() {
     try {
       await acceptTradeAndDepositAsync(trade.tradeId);
     } finally {
-      refetchTokenInfo();
+      refetchTokens();
       refetchTrades();
       setIsAddingTrade(false);
     }
@@ -214,15 +253,15 @@ export default function AddEscrowedTrade() {
 
             <div className="flex justify-between items-center mt-12 mb-4">
               <h2 className="font-medium text-2xl">Propose Trade</h2>
-              <MintFundsButton variant="outline" size="sm" onMintSuccess={refetchTokenInfo} />
+              <MintFundsButton variant="outline" size="sm" onMintSuccess={refetchTokens} />
             </div>
 
-            {walletChainId === chain1.id ? (
+            {isEscrowMainChain(walletChainId || 0) ? (
               <div>
                 <TradeForm
                   tradeState={tradeState}
-                  tokenABalance={tokenABalance ?? 0n}
-                  tokenBBalance={tokenBBalance ?? 0n}
+                  tokenABalance={tokenABalance}
+                  tokenBBalance={tokenBBalance}
                   isAddingTrade={isAddingTrade}
                   onTokenSelect={handleTokenSelect}
                   onAmountChange={handleAmountChange}
@@ -235,8 +274,8 @@ export default function AddEscrowedTrade() {
               <Alert variant="warning" className="mb-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  In current implementation of the demo, you can only propose trades from the {chain1.name} network. If
-                  you wish to propose a trade from your current wallet, switch network in your MetaMask wallet to
+                  In current implementation of the demo, you can only propose trades from the {mainChain.name} network.
+                  If you wish to propose a trade from your current wallet, switch network in your MetaMask wallet to
                   continue.
                 </AlertDescription>
               </Alert>
@@ -244,12 +283,7 @@ export default function AddEscrowedTrade() {
           </div>
 
           {/* Token Balances Section */}
-          <TokenBalances
-            usdcBalance={usdc.balance ?? 0n}
-            ttbillBalance={ttbill.balance ?? 0n}
-            isRefreshing={isRefreshingBalances}
-            onRefresh={handleRefreshBalances}
-          />
+          <TokenBalances tokens={tokens} isRefreshing={isRefreshingBalances} onRefresh={handleRefreshBalances} />
         </HiddenContent>
       </div>
     </div>

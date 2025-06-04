@@ -3,15 +3,16 @@ import { PoolCard } from "./PoolCard";
 import { Address, isAddress } from "viem";
 import { ArrowsUpDownIcon } from "@heroicons/react/24/outline";
 import { Button } from "~~/components/ui/button";
-import { Token } from "~~/contracts/tokens";
-import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
+import { getChainById } from "~~/config/chains-config";
+import { escrowMainChain, escrowSupportedChains, isEscrowMainChain } from "~~/config/escrow-trade-config";
+import { TokenConfig } from "~~/config/tokens-config";
 
 interface TradeFormProps {
   tradeState: {
     chainA: number;
     chainB: number;
-    tokenA: Token;
-    tokenB: Token;
+    tokenA: TokenConfig;
+    tokenB: TokenConfig;
     displayAmountA: string;
     displayAmountB: string;
     partyB: Address;
@@ -44,15 +45,19 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     onSubmit();
   };
 
+  const mainChain = escrowMainChain;
+  const chainA = getChainById(tradeState.chainA) || mainChain;
+  const chainB = getChainById(tradeState.chainB) || escrowSupportedChains[1];
+
   return (
     <form onSubmit={handleSubmit}>
       <PoolCard
         isPartyB={false}
-        balance={tokenABalance ?? 0n}
+        balance={tokenABalance || 0n}
         displayBalance={true}
         displayPartyB={tradeState.partyB}
         displayAmount={tradeState.displayAmountA}
-        chain={chain1.id === tradeState.chainA ? chain1 : chain2}
+        chain={chainA}
         token={tradeState.tokenA}
         selectedToken={tradeState.tokenA.symbol}
         onAmountChange={e => onAmountChange(e, "tokenA")}
@@ -66,11 +71,11 @@ export const TradeForm: React.FC<TradeFormProps> = ({
 
       <PoolCard
         isPartyB={true}
-        balance={tokenBBalance ?? 0n}
+        balance={tokenBBalance || 0n}
         displayBalance={false}
         displayPartyB={tradeState.partyB}
         displayAmount={tradeState.displayAmountB}
-        chain={chain1.id === tradeState.chainB ? chain1 : chain2}
+        chain={chainB}
         token={tradeState.tokenB}
         selectedToken={tradeState.tokenB.symbol}
         onAmountChange={e => onAmountChange(e, "tokenB")}
@@ -84,12 +89,15 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         type="submit"
         className="w-full mt-6 h-11"
         disabled={
-          !tradeState.amountA || !tradeState.amountB || !isAddress(tradeState.partyB) || tradeState.chainA !== chain1.id
+          !tradeState.amountA ||
+          !tradeState.amountB ||
+          !isAddress(tradeState.partyB) ||
+          !isEscrowMainChain(tradeState.chainA)
         }
         loading={isAddingTrade}
       >
-        {tradeState.chainA !== chain1.id
-          ? `Please switch to ${chain1.name} to propose a trade`
+        {!isEscrowMainChain(tradeState.chainA)
+          ? `Please switch to ${mainChain.name} to propose a trade`
           : "Propose Trade & Deposit"}
       </Button>
     </form>

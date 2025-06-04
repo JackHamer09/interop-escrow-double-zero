@@ -5,11 +5,10 @@ import { CheckCircleIcon, CircleDotIcon, HelpCircleIcon, InfoIcon, XCircleIcon }
 import { useAccount, useSwitchChain } from "wagmi";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { Button } from "~~/components/ui/button";
+import { chain1, chain2, getChainById } from "~~/config/chains-config";
 import { useConnectionStatus } from "~~/hooks/use-connection-status";
 import { useRpcLogin } from "~~/hooks/use-rpc-login";
-import { chain1, chain2 } from "~~/services/web3/wagmiConfig";
 import { cn } from "~~/utils/cn";
-import { env } from "~~/utils/env";
 
 type ContentState = "connected" | "wallet-disconnected" | "connection-issues";
 
@@ -70,9 +69,8 @@ export default function HiddenContent({ children, className }: { children: React
   };
 
   const getCurrentChainName = () => {
-    if (chainId === chain1.id) return chain1.name;
-    if (chainId === chain2.id) return chain2.name;
-    return null;
+    if (!chainId) return undefined;
+    return getChainById(chainId)?.name;
   };
 
   const handleExplanationClose = () => {
@@ -163,7 +161,7 @@ export default function HiddenContent({ children, className }: { children: React
                         <li>
                           For User 2 - After{" "}
                           <a
-                            href={`${env.NEXT_PUBLIC_CHAIN_B_BLOCK_EXPLORER_URL}/login`}
+                            href={`${chain2.blockExplorers.default.url}/login`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-semibold underline"
