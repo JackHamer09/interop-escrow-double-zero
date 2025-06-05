@@ -3,11 +3,11 @@
 import React from "react";
 import Image from "next/image";
 import { RefreshBalancesButton } from "./RefreshBalancesButton";
+import { formatUnits } from "viem";
 import { useChainId } from "wagmi";
 import { Card } from "~~/components/ui/card";
 import { getChainById } from "~~/config/chains-config";
 import { TokenWithBalance } from "~~/hooks/use-balances";
-import { formatTokenWithDecimals } from "~~/utils/currency";
 
 interface TokenBalancesProps {
   tokens: TokenWithBalance[];
@@ -37,7 +37,7 @@ export const TokenBalances: React.FC<TokenBalancesProps> = ({ tokens, isRefreshi
               <span className="font-medium">{token.symbol}</span>
             </div>
             <div className="flex flex-col items-end">
-              <span className="font-medium">{formatTokenWithDecimals(token.balance || 0n, token.decimals)}</span>
+              <span className="font-medium">{formatUnits(token.balance || 0n, token.decimals)}</span>
               <span className="text-xs text-muted-foreground">on {chain.name}</span>
             </div>
           </div>

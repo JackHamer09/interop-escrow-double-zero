@@ -3,13 +3,12 @@ import useBalances, { getTokenWithBalanceByAssetId } from "./use-balances";
 import useTradeEscrowInterop from "./use-trade-escrow-interop";
 import { readContract } from "@wagmi/core";
 import toast from "react-hot-toast";
-import { Address, erc20Abi } from "viem";
+import { Address, erc20Abi, formatUnits } from "viem";
 import { useAccount, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
 import { escrowMainChain, isEscrowMainChain } from "~~/config/escrow-trade-config";
 import { getTokenByAddress } from "~~/config/tokens-config";
 import { TRADE_ESCROW_ABI, TRADE_ESCROW_ADDRESS } from "~~/contracts/trade-escrow";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
-import { formatTokenWithDecimals } from "~~/utils/currency";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 export const options = {
@@ -19,12 +18,12 @@ export const options = {
 
 export type EscrowTrade = {
   tradeId: bigint;
-  partyA: string;
-  partyB: string;
+  partyA: Address;
+  partyB: Address;
   partyBChainId: bigint;
-  tokenA: string;
+  tokenA: Address;
   amountA: bigint;
-  tokenB: string;
+  tokenB: Address;
   amountB: bigint;
   depositedA: boolean;
   depositedB: boolean;
@@ -68,7 +67,7 @@ export default function useTradeEscrow() {
     }
   }
 
-  async function checkAndApproveToken(tokenAddress: string, amount: bigint) {
+  async function checkAndApproveToken(tokenAddress: Address, amount: bigint) {
     if (!address) throw new Error("No address available");
     if (!walletChainId) throw new Error("No chainId available");
 
@@ -265,7 +264,7 @@ export default function useTradeEscrow() {
       // Check if we have enough balance
       if ((token.balance || 0n) < trade.amountB) {
         toast.error(
-          `Insufficient ${token.symbol} balance for this trade. You need ${formatTokenWithDecimals(trade.amountB, tokenConfig.decimals)} ${token.symbol}.`,
+          `Insufficient ${token.symbol} balance for this trade. You need ${formatUnits(trade.amountB, tokenConfig.decimals)} ${token.symbol}.`,
         );
         return false;
       }

@@ -1,6 +1,6 @@
 import React from "react";
 import { PoolCard } from "./PoolCard";
-import { Address, isAddress } from "viem";
+import { Address, Hash, isAddress } from "viem";
 import { ArrowsUpDownIcon } from "@heroicons/react/24/outline";
 import { Button } from "~~/components/ui/button";
 import { getChainById } from "~~/config/chains-config";
@@ -22,7 +22,7 @@ interface TradeFormProps {
   tokenABalance: bigint;
   tokenBBalance: bigint;
   isAddingTrade: boolean;
-  onTokenSelect: (value: string, tokenType: "tokenA" | "tokenB") => void;
+  onTokenChange: (tokenAssetId: Hash, tokenType: "tokenA" | "tokenB") => void;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>, tokenType: "tokenA" | "tokenB") => void;
   onPartyBChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onChainChange: (value: number, chainType: "chainA" | "chainB") => void;
@@ -34,7 +34,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   tokenABalance,
   tokenBBalance,
   isAddingTrade,
-  onTokenSelect,
+  onTokenChange,
   onAmountChange,
   onPartyBChange,
   onChainChange,
@@ -53,17 +53,16 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     <form onSubmit={handleSubmit}>
       <PoolCard
         isPartyB={false}
-        balance={tokenABalance || 0n}
+        balance={tokenABalance}
         displayBalance={true}
         displayPartyB={tradeState.partyB}
         displayAmount={tradeState.displayAmountA}
         chain={chainA}
         token={tradeState.tokenA}
-        selectedToken={tradeState.tokenA.symbol}
         onAmountChange={e => onAmountChange(e, "tokenA")}
         onPartyBChange={onPartyBChange}
         onChainChange={e => onChainChange(e, "chainA")}
-        onTokenChange={e => onTokenSelect(e, "tokenA")}
+        onTokenChange={e => onTokenChange(e, "tokenA")}
         disabled={isAddingTrade}
       />
 
@@ -71,17 +70,16 @@ export const TradeForm: React.FC<TradeFormProps> = ({
 
       <PoolCard
         isPartyB={true}
-        balance={tokenBBalance || 0n}
+        balance={tokenBBalance}
         displayBalance={false}
         displayPartyB={tradeState.partyB}
         displayAmount={tradeState.displayAmountB}
         chain={chainB}
         token={tradeState.tokenB}
-        selectedToken={tradeState.tokenB.symbol}
         onAmountChange={e => onAmountChange(e, "tokenB")}
         onPartyBChange={onPartyBChange}
         onChainChange={e => onChainChange(e, "chainB")}
-        onTokenChange={e => onTokenSelect(e, "tokenB")}
+        onTokenChange={e => onTokenChange(e, "tokenB")}
         disabled={isAddingTrade}
       />
 

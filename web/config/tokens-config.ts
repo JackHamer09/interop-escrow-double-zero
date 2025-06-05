@@ -1,11 +1,11 @@
 import { chain1, chain2 } from "./chains-config";
-import { type Address, getAddress } from "viem";
+import { type Address, type Hash, getAddress } from "viem";
 import { env } from "~~/utils/env";
 
 export interface TokenConfig {
   symbol: string;
   name: string;
-  assetId: string;
+  assetId: Hash;
   decimals: number;
   logo: string;
   addresses: Record<number, Address>; // Chain ID -> Address mapping
@@ -15,7 +15,7 @@ export interface TokenConfig {
 export const usdcToken: TokenConfig = {
   symbol: "USDC",
   name: "USD Coin",
-  assetId: env.NEXT_PUBLIC_USDC_ASSET_ID,
+  assetId: env.NEXT_PUBLIC_USDC_ASSET_ID as Hash,
   decimals: 18,
   logo: "/usdc.webp",
   addresses: {
@@ -27,7 +27,7 @@ export const usdcToken: TokenConfig = {
 export const ttbillToken: TokenConfig = {
   symbol: "TTBILL",
   name: "Tokenized Treasury Bill",
-  assetId: env.NEXT_PUBLIC_TTBILL_ASSET_ID,
+  assetId: env.NEXT_PUBLIC_TTBILL_ASSET_ID as Hash,
   decimals: 18,
   logo: "/ttbill.png",
   addresses: {

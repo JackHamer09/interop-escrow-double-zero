@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { useBoolean } from "usehooks-ts";
-import { Address, isAddress, parseUnits } from "viem";
+import { Address, Hash, isAddress, parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
 import MintFundsButton from "~~/components/MintFundsButton";
@@ -71,13 +71,13 @@ export default function AddEscrowedTrade() {
     amountB: 0n,
     displayAmountA: "",
     displayAmountB: "",
-    partyB: "",
+    partyB: "" as Address,
   });
   const { value: isAddingTrade, setValue: setIsAddingTrade } = useBoolean(false);
 
   // Find token balances for the selected tokens
-  const tokenAWithBalance = tokens.find(token => token.symbol === tradeState.tokenA.symbol);
-  const tokenBWithBalance = tokens.find(token => token.symbol === tradeState.tokenB.symbol);
+  const tokenAWithBalance = tokens.find(token => token.assetId === tradeState.tokenA.assetId);
+  const tokenBWithBalance = tokens.find(token => token.assetId === tradeState.tokenB.assetId);
 
   const tokenABalance = tokenAWithBalance?.balance || 0n;
   const tokenBBalance = tokenBWithBalance?.balance || 0n;
@@ -94,32 +94,28 @@ export default function AddEscrowedTrade() {
     }
   };
 
-  const handleTokenSelect = (value: string, tokenType: "tokenA" | "tokenB") => {
-    const selectedToken = getTokenByAssetId(value);
-    if (!selectedToken) return;
+  const handleTokenChange = (tokenAssetId: Hash, tokenType: "tokenA" | "tokenB") => {
+    const newSelectedToken = getTokenByAssetId(tokenAssetId);
+    if (!newSelectedToken) return;
 
+    const currentlySelectedToken = tradeState[tokenType];
     // Get the token that would be the opposite (to ensure we don't use the same token twice)
     const otherTokenType = tokenType === "tokenA" ? "tokenB" : "tokenA";
-    const currentOtherToken = tradeState[otherTokenType];
+    const currentlySelectedOtherToken = tradeState[otherTokenType];
 
-    // If the selected token is the same as the other token, find a different token
-    let otherToken = currentOtherToken;
-
-    if (selectedToken.symbol === currentOtherToken.symbol) {
-      // Find the first token that isn't the selected one
-      const differentToken = escrowSupportedTokens.find(t => t.symbol !== selectedToken.symbol);
-      if (differentToken) {
-        otherToken = differentToken;
-      }
+    // If the selected token is the same as the other token, switch them in places
+    if (newSelectedToken.assetId === currentlySelectedOtherToken.assetId) {
+      setTradeState(prev => ({
+        ...prev,
+        [tokenType]: currentlySelectedOtherToken,
+        [otherTokenType]: currentlySelectedToken,
+      }));
+    } else {
+      setTradeState(prev => ({
+        ...prev,
+        [tokenType]: newSelectedToken,
+      }));
     }
-
-    // Only update the token types without swapping amounts
-    setTradeState(prev => ({
-      ...prev,
-      [tokenType]: selectedToken,
-      [otherTokenType]: otherToken,
-      // No amount swapping
-    }));
   };
 
   const isValidNumber = (value: string): boolean => {
@@ -179,8 +175,8 @@ export default function AddEscrowedTrade() {
     setIsAddingTrade(true);
     try {
       // Get the token addresses for the respective chains
-      const tokenAAddress = tradeState.tokenA.addresses[tradeState.chainA];
-      const tokenBAddress = tradeState.tokenB.addresses[tradeState.chainB];
+      const tokenAAddress = tradeState.tokenA.addresses[escrowMainChain.id];
+      const tokenBAddress = tradeState.tokenB.addresses[escrowMainChain.id];
 
       if (!tokenAAddress || !tokenBAddress) {
         throw new Error("Token not supported on selected chain");
@@ -263,7 +259,7 @@ export default function AddEscrowedTrade() {
                   tokenABalance={tokenABalance}
                   tokenBBalance={tokenBBalance}
                   isAddingTrade={isAddingTrade}
-                  onTokenSelect={handleTokenSelect}
+                  onTokenChange={handleTokenChange}
                   onAmountChange={handleAmountChange}
                   onPartyBChange={handlePartyBChange}
                   onChainChange={handleChainChange}

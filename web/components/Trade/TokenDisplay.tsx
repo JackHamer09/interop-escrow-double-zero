@@ -1,9 +1,8 @@
 import React from "react";
 import Image from "next/image";
 import { ShortAddress } from "./ShortAddress";
-import { Address } from "viem";
+import { Address, formatUnits } from "viem";
 import { TokenConfig } from "~~/config/tokens-config";
-import { formatTokenWithDecimals } from "~~/utils/currency";
 
 interface TokenDisplayProps {
   token: TokenConfig;
@@ -26,7 +25,7 @@ export const TokenDisplay: React.FC<TokenDisplayProps> = ({
     <div className="flex flex-col gap-1">
       <div className={`flex items-center gap-x-2 ${isRight ? "justify-end" : ""} ${isRight ? "" : "mr-2"}`}>
         <Image src={token.logo} alt={token.symbol} width={20} height={20} className="rounded-xl" />
-        <span>{formatTokenWithDecimals(amount, 18)}</span>
+        <span>{formatUnits(amount, token.decimals)}</span>
         <span>{token.symbol}</span>
       </div>
       {myAddress === party && (

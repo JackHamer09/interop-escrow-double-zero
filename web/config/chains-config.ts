@@ -1,13 +1,13 @@
-import { Chain, getAddress } from "viem";
+import { type Address, type Chain, getAddress } from "viem";
 import { env } from "~~/utils/env";
 
 export interface SystemContractsConfig {
-  l2AssetRouter: string;
-  l2NativeTokenVault: string;
-  l2StandardTriggerAccount: string;
-  l2InteropHandler: string;
-  l2InteropCenter: string;
-  deployerSystemContract: string;
+  l2AssetRouter: Address;
+  l2NativeTokenVault: Address;
+  l2StandardTriggerAccount: Address;
+  l2InteropHandler: Address;
+  l2InteropCenter: Address;
+  deployerSystemContract: Address;
 }
 
 // Define chain configurations

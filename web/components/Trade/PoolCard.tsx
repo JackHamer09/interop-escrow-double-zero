@@ -1,14 +1,13 @@
 import React from "react";
 import Image from "next/image";
 import { AlertCircle, CheckCircle, InfoIcon, WalletIcon, XCircle } from "lucide-react";
-import { Chain, isAddress } from "viem";
+import { Chain, Hash, formatUnits, isAddress } from "viem";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~~/components/ui/tooltip";
 import { escrowSupportedChains, escrowSupportedTokens } from "~~/config/escrow-trade-config";
 import { TokenConfig } from "~~/config/tokens-config";
 import { cn } from "~~/utils/cn";
-import { formatTokenWithDecimals } from "~~/utils/currency";
 
 interface PoolCardProps {
   isPartyB: boolean;
@@ -18,11 +17,10 @@ interface PoolCardProps {
   displayAmount: string;
   chain: Chain;
   token: TokenConfig;
-  selectedToken: string;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPartyBChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onChainChange: (value: number) => void;
-  onTokenChange: (value: string) => void;
+  onTokenChange: (tokenAssetId: Hash) => void;
   disabled: boolean;
 }
 
@@ -34,7 +32,6 @@ export const PoolCard: React.FC<PoolCardProps> = ({
   displayAmount,
   chain,
   token,
-  selectedToken,
   onAmountChange,
   onPartyBChange,
   onChainChange,
@@ -50,7 +47,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({
     // Create a simulated event to use the same change handler
     const fakeEvent = {
       target: {
-        value: formatTokenWithDecimals(balance, token.decimals),
+        value: formatUnits(balance, token.decimals),
       },
     } as React.ChangeEvent<HTMLInputElement>;
 
@@ -64,7 +61,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({
       try {
         // Convert both to numeric values for comparison
         const amountValue = parseFloat(displayAmount);
-        const balanceValue = parseFloat(formatTokenWithDecimals(balance, token.decimals));
+        const balanceValue = parseFloat(formatUnits(balance, token.decimals));
 
         // Set insufficient balance flag
         setHasInsufficientBalance(amountValue > balanceValue);
@@ -77,10 +74,10 @@ export const PoolCard: React.FC<PoolCardProps> = ({
     }
 
     // Reset max selected state when amount changes manually
-    if (displayAmount !== formatTokenWithDecimals(balance, token.decimals)) {
+    if (displayAmount !== formatUnits(balance, token.decimals)) {
       setIsMaxSelected(false);
     }
-  }, [displayAmount, balance, token.decimals, displayBalance]);
+  }, [displayAmount, balance, token.assetId, token.decimals, displayBalance]);
 
   return (
     <Card>
@@ -187,7 +184,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({
                   disabled={disabled || isMaxSelected}
                 >
                   <WalletIcon className="h-3 w-3" />
-                  <span>Max: {formatTokenWithDecimals(balance, token.decimals)}</span>
+                  <span>Max: {formatUnits(balance, token.decimals)}</span>
                 </button>
 
                 {hasInsufficientBalance && (
@@ -201,20 +198,18 @@ export const PoolCard: React.FC<PoolCardProps> = ({
           </div>
 
           <div className="flex flex-col gap-y-2">
-            <Select value={selectedToken} disabled={disabled} onValueChange={onTokenChange}>
+            <Select value={token.assetId} disabled={disabled} onValueChange={onTokenChange}>
               <SelectTrigger className="bg-secondary text-secondary-foreground shadow hover:bg-secondary/80 text-base h-fit w-max">
                 <SelectValue>
-                  {selectedToken && (
-                    <div className="flex items-center gap-x-2">
-                      <Image src={token.logo} alt={token.symbol} width={20} height={20} className="rounded-xl" />
-                      <span className="w-max">{token.assetId}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-x-2">
+                    <Image src={token.logo} alt={token.symbol} width={20} height={20} className="rounded-xl" />
+                    <span className="w-max">{token.symbol}</span>
+                  </div>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {escrowSupportedTokens.map(tokenConfig => (
-                  <SelectItem key={tokenConfig.symbol} value={tokenConfig.symbol}>
+                  <SelectItem key={tokenConfig.assetId} value={tokenConfig.assetId}>
                     <div className="flex items-center gap-x-2">
                       <Image
                         src={tokenConfig.logo}

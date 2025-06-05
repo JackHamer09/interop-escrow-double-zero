@@ -1,16 +1,18 @@
 import { ethers } from "ethers";
-import { type Address, type Hash, erc20Abi, getAddress } from "viem";
+import { type Address, type Hash, erc20Abi, getAddress, zeroAddress } from "viem";
 import { readContract, writeContract } from "wagmi/actions";
 import { systemContracts } from "~~/config/chains-config";
 import { INTEROP_CENTER_ABI } from "~~/contracts/interop-center";
+import { INTEROP_HANDLER_ABI } from "~~/contracts/interop-handler";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
+import { REQUIRED_L2_GAS_PRICE_PER_PUBDATA } from "~~/utils/constants";
 import { env } from "~~/utils/env";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 interface InteropCallStarter {
   directCall: boolean;
-  nextContract: string;
-  data: string;
+  nextContract: Address;
+  data: Hash;
   value: bigint;
   requestedInteropCallValue: bigint;
 }
@@ -49,7 +51,7 @@ export class InteropTransactionBuilder {
     });
   }
 
-  addTransaction({ contractAddress, data, value }: { contractAddress: Address; data: string; value: bigint }) {
+  addTransaction({ contractAddress, data, value }: { contractAddress: Address; data: Hash; value: bigint }) {
     this.execCallStarters.push({
       directCall: true,
       nextContract: contractAddress,
@@ -105,9 +107,9 @@ export class InteropTransactionBuilder {
         this.execCallStarters,
         {
           gasLimit: 30_000_000n,
-          gasPerPubdataByteLimit: 800n, // REQUIRED_L2_GAS_PRICE_PER_PUBDATA
+          gasPerPubdataByteLimit: BigInt(REQUIRED_L2_GAS_PRICE_PER_PUBDATA),
           refundRecipient: this.senderAddress,
-          paymaster: ethers.ZeroAddress,
+          paymaster: zeroAddress,
           paymasterInput: "0x",
         },
       ],
@@ -123,26 +125,15 @@ export class InteropTransactionBuilder {
 
   public async getAliasedAddress(address: Address): Promise<Address> {
     return await readContract(wagmiConfig, {
-      chainId: this.toChainId,
+      // chainId: this.toChainId, // For now its ok to request any chain, since result will be the same
       address: systemContracts.l2InteropHandler,
-      abi: [
-        {
-          type: "function",
-          name: "getAliasedAccount",
-          inputs: [
-            { name: "fromAsSalt", type: "address", internalType: "address" },
-            { name: "", type: "uint256", internalType: "uint256" },
-          ],
-          outputs: [{ name: "", type: "address", internalType: "address" }],
-          stateMutability: "view",
-        },
-      ],
+      abi: INTEROP_HANDLER_ABI,
       functionName: "getAliasedAccount",
       args: [getAddress(address.toLowerCase()), BigInt(this.fromChainId)],
     });
   }
 
-  private getTokenTransferSecondBridgeData(assetId: Hash, amount: bigint, recipient: Address): string {
+  private getTokenTransferSecondBridgeData(assetId: Hash, amount: bigint, recipient: Address): Hash {
     return ethers.concat([
       "0x01",
       new ethers.AbiCoder().encode(
@@ -152,7 +143,7 @@ export class InteropTransactionBuilder {
           new ethers.AbiCoder().encode(["uint256", "address", "address"], [amount, recipient, ethers.ZeroAddress]),
         ],
       ),
-    ]);
+    ]) as Hash;
   }
 
   public async waitUntilInteropTxProcessed(transactionHash: Hash, pollingInterval = 250) {
