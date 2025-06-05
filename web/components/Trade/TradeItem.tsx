@@ -5,9 +5,8 @@ import { ArrowLeftRightIcon } from "lucide-react";
 import { Address } from "viem";
 import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
-import { TTBILL_TOKEN, USDC_TOKEN } from "~~/contracts/tokens";
-import { EscrowTrade, EscrowTradeStatus } from "~~/hooks/use-trade-escrow";
-import { env } from "~~/utils/env";
+import { escrowMainChain, escrowSupportedChains, escrowSupportedTokens } from "~~/config/escrow-trade-config";
+import { type EscrowTrade, EscrowTradeStatus } from "~~/hooks/use-trade-escrow";
 
 interface TradeItemProps {
   trade: EscrowTrade;
@@ -24,6 +23,11 @@ export const TradeItem: React.FC<TradeItemProps> = ({
   onAcceptTrade,
   onCancelTrade,
 }) => {
+  const chainA = escrowMainChain; // Trade can be initiated on the main chain only
+  const chainB = escrowSupportedChains.find(chain => BigInt(chain.id) === trade.partyBChainId);
+  const tokenA = escrowSupportedTokens.find(e => e.addresses[escrowMainChain.id] === trade.tokenA);
+  const tokenB = escrowSupportedTokens.find(e => e.addresses[escrowMainChain.id] === trade.tokenB);
+
   return (
     <Card className="mb-4 hover:bg-slate-400 hover:bg-opacity-5 border-slate-600">
       <CardHeader className="p-4 pb-3">
@@ -45,31 +49,31 @@ export const TradeItem: React.FC<TradeItemProps> = ({
       <CardContent className="flex flex-col gap-y-2 p-4 pt-0">
         <div className="flex items-center justify-center mb-2">
           <div className="flex items-center gap-4 min-w-32 justify-end">
-            <TokenDisplay
-              token={USDC_TOKEN}
-              amount={trade.amountA}
-              party={trade.partyA}
-              myAddress={myAddress}
-              isRight={false}
-              chainName={env.NEXT_PUBLIC_CHAIN_A_NAME}
-            />
+            {tokenA && (
+              <TokenDisplay
+                token={tokenA}
+                amount={trade.amountA}
+                party={trade.partyA}
+                myAddress={myAddress}
+                isRight={false}
+                chainName={chainA.name}
+              />
+            )}
           </div>
 
           <ArrowLeftRightIcon className="h-7 w-7 my-4 mx-8 text-muted-foreground" />
 
           <div className="flex items-center gap-4 min-w-32">
-            <TokenDisplay
-              token={TTBILL_TOKEN}
-              amount={trade.amountB}
-              party={trade.partyB}
-              myAddress={myAddress}
-              isRight={true}
-              chainName={
-                Number(trade.partyBChainId) === env.NEXT_PUBLIC_CHAIN_A_ID
-                  ? env.NEXT_PUBLIC_CHAIN_A_NAME
-                  : env.NEXT_PUBLIC_CHAIN_B_NAME
-              }
-            />
+            {tokenB && (
+              <TokenDisplay
+                token={tokenB}
+                amount={trade.amountB}
+                party={trade.partyB}
+                myAddress={myAddress}
+                isRight={true}
+                chainName={chainB?.name}
+              />
+            )}
           </div>
         </div>
 

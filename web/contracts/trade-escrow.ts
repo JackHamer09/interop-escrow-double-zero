@@ -1,4 +1,4 @@
-import { env } from "~~/utils/env";
+import { escrowContracts } from "~~/config/escrow-trade-config";
 
 export const TRADE_ESCROW_ABI = [
   { type: "receive", stateMutability: "payable" },
@@ -141,4 +141,4 @@ export const TRADE_ESCROW_ABI = [
   },
 ] as const;
 
-export const TRADE_ESCROW_ADDRESS = env.NEXT_PUBLIC_TRADE_ESCROW_ADDRESS;
+export const TRADE_ESCROW_ADDRESS = escrowContracts.tradeEscrow;

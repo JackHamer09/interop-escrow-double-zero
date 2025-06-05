@@ -22,6 +22,7 @@
     "@rainbow-me/rainbowkit": "2.1.6",
     "@t3-oss/env-nextjs": "^0.11.1",
     "@tanstack/react-query": "~5.59.15",
+    "@wagmi/core": "^2.17.2",
     "blo": "~1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -41,8 +42,8 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^3.1.0",
-    "viem": "2.21.32",
-    "wagmi": "2.12.23",
+    "viem": "2.30.6",
+    "wagmi": "2.15.5",
     "zksync-ethers": "github:zksync-sdk/zksync-ethers#sb-use-new-encoding-in-sdk",
     "zksync-ethers-interop-support": "github:zksync-sdk/zksync-ethers#kl/interop-ethers-support",
     "zod": "^3.23.8"

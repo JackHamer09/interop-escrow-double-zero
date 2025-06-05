@@ -5,7 +5,7 @@ import { $fetch } from "ofetch";
 import { SiweMessage } from "siwe";
 import { addChain } from "viem/actions";
 import { useAccount, useClient, useSignMessage } from "wagmi";
-import { chain1 } from "~~/services/web3/wagmiConfig";
+import { chain1 } from "~~/config/chains-config";
 import { env } from "~~/utils/env";
 
 const STORAGE_KEY = "rpc_auth";
@@ -200,18 +200,10 @@ export function useRpcLogin() {
     try {
       await addChain(client as any, {
         chain: {
-          id: chain1.id,
-          name: chain1.name,
-          nativeCurrency: chain1.nativeCurrency,
+          ...chain1,
           rpcUrls: {
             default: {
               http: [fullRpcUrl],
-            },
-          },
-          blockExplorers: {
-            default: {
-              name: "Block Explorer",
-              url: env.NEXT_PUBLIC_CHAIN_A_BLOCK_EXPLORER_URL,
             },
           },
         },
