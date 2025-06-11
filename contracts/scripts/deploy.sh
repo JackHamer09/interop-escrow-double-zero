@@ -164,6 +164,7 @@ if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
   deployer_chain_a_deposit_amount_decimal=1000
   echo "Funding deployer L2 balance with $deployer_chain_a_deposit_amount_decimal ETH..."
   npx zksync-cli@latest bridge deposit --amount $deployer_chain_a_deposit_amount_decimal --pk $DEPLOYER_PRIVATE_KEY --to $DEPLOYER_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_A_RPC_URL
+  sleep 5;
 else
   DEPLOYER_ADDRESS=$(get_address_from_private_key $DEPLOYER_PRIVATE_KEY)
   echo "Deployer address: $DEPLOYER_ADDRESS"
@@ -226,6 +227,11 @@ echo "Deploying TradeEscrow contract..."
 trade_escrow_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 100ether
 
+# Deploy RepoContract
+echo "Deploying RepoContract..."
+repo_contract_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/RepoContract.sol:RepoContract --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $repo_contract_address --value 100ether
+
 echo ""
 echo "Accounts:"
 echo "Deployer: $DEPLOYER_ADDRESS"
@@ -234,6 +240,7 @@ echo "User 2 (Chain B): $USER_2_CHAIN_B_ADDRESS"
 echo ""
 echo "Contracts:"
 echo "TradeEscrow: $trade_escrow_address"
+echo "RepoContract: $repo_contract_address"
 echo ""
 echo "Tokens:"
 echo "USDC: "

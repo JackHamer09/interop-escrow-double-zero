@@ -5,6 +5,7 @@ import Image from "next/image";
 import { RefreshBalancesButton } from "./RefreshBalancesButton";
 import { formatUnits } from "viem";
 import { useChainId } from "wagmi";
+import MintFundsButton from "~~/components/MintFundsButton";
 import { Card } from "~~/components/ui/card";
 import { getChainById } from "~~/config/chains-config";
 import { TokenWithBalance } from "~~/hooks/use-balances";
@@ -13,9 +14,10 @@ interface TokenBalancesProps {
   tokens: TokenWithBalance[];
   isRefreshing: boolean;
   onRefresh: () => void;
+  onMintSuccess?: () => void;
 }
 
-export const TokenBalances: React.FC<TokenBalancesProps> = ({ tokens, isRefreshing, onRefresh }) => {
+export const TokenBalances: React.FC<TokenBalancesProps> = ({ tokens, isRefreshing, onRefresh, onMintSuccess }) => {
   const chainId = useChainId();
 
   if (!tokens.length) return null;
@@ -27,7 +29,10 @@ export const TokenBalances: React.FC<TokenBalancesProps> = ({ tokens, isRefreshi
     <Card className="w-full max-w-[550px] p-6 mt-14">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-medium text-xl">My Token Balances</h3>
-        <RefreshBalancesButton isLoading={isRefreshing} onRefresh={onRefresh} />
+        <div className="flex items-center gap-3">
+          <RefreshBalancesButton isLoading={isRefreshing} onRefresh={onRefresh} />
+          <MintFundsButton variant="outline" size="sm" onMintSuccess={onMintSuccess} />
+        </div>
       </div>
       <div className="flex flex-col space-y-4">
         {tokens.map(token => (
