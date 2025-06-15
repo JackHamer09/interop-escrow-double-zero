@@ -36,8 +36,23 @@ export const ttbillToken: TokenConfig = {
   },
 };
 
+export const sgdToken: TokenConfig = {
+  symbol: "SGD",
+  name: "Singapore Dollar",
+  assetId: env.NEXT_PUBLIC_SGD_ASSET_ID as Hash, // Define this in your env
+  decimals: 18,
+  logo: "/sgd.png", // Add a SGD logo to your assets
+  addresses: {
+    [chain1.id]: getAddress(env.NEXT_PUBLIC_SGD_CHAIN_A_ADDRESS || "0x0"), // Replace with actual address
+    [chain2.id]: getAddress(env.NEXT_PUBLIC_SGD_CHAIN_B_ADDRESS || "0x0"), // Replace with actual address
+  },
+};
+
 // All available tokens
-export const allTokens: TokenConfig[] = [usdcToken, ttbillToken];
+export const allTokens: TokenConfig[] = [usdcToken, ttbillToken, sgdToken];
+
+// Tokens supported for the invoice payment system
+export const invoiceSupportedTokens: TokenConfig[] = [sgdToken, usdcToken, ttbillToken];
 
 // Helper functions
 export function getTokenByAssetId(assetId: string): TokenConfig | undefined {

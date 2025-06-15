@@ -91,6 +91,21 @@ export class MintTestFundsService {
     } else {
       this.logger.warn('TTBILL token address or asset ID not found in config');
     }
+    
+    // Initialize SGD token info
+    const sgdMintAmount = this.configService.get<bigint>('mintAmounts.sgd');
+    const sgdAddressChain1 = this.configService.get<Address>('tokens.sgdChainA');
+    const sgdAssetId = this.configService.get<Hash>('tokens.sgdAssetId');
+    if (sgdAddressChain1 && sgdAssetId) {
+      this.supportedTokens.push({
+        name: 'SGD',
+        address_chain1: sgdAddressChain1,
+        assetId: sgdAssetId,
+        mintAmount: sgdMintAmount
+      });
+    } else {
+      this.logger.warn('SGD token address or asset ID not found in config');
+    }
   }
 
   private getMinterClient(chainId: number = chain1.id) {
