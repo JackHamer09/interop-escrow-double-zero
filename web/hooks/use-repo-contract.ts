@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react";
 import useBalances, { getTokenWithBalanceByAssetId } from "./use-balances";
+import { useInterval } from "./use-interval";
 import useRepoContractInterop from "./use-repo-contract-interop";
 import { readContract } from "@wagmi/core";
 import toast from "react-hot-toast";
@@ -127,6 +128,11 @@ export default function useRepoContract() {
     ...options,
     chainId: mainChain.id,
     functionName: "getOpenOffers",
+    query: {
+      gcTime: 1000,
+      refetchInterval: 1000, // Refresh every second
+      refetchIntervalInBackground: true,
+    },
   });
 
   // Get lender offers for the current address
@@ -416,22 +422,28 @@ export default function useRepoContract() {
 
   // Helper function to get historical offers
   const getHistoricalOffers = () => {
-    const historicalLenderOffers = (lenderOffers || []).filter(offer => 
-      offer.status === RepoOfferStatus.Completed || 
-      offer.status === RepoOfferStatus.Cancelled ||
-      offer.status === RepoOfferStatus.Defaulted
+    const historicalLenderOffers = (lenderOffers || []).filter(
+      offer =>
+        offer.status === RepoOfferStatus.Completed ||
+        offer.status === RepoOfferStatus.Cancelled ||
+        offer.status === RepoOfferStatus.Defaulted,
     );
-    
-    const historicalBorrowerOffers = (borrowerOffers || []).filter(offer => 
-      offer.status === RepoOfferStatus.Completed || 
-      offer.status === RepoOfferStatus.Cancelled ||
-      offer.status === RepoOfferStatus.Defaulted
+
+    const historicalBorrowerOffers = (borrowerOffers || []).filter(
+      offer =>
+        offer.status === RepoOfferStatus.Completed ||
+        offer.status === RepoOfferStatus.Cancelled ||
+        offer.status === RepoOfferStatus.Defaulted,
     );
-    
+
     // Combine both arrays and sort by offerId in descending order (newest first)
-    return [...historicalLenderOffers, ...historicalBorrowerOffers]
-      .sort((a, b) => Number(b.offerId - a.offerId));
+    return [...historicalLenderOffers, ...historicalBorrowerOffers].sort((a, b) => Number(b.offerId - a.offerId));
   };
+
+  // Setup automatic refresh interval
+  useInterval(() => {
+    refetchAll();
+  }, 1000);
 
   return {
     openOffers,

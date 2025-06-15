@@ -6,18 +6,17 @@ import { useBoolean } from "usehooks-ts";
 import { Address, Hash, parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
-import MintFundsButton from "~~/components/MintFundsButton";
-import { CreateOfferModal, RepoTable, RepoHistoryTable } from "~~/components/Repo";
-import { RefreshBalancesButton, TokenBalances } from "~~/components/Trade";
+import { CreateOfferModal, RepoHistoryTable, RepoTable } from "~~/components/Repo";
+import { TokenBalances } from "~~/components/Trade";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { Button } from "~~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs";
-import { 
-  isRepoMainChain, 
-  repoDurationOptions, 
-  repoMainChain, 
-  repoSupportedChains, 
-  RepoOfferStatus
+import {
+  RepoOfferStatus,
+  isRepoMainChain,
+  repoDurationOptions,
+  repoMainChain,
+  repoSupportedChains,
 } from "~~/config/repo-config";
 import { repoSupportedTokens } from "~~/config/repo-config";
 import { TokenConfig, getTokenByAssetId } from "~~/config/tokens-config";
@@ -39,7 +38,7 @@ export default function IntradayRepo() {
   const [isRefreshingBalances, setIsRefreshingBalances] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [processingOfferId, setProcessingOfferId] = useState<bigint | undefined>(undefined);
-  
+
   const {
     openOffers,
     lenderOffers,
@@ -284,21 +283,18 @@ export default function IntradayRepo() {
   };
 
   // Prepare sorted offers for display
-  const myActiveOffers = [...(lenderOffers || []), ...(borrowerOffers || [])].filter(offer => 
-    offer.status === RepoOfferStatus.Active || 
-    offer.status === RepoOfferStatus.Open
+  const myActiveOffers = [...(lenderOffers || []), ...(borrowerOffers || [])].filter(
+    offer => offer.status === RepoOfferStatus.Active || offer.status === RepoOfferStatus.Open,
   );
 
   // Filter offers that the current user can view (not created by them)
   const availableOffers = openOffers?.filter(offer => offer.lender !== myAddress) || [];
-  
-  // historicalOffers is now provided by the hook
 
   // State for managing the active tab
   const [activeTab, setActiveTab] = useState("offers");
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center relative w-full">
+    <div className="flex-1 flex flex-col items-center justify-center relative w-full px-4">
       <div className="flex flex-col items-center w-full mt-10">
         <h2 className="mb-4 font-medium text-2xl text-center">Intraday Repo</h2>
 
@@ -307,7 +303,7 @@ export default function IntradayRepo() {
             {/* Create Offer Button and Info */}
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-4">
-                <Button 
+                <Button
                   onClick={() => setIsCreateModalOpen(true)}
                   disabled={!isRepoMainChain(walletChainId || 0)}
                   className="flex items-center gap-2"
@@ -315,13 +311,11 @@ export default function IntradayRepo() {
                   <Plus className="h-4 w-4" />
                   Create Lending Offer
                 </Button>
-                
+
                 {!isRepoMainChain(walletChainId || 0) && (
                   <Alert variant="warning" className="py-1 px-3 h-auto">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
-                      Switch to {mainChain.name} to create offers
-                    </AlertDescription>
+                    <AlertDescription className="text-xs">Switch to {mainChain.name} to create offers</AlertDescription>
                   </Alert>
                 )}
               </div>
@@ -333,7 +327,7 @@ export default function IntradayRepo() {
                 <TabsTrigger value="offers">Current Offers</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="offers" className="space-y-6">
                 {/* My Active Offers Section */}
                 {myActiveOffers.length > 0 && (
@@ -366,14 +360,10 @@ export default function IntradayRepo() {
                   onClaimCollateral={handleClaimCollateral}
                 />
               </TabsContent>
-              
+
               <TabsContent value="history">
                 {/* Historical Offers Table */}
-                <RepoHistoryTable
-                  title="My Offer History"
-                  offers={historicalOffers}
-                  myAddress={myAddress}
-                />
+                <RepoHistoryTable title="My Offer History" offers={historicalOffers} myAddress={myAddress} />
               </TabsContent>
             </Tabs>
 
@@ -394,10 +384,10 @@ export default function IntradayRepo() {
           </div>
 
           {/* Token Balances Section */}
-          <TokenBalances 
-            tokens={tokens} 
-            isRefreshing={isRefreshingBalances} 
-            onRefresh={handleRefreshBalances} 
+          <TokenBalances
+            tokens={tokens}
+            isRefreshing={isRefreshingBalances}
+            onRefresh={handleRefreshBalances}
             onMintSuccess={refetchTokens}
           />
         </HiddenContent>
