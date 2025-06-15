@@ -164,6 +164,7 @@ if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
   deployer_chain_a_deposit_amount_decimal=1000
   echo "Funding deployer L2 balance with $deployer_chain_a_deposit_amount_decimal ETH..."
   npx zksync-cli@latest bridge deposit --amount $deployer_chain_a_deposit_amount_decimal --pk $DEPLOYER_PRIVATE_KEY --to $DEPLOYER_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_A_RPC_URL
+  sleep 5;
 else
   DEPLOYER_ADDRESS=$(get_address_from_private_key $DEPLOYER_PRIVATE_KEY)
   echo "Deployer address: $DEPLOYER_ADDRESS"
@@ -210,11 +211,11 @@ echo "Approving tokens for L2_NATIVE_TOKEN_VAULT_ADDRESS..."
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 100000000000000000000000 # 100,000 USDC
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 100000000000000000000 # 100 TTBILL
 #### 2. Request interop transaction with transfer
-echo "Requesting interop transfer for User 2 on Chain B..."
-interop_transfer_usdc_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $usdc_asset_id 100000000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
-wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_usdc_tx_hash
-interop_transfer_ttbill_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $ttbill_asset_id 100000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
-wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_ttbill_tx_hash
+# echo "Requesting interop transfer for User 2 on Chain B..."
+# interop_transfer_usdc_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $usdc_asset_id 100000000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
+# wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_usdc_tx_hash
+# interop_transfer_ttbill_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $ttbill_asset_id 100000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
+# wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_ttbill_tx_hash
 
 ## Get addresses of tokens on Chain B
 usdc_address_chain_b=$(cast parse-bytes32-address $(cast call --rpc-url $CHAIN_B_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADDRESS "tokenAddress(bytes32)" $usdc_asset_id))
@@ -226,6 +227,11 @@ echo "Deploying TradeEscrow contract..."
 trade_escrow_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 100ether
 
+# Deploy RepoContract
+echo "Deploying RepoContract..."
+repo_contract_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/RepoContract.sol:RepoContract --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $repo_contract_address --value 100ether
+
 echo ""
 echo "Accounts:"
 echo "Deployer: $DEPLOYER_ADDRESS"
@@ -234,6 +240,7 @@ echo "User 2 (Chain B): $USER_2_CHAIN_B_ADDRESS"
 echo ""
 echo "Contracts:"
 echo "TradeEscrow: $trade_escrow_address"
+echo "RepoContract: $repo_contract_address"
 echo ""
 echo "Tokens:"
 echo "USDC: "

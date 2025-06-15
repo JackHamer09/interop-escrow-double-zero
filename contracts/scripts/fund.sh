@@ -6,8 +6,8 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-usdc_address="0x65C899B5fb8Eb9ae4da51D67E1fc417c7CB7e964" # Replace with actual Chain A USDC address
-ttbill_address="0x0a67078A35745947A37A552174aFe724D8180c25" # Replace with actual Chain A TTBILL address
+usdc_address="0xC7B060B7D883DBd86AEc6C2AA71e02Ec6Aaf82CE" # Replace with actual Chain A USDC address
+ttbill_address="0x22D151A1313d9B517Fa437F1F5B3744E636D8790" # Replace with actual Chain A TTBILL address
 
 # Set environment variables with defaults if not already set
 DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY:-""}
@@ -175,30 +175,27 @@ deployer_chain_1_balance=$(cast balance --rpc-url $CHAIN_A_RPC_URL $DEPLOYER_ADD
 echo "Deployer balance: $deployer_chain_1_balance"
 
 # Get token Asset IDs
-usdc_asset_id=$(cast call --rpc-url $CHAIN_A_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADDRESS "assetId(address)" $usdc_address)
-ttbill_asset_id=$(cast call --rpc-url $CHAIN_A_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADDRESS "assetId(address)" $ttbill_address)
+# usdc_asset_id=$(cast call --rpc-url $CHAIN_A_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADDRESS "assetId(address)" $usdc_address)
+# ttbill_asset_id=$(cast call --rpc-url $CHAIN_A_RPC_URL $L2_NATIVE_TOKEN_VAULT_ADDRESS "assetId(address)" $ttbill_address)
 
 # Mint tokens
 ## Premium User
 echo "Minting tokens for Premium user..."
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 1000000000000000000 # 1 USDC
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 1000000000000000000000 # 1 USDC
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "mint(address,uint256)" $USER_1_CHAIN_A_ADDRESS 1000000000000000000000 # 1 USDC
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "mint(address,uint256)" $USER_2_CHAIN_B_ADDRESS 1000000000000000000000 # 1 USDC
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "mint(address,uint256)" $USER_2_CHAIN_B_ADDRESS 1000000000000000000000 # 1 USDC
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $USER_1_CHAIN_A_ADDRESS --value 100ether
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $USER_2_CHAIN_B_ADDRESS --value 100ether
 
-## Basic User
-echo "Minting tokens for Basic user..."
-### Mint for Deployer on Chain1
-npx zksync-cli@latest bridge deposit --amount "100" --pk $DEPLOYER_PRIVATE_KEY --to $USER_2_CHAIN_B_ADDRESS --l1-rpc $L1_RPC_URL --rpc $CHAIN_B_RPC_URL
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "mint(address,uint256)" $DEPLOYER_ADDRESS 5000000000000000000 # 5 TTBILL
-### Then interop transfer these funds to Basic user on Chain2
-#### 1. Approve tokens for L2_NATIVE_TOKEN_VAULT_ADDRESS address
-echo "Approving tokens for L2_NATIVE_TOKEN_VAULT_ADDRESS..."
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 5000000000000000000 # 5 TTBILL
-#### 2. Request interop transaction with transfer
-echo "Requesting interop transfer for Basic user..."
-interop_transfer_ttbill_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $ttbill_asset_id 5000000000000000000 $USER_2_CHAIN_B_ADDRESS $DEPLOYER_PRIVATE_KEY 200000000000000000)
-wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_ttbill_tx_hash
+# Log balances
+user_1_chain_a_balance=$(cast balance --rpc-url $CHAIN_A_RPC_URL $USER_1_CHAIN_A_ADDRESS)
+user_2_chain_b_balance=$(cast balance --rpc-url $CHAIN_A_RPC_URL $USER_2_CHAIN_B_ADDRESS)
 
 echo ""
 echo "Funded Accounts:"
+echo "Chain A RPC: $CHAIN_A_RPC_URL"
 echo "Chain A: $USER_1_CHAIN_A_ADDRESS"
+echo "Chain A Balance: $user_1_chain_a_balance"
 echo "Chain B: $USER_2_CHAIN_B_ADDRESS"
+echo "Chain B Balance: $user_2_chain_b_balance"

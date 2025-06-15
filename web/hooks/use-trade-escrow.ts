@@ -1,14 +1,14 @@
 import { useCallback, useEffect } from "react";
+import useBalances, { getTokenWithBalanceByAssetId } from "./use-balances";
 import useTradeEscrowInterop from "./use-trade-escrow-interop";
-import useTtbillToken from "./use-ttbill-token";
-import useUsdcToken from "./use-usdc-token";
+import { readContract } from "@wagmi/core";
 import toast from "react-hot-toast";
-import { Address } from "viem";
+import { Address, erc20Abi, formatUnits } from "viem";
 import { useAccount, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
-import { USDC_TOKEN } from "~~/contracts/tokens";
+import { escrowMainChain, isEscrowMainChain } from "~~/config/escrow-trade-config";
+import { getTokenByAddress } from "~~/config/tokens-config";
 import { TRADE_ESCROW_ABI, TRADE_ESCROW_ADDRESS } from "~~/contracts/trade-escrow";
-import { chain1 } from "~~/services/web3/wagmiConfig";
-import { formatTokenWithDecimals } from "~~/utils/currency";
+import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
 export const options = {
@@ -18,12 +18,12 @@ export const options = {
 
 export type EscrowTrade = {
   tradeId: bigint;
-  partyA: string;
-  partyB: string;
+  partyA: Address;
+  partyB: Address;
   partyBChainId: bigint;
-  tokenA: string;
+  tokenA: Address;
   amountA: bigint;
-  tokenB: string;
+  tokenB: Address;
   amountB: bigint;
   depositedA: boolean;
   depositedB: boolean;
@@ -41,8 +41,9 @@ export default function useTradeEscrow() {
   const interop = useTradeEscrowInterop();
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
-  const usdcToken = useUsdcToken();
-  const ttbillToken = useTtbillToken();
+  const { tokens, refetch: refetchTokens } = useBalances(walletChainId);
+
+  const mainChain = escrowMainChain;
 
   async function switchChainIfNotSet(chainId: number) {
     if (walletChainId !== chainId) {
@@ -50,37 +51,76 @@ export default function useTradeEscrow() {
     }
   }
 
-  async function checkAndApproveToken(tokenAddress: string, amount: bigint) {
-    if (!address) throw new Error("No address available");
+  // Check allowance directly when needed
+  async function checkAllowance(tokenAddress: Address, owner: Address, spender: Address): Promise<bigint> {
+    try {
+      const result = await readContract(wagmiConfig as any, {
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [owner, spender],
+      });
+      return result as bigint;
+    } catch (error) {
+      console.error("Error checking allowance:", error);
+      return 0n;
+    }
+  }
 
-    // Determine which token we're working with
-    const tokenInfo =
-      tokenAddress === USDC_TOKEN.address
-        ? { token: usdcToken, symbol: "USDC" }
-        : { token: ttbillToken, symbol: "TTBILL" };
+  async function checkAndApproveToken(tokenAddress: Address, amount: bigint) {
+    if (!address) throw new Error("No address available");
+    if (!walletChainId) throw new Error("No chainId available");
+
+    // Find token by address
+    const tokenConfig = getTokenByAddress(tokenAddress);
+    if (!tokenConfig) throw new Error("Token not found");
+
+    // Find token in our tokens array
+    const token = getTokenWithBalanceByAssetId(tokens, tokenConfig.assetId);
+    if (!token) throw new Error("Token not found in wallet");
+
+    // Check allowance directly when needed
+    const currentAllowance = await checkAllowance(token.addresses[walletChainId], address, TRADE_ESCROW_ADDRESS);
 
     // Check if we need to approve
-    if ((tokenInfo.token.allowance ?? 0n) < amount) {
-      const approveHash = await toast.promise(tokenInfo.token.approve(amount), {
-        loading: `Approving use of ${tokenInfo.symbol} funds...`,
-        success: `${tokenInfo.symbol} approved!`,
-        error: err => {
-          console.error(err);
-          return `Failed to approve ${tokenInfo.symbol}`;
+    if (currentAllowance < amount) {
+      // Approve token
+      const approveHash = await toast.promise(
+        writeContractAsync({
+          abi: [
+            {
+              type: "function",
+              name: "approve",
+              inputs: [
+                { name: "spender", type: "address", internalType: "address" },
+                { name: "value", type: "uint256", internalType: "uint256" },
+              ],
+              outputs: [{ name: "", type: "bool", internalType: "bool" }],
+              stateMutability: "nonpayable",
+            },
+          ],
+          address: token.addresses[walletChainId],
+          functionName: "approve",
+          args: [TRADE_ESCROW_ADDRESS, amount],
+        }),
+        {
+          loading: `Approving use of ${token.symbol} funds...`,
+          success: `${token.symbol} approved!`,
+          error: err => {
+            console.error(err);
+            return `Failed to approve ${token.symbol}`;
+          },
         },
-      });
+      );
 
       await toast.promise(waitForTransactionReceipt({ hash: approveHash }), {
-        loading: `Waiting for ${tokenInfo.symbol} approval confirmation...`,
-        success: `${tokenInfo.symbol} approval confirmed!`,
+        loading: `Waiting for ${token.symbol} approval confirmation...`,
+        success: `${token.symbol} approval confirmed!`,
         error: err => {
           console.error(err);
-          return `Failed to approve ${tokenInfo.symbol}`;
+          return `Failed to approve ${token.symbol}`;
         },
       });
-
-      // Refetch allowance after approval
-      await tokenInfo.token.refetchAllowance();
     }
   }
 
@@ -90,7 +130,7 @@ export default function useTradeEscrow() {
     refetch: refetchMySwaps,
   } = useReadContract({
     ...options,
-    chainId: chain1.id,
+    chainId: mainChain.id,
     functionName: "getMySwaps",
     args: [address || "0x"],
   });
@@ -108,7 +148,7 @@ export default function useTradeEscrow() {
   const findTrade = (tradeId: bigint) => {
     const trade = myTrades?.find(trade => trade.tradeId === tradeId);
     if (!trade) throw new Error("Trade wasn't found");
-    const myExpectedChainId = trade.partyA === address ? BigInt(chain1.id) : trade.partyBChainId;
+    const myExpectedChainId = trade.partyA === address ? BigInt(mainChain.id) : trade.partyBChainId;
     return { ...trade, myExpectedChainId };
   };
 
@@ -120,19 +160,23 @@ export default function useTradeEscrow() {
     tokenB: Address,
     amountB: bigint,
   ) => {
-    // Check if user is on Chain B and show toast error
-    if (walletChainId !== chain1.id) {
-      toast.error(`Trade proposals can only be submitted on ${chain1.name}. Please switch network in your wallet.`);
+    // Check if user is on main chain and show toast error if not
+    if (!isEscrowMainChain(walletChainId || 0)) {
+      toast.error(`Trade proposals can only be submitted on ${mainChain.name}. Please switch network in your wallet.`);
       return;
     }
 
-    // Check if the user has sufficient balance to propose the trade
-    const tokenInfo =
-      tokenA === USDC_TOKEN.address ? { token: usdcToken, symbol: "USDC" } : { token: ttbillToken, symbol: "TTBILL" };
+    // Find token by address
+    const tokenConfig = getTokenByAddress(tokenA);
+    if (!tokenConfig) throw new Error("Token not found");
+
+    // Find token in our tokens array
+    const token = getTokenWithBalanceByAssetId(tokens, tokenConfig.assetId);
+    if (!token) throw new Error("Token not found in wallet");
 
     // Check if we have enough balance
-    if ((tokenInfo.token.balance ?? 0n) < amountA) {
-      toast.error(`Insufficient ${tokenInfo.symbol} balance for this trade.`);
+    if ((token.balance || 0n) < amountA) {
+      toast.error(`Insufficient ${token.symbol} balance for this trade.`);
       return false;
     }
 
@@ -172,7 +216,7 @@ export default function useTradeEscrow() {
     await switchChainIfNotSet(Number(trade.myExpectedChainId));
 
     const cancelTrade = await toast.promise(
-      trade.myExpectedChainId === BigInt(chain1.id)
+      isEscrowMainChain(Number(trade.myExpectedChainId))
         ? writeContractAsync({
             ...options,
             functionName: "cancelTrade",
@@ -189,7 +233,7 @@ export default function useTradeEscrow() {
       },
     );
 
-    if (trade.myExpectedChainId === BigInt(chain1.id)) {
+    if (isEscrowMainChain(Number(trade.myExpectedChainId))) {
       await toast.promise(waitForTransactionReceipt({ hash: cancelTrade }), {
         loading: "Canceling trade...",
         success: "Trade cancelled successfully!",
@@ -209,32 +253,34 @@ export default function useTradeEscrow() {
 
     // Check if the user has sufficient balance to accept the trade
     if (trade.partyB === address) {
-      // Determine which token will be deposited by Party B
-      const tokenInfo =
-        trade.tokenB === USDC_TOKEN.address
-          ? { token: usdcToken, symbol: "USDC" }
-          : { token: ttbillToken, symbol: "TTBILL" };
+      // Find token by address
+      const tokenConfig = getTokenByAddress(trade.tokenB);
+      if (!tokenConfig) throw new Error("Token not found");
+
+      // Find token in our tokens array
+      const token = getTokenWithBalanceByAssetId(tokens, tokenConfig.assetId);
+      if (!token) throw new Error("Token not found in wallet");
 
       // Check if we have enough balance
-      if ((tokenInfo.token.balance ?? 0n) < trade.amountB) {
+      if ((token.balance || 0n) < trade.amountB) {
         toast.error(
-          `Insufficient ${tokenInfo.symbol} balance for this trade. You need ${formatTokenWithDecimals(trade.amountB, 18)} ${tokenInfo.symbol}.`,
+          `Insufficient ${token.symbol} balance for this trade. You need ${formatUnits(trade.amountB, tokenConfig.decimals)} ${token.symbol}.`,
         );
         return false;
       }
     }
 
-    // Handle token approvals for chain1 case
-    if (trade.myExpectedChainId === BigInt(chain1.id) && trade.partyB === address) {
+    // Handle token approvals for main chain case
+    if (isEscrowMainChain(Number(trade.myExpectedChainId)) && trade.partyB === address) {
       // We only need to approve the token that party B will deposit
       await checkAndApproveToken(trade.tokenB, trade.amountB);
     }
 
-    if (trade.myExpectedChainId === BigInt(chain1.id)) {
+    if (isEscrowMainChain(Number(trade.myExpectedChainId))) {
       const acceptTrade = await toast.promise(
         writeContractAsync({
           ...options,
-          chainId: chain1.id,
+          chainId: mainChain.id,
           functionName: "acceptAndDeposit",
           args: [tradeId],
         }),
@@ -262,21 +308,15 @@ export default function useTradeEscrow() {
     }
   };
 
-  // Removed depositTradeAsync to enforce strict 2-step process
-
-  const refetchTokenInfo = () => {
-    usdcToken.refetchAll();
-    ttbillToken.refetchAll();
-  };
-
   return {
     myTrades,
     successfullyReceivedSwaps,
     refetchAll,
     refetchMySwaps,
-    refetchTokenInfo,
+    refetchTokens,
     proposeTradeAndDepositAsync,
     cancelTradeAsync,
     acceptTradeAndDepositAsync,
+    tokens,
   };
 }

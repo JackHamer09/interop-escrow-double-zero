@@ -1,38 +1,9 @@
-import { createWalletClient, custom, http } from "viem";
+import { type Chain, createWalletClient, custom, http } from "viem";
 import { createConfig } from "wagmi";
 import { metaMask } from "wagmi/connectors";
+import { allChains, chain1 } from "~~/config/chains-config";
 import { getStoredAuth } from "~~/hooks/use-rpc-login";
 import { env } from "~~/utils/env";
-
-export const chain1 = {
-  id: env.NEXT_PUBLIC_CHAIN_A_ID,
-  name: env.NEXT_PUBLIC_CHAIN_A_NAME,
-  nativeCurrency: {
-    name: "Ethereum",
-    symbol: "ETH",
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: {
-      http: [],
-    },
-  },
-} as const;
-
-export const chain2 = {
-  id: env.NEXT_PUBLIC_CHAIN_B_ID,
-  name: env.NEXT_PUBLIC_CHAIN_B_NAME,
-  nativeCurrency: {
-    name: "Ethereum",
-    symbol: "ETH",
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: {
-      http: [],
-    },
-  },
-} as const;
 
 /**
  * Helper function to check if MetaMask is available
@@ -44,7 +15,7 @@ export const isMetaMaskAvailable = () => {
 /**
  * Creates a wallet client for the specified chain
  */
-export const createMetaMaskClient = ({ chain }: { chain: typeof chain1 | typeof chain2 }) => {
+export const createMetaMaskClient = ({ chain }: { chain: Chain }) => {
   return createWalletClient({
     chain,
     pollingInterval: 500,
@@ -54,8 +25,9 @@ export const createMetaMaskClient = ({ chain }: { chain: typeof chain1 | typeof 
           throw new Error("MetaMask is not available");
         }
 
-        if (params?.from || chain.id !== chain1.id || method === "wallet_addEthereumChain") {
-          // Signature request or non-chain1-requests
+        const mainChainId = chain1.id;
+        if (params?.from || chain.id !== mainChainId || method === "wallet_addEthereumChain") {
+          // Signature request or non-main-chain requests
           const response = await window.ethereum!.request({ method, params });
           return response;
         }
@@ -65,7 +37,7 @@ export const createMetaMaskClient = ({ chain }: { chain: typeof chain1 | typeof 
             ?.request({ method: "eth_chainId" })
             .then((res: string) => parseInt(res, 16))
             .catch(() => 0)) || 0;
-        if (walletChainId === chain1.id) {
+        if (walletChainId === mainChainId) {
           try {
             const response = await window.ethereum!.request({ method, params });
             return response;
@@ -96,7 +68,7 @@ export const createMetaMaskClient = ({ chain }: { chain: typeof chain1 | typeof 
 };
 
 export const wagmiConfig = createConfig({
-  chains: [chain1, chain2],
+  chains: allChains,
   connectors: [metaMask()],
-  client: createMetaMaskClient,
+  client: createMetaMaskClient as any,
 });
