@@ -1,6 +1,5 @@
 import * as React from "react";
 import { X } from "lucide-react";
-import { Button } from "./button";
 import { cn } from "~~/utils/cn";
 
 interface DialogProps {
@@ -28,11 +27,8 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children, cl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
-        className={cn(
-          "relative bg-background rounded-lg shadow-lg max-h-[85vh] overflow-auto",
-          className
-        )}
-        onClick={(e) => e.stopPropagation()}
+        className={cn("relative bg-background rounded-lg shadow-lg max-h-[85vh] overflow-auto", className)}
+        onClick={e => e.stopPropagation()}
       >
         {children}
       </div>
@@ -68,6 +64,24 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({ children, className })
   <h2 className={cn("text-xl font-semibold", className)}>{children}</h2>
 );
 
+interface DialogDescriptionProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const DialogDescription: React.FC<DialogDescriptionProps> = ({ children, className }) => (
+  <p className={cn("text-sm text-muted-foreground mt-1", className)}>{children}</p>
+);
+
+interface DialogFooterProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const DialogFooter: React.FC<DialogFooterProps> = ({ children, className }) => (
+  <div className={cn("mt-5 flex justify-end gap-3", className)}>{children}</div>
+);
+
 interface DialogCloseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
 }
@@ -80,10 +94,7 @@ export const DialogClose: React.FC<DialogCloseProps> = ({ asChild, children, ...
   }
 
   return (
-    <button 
-      {...props}
-      className={cn("absolute top-4 right-4", props.className)}
-    >
+    <button {...props} className={cn("absolute top-4 right-4", props.className)}>
       {children || <X className="h-4 w-4" />}
     </button>
   );
