@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { Hash } from "viem";
 import { Button } from "~~/components/ui/button";
 import {
@@ -61,7 +62,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Invoice</DialogTitle>
           <DialogDescription>Create a new invoice to bill another address</DialogDescription>
@@ -104,41 +105,43 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
             </Select>
           </div>
 
-          {/* Token selection */}
+          {/* Combined Amount and Token */}
           <div className="flex flex-col items-start gap-2">
-            <Label htmlFor="token" className="text-right">
-              Billing Token
-            </Label>
-            <Select value={invoiceState.billingToken.assetId} onValueChange={value => onTokenChange(value as Hash)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Token" />
-              </SelectTrigger>
-              <SelectContent>
-                {whitelistedTokens.map(token => (
-                  <SelectItem key={token.assetId} value={token.assetId}>
-                    {token.symbol}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Amount */}
-          <div className="flex flex-col items-start gap-2">
-            <Label htmlFor="amount" className="text-right">
-              Amount
-            </Label>
-            <div className="relative w-full">
+            <Label className="text-right">Amount</Label>
+            <div className="w-full grid grid-cols-[1fr_max-content] items-center overflow-hidden border border-input rounded-md">
               <input
-                id="amount"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors"
+                className="bg-background appearance-none focus:outline-none px-3 py-2 text-sm w-full"
                 placeholder="0.0"
                 value={invoiceState.displayAmount}
                 onChange={onAmountChange}
               />
-              <div className="absolute inset-y-0 right-3 flex items-center">
-                <span className="text-muted-foreground text-sm">{invoiceState.billingToken.symbol}</span>
-              </div>
+
+              <Select value={invoiceState.billingToken.assetId} onValueChange={value => onTokenChange(value as Hash)}>
+                <SelectTrigger className="bg-secondary text-secondary-foreground shadow hover:bg-secondary/80 text-sm h-fit w-max border-none rounded-none px-3">
+                  <SelectValue>
+                    <div className="flex items-center gap-x-2">
+                      <Image
+                        src={invoiceState.billingToken.logo}
+                        alt={invoiceState.billingToken.symbol}
+                        width={16}
+                        height={16}
+                        className="rounded-full"
+                      />
+                      <span className="w-max">{invoiceState.billingToken.symbol}</span>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {whitelistedTokens.map(token => (
+                    <SelectItem key={token.assetId} value={token.assetId}>
+                      <div className="flex items-center gap-x-2">
+                        <Image src={token.logo} alt={token.symbol} width={16} height={16} className="rounded-full" />
+                        <span className="truncate">{token.symbol}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

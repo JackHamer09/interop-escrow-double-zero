@@ -1,9 +1,14 @@
-import { repoMainChain, repoSupportedChains } from "./repo-config";
-import { invoiceSupportedTokens } from "./tokens-config";
+import { escrowMainChain, escrowSupportedChains, escrowSupportedTokens } from "./escrow-trade-config";
+import { Address, getAddress } from "viem";
+import { env } from "~~/utils/env";
 
-// Supported chains for invoice payment system
-export const invoiceMainChain = repoMainChain;
-export const invoiceSupportedChains = repoSupportedChains;
+export const invoiceMainChain = escrowMainChain;
+export const invoiceSupportedChains = escrowSupportedChains;
+export const invoiceSupportedTokens = escrowSupportedTokens;
+
+export const invoiceContracts = {
+  invoiceContractAddress: getAddress(env.NEXT_PUBLIC_INVOICE_CONTRACT_ADDRESS),
+};
 
 // Check if a chain is the main invoice chain
 export const isInvoiceMainChain = (chainId: number) => chainId === invoiceMainChain.id;
@@ -12,19 +17,19 @@ export const isInvoiceMainChain = (chainId: number) => chainId === invoiceMainCh
 export enum InvoiceStatus {
   Created = 0,
   Paid = 1,
-  Cancelled = 2
+  Cancelled = 2,
 }
 
 // Invoice data structure
 export interface Invoice {
   id: bigint;
-  creator: `0x${string}`;
-  recipient: `0x${string}`;
+  creator: Address;
+  recipient: Address;
   creatorChainId: bigint;
   recipientChainId: bigint;
-  billingToken: `0x${string}`;
+  billingToken: Address;
   amount: bigint;
-  paymentToken: `0x${string}`;
+  paymentToken: Address;
   paymentAmount: bigint;
   status: InvoiceStatus;
   createdAt: bigint;

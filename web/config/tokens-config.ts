@@ -51,9 +51,6 @@ export const sgdToken: TokenConfig = {
 // All available tokens
 export const allTokens: TokenConfig[] = [usdcToken, ttbillToken, sgdToken];
 
-// Tokens supported for the invoice payment system
-export const invoiceSupportedTokens: TokenConfig[] = [sgdToken, usdcToken, ttbillToken];
-
 // Helper functions
 export function getTokenByAssetId(assetId: string): TokenConfig | undefined {
   return allTokens.find(token => token.assetId === assetId);

@@ -27,7 +27,10 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children, cl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
-        className={cn("relative bg-background rounded-lg shadow-lg max-h-[85vh] overflow-auto", className)}
+        className={cn(
+          "w-full max-w-md relative bg-background rounded-lg shadow-lg max-h-[85vh] overflow-auto",
+          className,
+        )}
         onClick={e => e.stopPropagation()}
       >
         {children}

@@ -108,19 +108,22 @@ export default function useInvoiceContract() {
   }
 
   // Get conversion amount between tokens
-  const getConversionAmount = async (fromTokenAddress: Address, toTokenAddress: Address, amount: bigint) => {
-    try {
-      return await readContract(wagmiConfig as any, {
-        ...options,
-        chainId: mainChain.id,
-        functionName: "getConversionAmount",
-        args: [fromTokenAddress, toTokenAddress, amount],
-      });
-    } catch (error) {
-      console.error("Error getting conversion amount:", error);
-      return 0n;
-    }
-  };
+  const getConversionAmount = useCallback(
+    async (fromTokenAddress: Address, toTokenAddress: Address, amount: bigint) => {
+      try {
+        return await readContract(wagmiConfig as any, {
+          ...options,
+          chainId: mainChain.id,
+          functionName: "getConversionAmount",
+          args: [fromTokenAddress, toTokenAddress, amount],
+        });
+      } catch (error) {
+        console.error("Error getting conversion amount:", error);
+        return 0n;
+      }
+    },
+    [],
+  );
 
   // Get whitelisted tokens
   const { data: whitelistedTokensData, refetch: refetchWhitelistedTokens } = useReadContract({
@@ -146,7 +149,7 @@ export default function useInvoiceContract() {
   });
 
   // Function to fetch all created invoices
-  const fetchCreatedInvoices = async (): Promise<Invoice[]> => {
+  const fetchCreatedInvoices = useCallback(async (): Promise<Invoice[]> => {
     if (!address || !createdInvoiceCount) return [];
 
     try {
@@ -192,10 +195,10 @@ export default function useInvoiceContract() {
       console.error("Error fetching created invoices:", error);
       return [];
     }
-  };
+  }, [address, createdInvoiceCount]);
 
   // Function to fetch all pending invoices
-  const fetchPendingInvoices = async (): Promise<Invoice[]> => {
+  const fetchPendingInvoices = useCallback(async (): Promise<Invoice[]> => {
     if (!address || !pendingInvoiceCount) return [];
 
     try {
@@ -241,7 +244,7 @@ export default function useInvoiceContract() {
       console.error("Error fetching pending invoices:", error);
       return [];
     }
-  };
+  }, [address, pendingInvoiceCount]);
 
   // Create a new invoice
   const createInvoiceAsync = async (
@@ -393,10 +396,13 @@ export default function useInvoiceContract() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
-  // Setup automatic refresh interval
+  // Setup automatic refresh interval with a longer delay to prevent update loops
   useInterval(() => {
-    refetchAll();
-  }, 3000);
+    // Only refetch if we're not in the middle of another operation
+    if (address) {
+      refetchAll();
+    }
+  }, 10000); // Increased to 10 seconds to reduce update frequency
 
   return {
     whitelistedTokens: whitelistedTokensData,

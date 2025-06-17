@@ -2,7 +2,6 @@ import React from "react";
 import { TokenDisplay } from "../Trade/TokenDisplay";
 import { CalendarIcon, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Address } from "viem";
-import { Address as AddressDisplay } from "~~/components/Address/Address";
 import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { InvoiceStatus, invoiceSupportedChains } from "~~/config/invoice-config";
@@ -75,11 +74,12 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
 
             <div className="flex mt-2 text-sm justify-between">
               <div>
-                <span className="text-gray-400">From:</span> <AddressDisplay address={invoice.creator} />
+                <span className="text-gray-400">From:</span> {invoice.creator.slice(0, 6)}...{invoice.creator.slice(-4)}
                 <span className="ml-1 text-xs text-gray-500">({creatorChain?.name})</span>
               </div>
               <div>
-                <span className="text-gray-400">To:</span> <AddressDisplay address={invoice.recipient} />
+                <span className="text-gray-400">To:</span> {invoice.recipient.slice(0, 6)}...
+                {invoice.recipient.slice(-4)}
                 <span className="ml-1 text-xs text-gray-500">({recipientChain?.name})</span>
               </div>
             </div>

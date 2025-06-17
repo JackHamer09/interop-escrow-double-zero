@@ -6,7 +6,6 @@ import { useBoolean } from "usehooks-ts";
 import { Address, Hash, isAddress, parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
-import MintFundsButton from "~~/components/MintFundsButton";
 import { TokenBalances, TradeForm, TradeList } from "~~/components/Trade";
 import { Alert, AlertDescription } from "~~/components/ui/alert";
 import {
@@ -249,7 +248,6 @@ export default function AddEscrowedTrade() {
 
             <div className="flex justify-between items-center mt-12 mb-4">
               <h2 className="font-medium text-2xl">Propose Trade</h2>
-              <MintFundsButton variant="outline" size="sm" onMintSuccess={refetchTokens} />
             </div>
 
             {isEscrowMainChain(walletChainId || 0) ? (

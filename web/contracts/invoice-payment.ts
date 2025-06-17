@@ -1,7 +1,4 @@
-import { Address } from "viem";
-
-// ABI for the InvoicePayment contract
-export const INVOICE_CONTRACT_ADDRESS = "0x123" as Address; // Replace with actual deployed address
+import { invoiceContracts } from "~~/config/invoice-config";
 
 export const INVOICE_CONTRACT_ABI = [
   {
@@ -292,3 +289,5 @@ export const INVOICE_CONTRACT_ABI = [
     type: "function",
   },
 ] as const;
+
+export const INVOICE_CONTRACT_ADDRESS = invoiceContracts.invoiceContractAddress;

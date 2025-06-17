@@ -23,7 +23,7 @@ export const TradeList: React.FC<TradeListProps> = ({
   const [showAllTrades, setShowAllTrades] = useState(false);
 
   if (!trades || trades.length === 0) {
-    return <h3>No trades.</h3>;
+    return <h3 className="text-center text-gray-400">No trades yet...</h3>;
   }
 
   // Sort trades by ID (newest first)
