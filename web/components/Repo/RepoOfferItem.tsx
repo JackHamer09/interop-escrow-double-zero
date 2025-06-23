@@ -1,11 +1,11 @@
 import React from "react";
-import { RepoTokenDisplay } from "./RepoTokenDisplay";
 import { RepoProgress } from "./RepoProgress";
+import { RepoTokenDisplay } from "./RepoTokenDisplay";
 import { ArrowLeftRightIcon } from "lucide-react";
-import { Address, formatDuration } from "viem";
+import { Address } from "viem";
 import { Button } from "~~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
-import { repoMainChain, repoSupportedChains, repoSupportedTokens, RepoOfferStatus } from "~~/config/repo-config";
+import { RepoOfferStatus, repoMainChain, repoSupportedChains, repoSupportedTokens } from "~~/config/repo-config";
 import { RepoOffer } from "~~/hooks/use-repo-contract";
 
 interface RepoOfferItemProps {
@@ -27,14 +27,15 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
   onRepayLoan,
   onClaimCollateral,
 }) => {
-  const chainA = repoMainChain; 
+  const chainA = repoMainChain;
   const chainB = repoSupportedChains.find(chain => BigInt(chain.id) === offer.borrowerChainId);
   const lendToken = repoSupportedTokens.find(e => e.addresses[repoMainChain.id] === offer.lendToken);
   const collateralToken = repoSupportedTokens.find(e => e.addresses[repoMainChain.id] === offer.collateralToken);
 
   // Check if loan is past due date but still active
-  const isPastDue = offer.status === RepoOfferStatus.Active && 
-    offer.endTime > 0n && 
+  const isPastDue =
+    offer.status === RepoOfferStatus.Active &&
+    offer.endTime > 0n &&
     BigInt(Math.floor(Date.now() / 1000)) > offer.endTime;
 
   // Format duration from seconds to a readable format
@@ -56,9 +57,7 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
           <div className="flex flex-col">
             <div className="flex justify-between">
               <div className="text-lg">Repo Offer #{offer.offerId.toString()}</div>
-              <div className="text-sm text-gray-400">
-                Duration: {formatOfferDuration(offer.duration)}
-              </div>
+              <div className="text-sm text-gray-400">Duration: {formatOfferDuration(offer.duration)}</div>
             </div>
 
             <RepoProgress
@@ -138,10 +137,10 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
                 </Button>
               )}
               {offer.lender === myAddress && isPastDue && (
-                <Button 
-                  className="p-4" 
-                  variant="destructive" 
-                  loading={isProcessing} 
+                <Button
+                  className="p-4"
+                  variant="destructive"
+                  loading={isProcessing}
                   onClick={() => onClaimCollateral(offer.offerId)}
                 >
                   Claim Collateral
