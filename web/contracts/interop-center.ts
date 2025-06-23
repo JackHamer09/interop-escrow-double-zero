@@ -1,5 +1,26 @@
 export const INTEROP_CENTER_ABI = [
   {
+    type: "constructor",
+    inputs: [
+      {
+        name: "_bridgehub",
+        type: "address",
+        internalType: "contract IBridgehub",
+      },
+      {
+        name: "_l1ChainId",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "_owner",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
     type: "function",
     name: "BRIDGE_HUB",
     inputs: [],
@@ -11,6 +32,50 @@ export const INTEROP_CENTER_ABI = [
       },
     ],
     stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "L1_CHAIN_ID",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "_startBundle",
+    inputs: [
+      {
+        name: "_destinationChainId",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "_sender",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "bundleId",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "acceptOwnership",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
     type: "function",
@@ -99,6 +164,19 @@ export const INTEROP_CENTER_ABI = [
   },
   {
     type: "function",
+    name: "assetRouter",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "assetTracker",
     inputs: [],
     outputs: [
@@ -106,6 +184,19 @@ export const INTEROP_CENTER_ABI = [
         name: "",
         type: "address",
         internalType: "contract IAssetTracker",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "bundleCount",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
     ],
     stateMutability: "view",
@@ -174,6 +265,19 @@ export const INTEROP_CENTER_ABI = [
   },
   {
     type: "function",
+    name: "initialize",
+    inputs: [
+      {
+        name: "_owner",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "l2TransactionBaseCost",
     inputs: [
       {
@@ -202,6 +306,52 @@ export const INTEROP_CENTER_ABI = [
         name: "",
         type: "uint256",
         internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "owner",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "pause",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "paused",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "pendingOwner",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
       },
     ],
     stateMutability: "view",
@@ -381,6 +531,13 @@ export const INTEROP_CENTER_ABI = [
       },
     ],
     stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "renounceOwnership",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
     type: "function",
@@ -910,6 +1067,40 @@ export const INTEROP_CENTER_ABI = [
   },
   {
     type: "function",
+    name: "sendCall",
+    inputs: [
+      {
+        name: "_destinationChainId",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "_destinationAddress",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "_data",
+        type: "bytes",
+        internalType: "bytes",
+      },
+      {
+        name: "_value",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+    ],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
     name: "sendInteropTrigger",
     inputs: [
       {
@@ -988,15 +1179,34 @@ export const INTEROP_CENTER_ABI = [
   },
   {
     type: "function",
+    name: "sendMessage",
+    inputs: [
+      {
+        name: "_msg",
+        type: "bytes",
+        internalType: "bytes",
+      },
+    ],
+    outputs: [
+      {
+        name: "canonicalTxHash",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "setAddresses",
     inputs: [
       {
-        name: "assetRouter",
+        name: "_assetRouter",
         type: "address",
         internalType: "address",
       },
       {
-        name: "assetTracker",
+        name: "_assetTracker",
         type: "address",
         internalType: "address",
       },
@@ -1024,9 +1234,48 @@ export const INTEROP_CENTER_ABI = [
     stateMutability: "nonpayable",
   },
   {
+    type: "function",
+    name: "transferOwnership",
+    inputs: [
+      {
+        name: "newOwner",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "unpause",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "event",
+    name: "Initialized",
+    inputs: [
+      {
+        name: "version",
+        type: "uint8",
+        indexed: false,
+        internalType: "uint8",
+      },
+    ],
+    anonymous: false,
+  },
+  {
     type: "event",
     name: "InteropBundleSent",
     inputs: [
+      {
+        name: "l2l1TxHash",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
       {
         name: "interopBundleHash",
         type: "bytes32",
@@ -1090,6 +1339,12 @@ export const INTEROP_CENTER_ABI = [
     type: "event",
     name: "InteropTriggerSent",
     inputs: [
+      {
+        name: "l2l11TxHash",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
       {
         name: "_interopTrigger",
         type: "tuple",
@@ -1157,5 +1412,170 @@ export const INTEROP_CENTER_ABI = [
       },
     ],
     anonymous: false,
+  },
+  {
+    type: "event",
+    name: "OwnershipTransferStarted",
+    inputs: [
+      {
+        name: "previousOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "newOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "OwnershipTransferred",
+    inputs: [
+      {
+        name: "previousOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "newOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "Paused",
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "Unpaused",
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "error",
+    name: "ChainIdNotRegistered",
+    inputs: [
+      {
+        name: "chainId",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+  },
+  {
+    type: "error",
+    name: "DirectCallNonEmptyValue",
+    inputs: [
+      {
+        name: "nextContract",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+  },
+  {
+    type: "error",
+    name: "MsgValueMismatch",
+    inputs: [
+      {
+        name: "expectedMsgValue",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "providedMsgValue",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+  },
+  {
+    type: "error",
+    name: "NotInGatewayMode",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "NotInitializedReentrancyGuard",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "Reentrancy",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "SecondBridgeAddressTooLow",
+    inputs: [
+      {
+        name: "secondBridgeAddress",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "minSecondBridgeAddress",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+  },
+  {
+    type: "error",
+    name: "SlotOccupied",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "Unauthorized",
+    inputs: [
+      {
+        name: "caller",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+  },
+  {
+    type: "error",
+    name: "WrongMagicValue",
+    inputs: [
+      {
+        name: "expectedMagicValue",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "providedMagicValue",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
   },
 ] as const;

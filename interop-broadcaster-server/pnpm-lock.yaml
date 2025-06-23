@@ -90,11 +90,8 @@ importers:
         specifier: ^3.8.2
         version: 3.17.0
       zksync-ethers:
-        specifier: https://github.com/zksync-sdk/zksync-ethers#sb-use-new-encoding-in-sdk
-        version: https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/d0a248dade5b6ec4b508872e5d61e42fe058e8ca(ethers@6.13.7)
-      zksync-ethers-interop-support:
-        specifier: git+https://github.com/zksync-sdk/zksync-ethers#kl/interop-for-jackhamer
-        version: zksync-ethers@https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/1a468a91440a2478709ee550a7470ba54c4d210f(ethers@6.13.7)
+        specifier: github:zksync-sdk/zksync-ethers.git#0cf0c171bbb07afd9a23b8796935d38ff3ab8661
+        version: https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/0cf0c171bbb07afd9a23b8796935d38ff3ab8661(ethers@6.13.7)
     devDependencies:
       '@nestjs/cli':
         specifier: ^10.3.2
@@ -3861,16 +3858,9 @@ packages:
     resolution: {integrity: sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==}
     engines: {node: '>=6'}
 
-  zksync-ethers@https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/1a468a91440a2478709ee550a7470ba54c4d210f:
-    resolution: {tarball: https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/1a468a91440a2478709ee550a7470ba54c4d210f}
-    version: 6.15.2
-    engines: {node: '>=18.9.0'}
-    peerDependencies:
-      ethers: ^6.7.1
-
-  zksync-ethers@https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/d0a248dade5b6ec4b508872e5d61e42fe058e8ca:
-    resolution: {tarball: https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/d0a248dade5b6ec4b508872e5d61e42fe058e8ca}
-    version: 6.16.2
+  zksync-ethers@https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/0cf0c171bbb07afd9a23b8796935d38ff3ab8661:
+    resolution: {tarball: https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/0cf0c171bbb07afd9a23b8796935d38ff3ab8661}
+    version: 6.17.0
     engines: {node: '>=18.9.0'}
     peerDependencies:
       ethers: ^6.7.1
@@ -7992,10 +7982,6 @@ snapshots:
 
   yn@3.1.1: {}
 
-  zksync-ethers@https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/1a468a91440a2478709ee550a7470ba54c4d210f(ethers@6.13.7):
-    dependencies:
-      ethers: 6.13.7
-
-  zksync-ethers@https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/d0a248dade5b6ec4b508872e5d61e42fe058e8ca(ethers@6.13.7):
+  zksync-ethers@https://codeload.github.com/zksync-sdk/zksync-ethers/tar.gz/0cf0c171bbb07afd9a23b8796935d38ff3ab8661(ethers@6.13.7):
     dependencies:
       ethers: 6.13.7

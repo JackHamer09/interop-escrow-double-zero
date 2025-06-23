@@ -24,7 +24,7 @@ contract InvoicePayment {
     address constant L2_ASSET_ROUTER_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x03);
     
     // Cross-chain fee in ETH
-    uint256 public constant CROSS_CHAIN_FEE = 0.1 ether; // Same as TradeEscrow
+    uint256 public constant CROSS_CHAIN_FEE = 0.01 ether; // Same as TradeEscrow
 
     // Admin address
     address public admin;
@@ -579,9 +579,6 @@ contract InvoicePayment {
             invoice.paidAt
         );
     }
-    
-    // Array to track all whitelisted token addresses (for enumeration)
-    address[] private whitelistedTokenAddresses;
     
     /**
      * @dev Modified whitelistToken function to track token addresses

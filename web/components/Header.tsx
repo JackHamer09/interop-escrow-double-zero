@@ -19,19 +19,19 @@ export const Header = () => {
         <nav suppressHydrationWarning className="flex lg:flex-nowrap px-1 gap-6">
           <Link
             href="/trade"
-            className={`text-lg font-normal ${pathname === "/trade" ? "text-blue-400" : "text-gray-400 hover:text-gray-300"}`}
+            className={`lg:text-lg font-normal leading-tight ${pathname === "/trade" ? "text-blue-400" : "text-gray-400 hover:text-gray-300"}`}
           >
             Escrow Trade
           </Link>
           <Link
             href="/repo"
-            className={`text-lg font-normal ${pathname === "/repo" ? "text-blue-400" : "text-gray-400 hover:text-gray-300"}`}
+            className={`lg:text-lg font-normal leading-tight ${pathname === "/repo" ? "text-blue-400" : "text-gray-400 hover:text-gray-300"}`}
           >
             Intraday Repo
           </Link>
           <Link
             href="/invoice"
-            className={`text-lg font-normal ${pathname === "/invoice" ? "text-blue-400" : "text-gray-400 hover:text-gray-300"}`}
+            className={`lg:text-lg font-normal leading-tight ${pathname === "/invoice" ? "text-blue-400" : "text-gray-400 hover:text-gray-300"}`}
           >
             Invoice Payment
           </Link>

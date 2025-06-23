@@ -7,7 +7,6 @@ import { chain1, chain2 } from '@app/common/chains';
 import { InteropBroadcasterService } from '../interop-broadcaster/interop-broadcaster.service';
 import { InteropTransactionBuilder } from '@app/common/utils/interop-builder';
 import { L2_NATIVE_TOKEN_VAULT_ADDRESS } from '@app/common/utils/constants';
-import { ZeroAddress } from 'ethers';
 
 interface MintRequest {
   address: Address;
@@ -224,6 +223,12 @@ export class MintTestFundsService {
       this.logger.error(`Minter has insufficient ETH balance on ${chain1.name}: ${formatEther(minterBalance)}`);
       throw new InternalServerErrorException('Minter has insufficient ETH balance');
     }
+
+    const userBalance = await publicClient1.getBalance({ address });
+    if (userBalance >= this.ethMintAmount) {
+      this.logger.log(`User ${address} already has sufficient ETH on ${chain1.name}, skipping mint`);
+      return;
+    }
     
     this.logger.log(`Sending ETH to ${address} on ${chain1.name}`);
     const ethTxHash = await minterClient.sendTransaction({
@@ -328,7 +333,7 @@ export class MintTestFundsService {
   ): Promise<void> {    
     try {
       // Fee amount for interop transaction
-      const feeAmount = parseEther("0.1");
+      const feeAmount = parseEther("0.001");
       const tokensToSend = this.supportedTokens;
       
       // Log which tokens are being sent

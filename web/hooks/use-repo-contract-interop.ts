@@ -28,7 +28,7 @@ export default function useRepoContractInterop() {
     throw new Error("No supported interop chain found");
   }
 
-  const feeAmount = parseEther("0.1");
+  const feeAmount = parseEther("0.01");
 
   const cancelOfferAsync = async (offerId: bigint) => {
     if (!address) throw new Error("No address available");

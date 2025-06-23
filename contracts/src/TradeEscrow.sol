@@ -22,7 +22,7 @@ contract TradeEscrow {
     uint160 constant USER_CONTRACTS_OFFSET = 0x10000; // 2^16
     address constant L2_NATIVE_TOKEN_VAULT_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x04);
     address constant L2_ASSET_ROUTER_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x03);
-    uint256 constant CROSS_CHAIN_FEE = 0.1 ether; // TODO: Fee can be much lower and actually should estimated, not hardcoded
+    uint256 constant CROSS_CHAIN_FEE = 0.01 ether; // TODO: Fee can be much lower and actually should estimated, not hardcoded
     
     /// @notice Trade status values.
     enum TradeStatus { PendingCounterpartyDeposit, Complete, Declined }

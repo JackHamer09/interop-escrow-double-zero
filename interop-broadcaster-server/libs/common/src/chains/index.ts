@@ -3,7 +3,7 @@ import { chainConfig } from 'viem/zksync';
 
 export const chain1 = defineChain({
   ...chainConfig,
-  id: 271,
+  id: 510,
   name: 'Chain A',
   network: 'chain-a',
   nativeCurrency: {
@@ -19,7 +19,7 @@ export const chain1 = defineChain({
 });
 export const chain2 = defineChain({
   ...chainConfig,
-  id: 260,
+  id: 512,
   name: 'Chain B',
   network: 'chain-b',
   nativeCurrency: {

@@ -39,7 +39,7 @@ export default {
     sgdAssetId: SGD_ASSET_ID,
   },
   mintAmounts: {
-    eth: ETH_MINT_AMOUNT ? parseUnits(ETH_MINT_AMOUNT, 18) : parseUnits("10", 18),
+    eth: ETH_MINT_AMOUNT ? parseUnits(ETH_MINT_AMOUNT, 18) : parseUnits("0.1", 18),
     usdc: USDC_MINT_AMOUNT ? parseUnits(USDC_MINT_AMOUNT, 18) : parseUnits("100", 18),
     ttbill: TTBILL_MINT_AMOUNT ? parseUnits(TTBILL_MINT_AMOUNT, 18) : parseUnits("100", 18),
     sgd: SGD_MINT_AMOUNT ? parseUnits(SGD_MINT_AMOUNT, 18) : parseUnits("100", 18),

@@ -46,8 +46,7 @@
     "usehooks-ts": "^3.1.0",
     "viem": "2.30.6",
     "wagmi": "2.15.5",
-    "zksync-ethers": "github:zksync-sdk/zksync-ethers#sb-use-new-encoding-in-sdk",
-    "zksync-ethers-interop-support": "github:zksync-sdk/zksync-ethers#kl/interop-ethers-support",
+    "zksync-ethers": "github:zksync-sdk/zksync-ethers.git#0cf0c171bbb07afd9a23b8796935d38ff3ab8661",
     "zod": "^3.23.8"
   },
   "devDependencies": {

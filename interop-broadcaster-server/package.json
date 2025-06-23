@@ -54,8 +54,7 @@
     "typescript-memoize": "^1.1.1",
     "viem": "^2.22.17",
     "winston": "^3.8.2",
-    "zksync-ethers": "https://github.com/zksync-sdk/zksync-ethers#sb-use-new-encoding-in-sdk",
-    "zksync-ethers-interop-support": "git+https://github.com/zksync-sdk/zksync-ethers#kl/interop-for-jackhamer"
+    "zksync-ethers": "github:zksync-sdk/zksync-ethers.git#0cf0c171bbb07afd9a23b8796935d38ff3ab8661"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.3.2",

@@ -28,7 +28,7 @@ export default function useTradeEscrowInterop() {
     throw new Error("No supported interop chain found");
   }
 
-  const feeAmount = parseEther("0.1");
+  const feeAmount = parseEther("0.01");
 
   const cancelTradeAsync = async (tradeId: bigint) => {
     if (!address) throw new Error("No address available");

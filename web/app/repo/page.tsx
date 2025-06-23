@@ -1,23 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { AlertCircle, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useBoolean } from "usehooks-ts";
 import { Address, Hash, parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
 import { CreateOfferModal, RepoHistoryTable, RepoTable } from "~~/components/Repo";
 import { TokenBalances } from "~~/components/Trade";
-import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { Button } from "~~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs";
-import {
-  RepoOfferStatus,
-  isRepoMainChain,
-  repoDurationOptions,
-  repoMainChain,
-  repoSupportedChains,
-} from "~~/config/repo-config";
+import { RepoOfferStatus, repoDurationOptions, repoMainChain, repoSupportedChains } from "~~/config/repo-config";
 import { repoSupportedTokens } from "~~/config/repo-config";
 import { TokenConfig, getTokenByAssetId } from "~~/config/tokens-config";
 import useRepoContract, { RepoOffer } from "~~/hooks/use-repo-contract";
@@ -303,21 +296,10 @@ export default function IntradayRepo() {
             {/* Create Offer Button and Info */}
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-4">
-                <Button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  disabled={!isRepoMainChain(walletChainId || 0)}
-                  className="flex items-center gap-2"
-                >
+                <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   Create Lending Offer
                 </Button>
-
-                {!isRepoMainChain(walletChainId || 0) && (
-                  <Alert variant="warning" className="py-1 px-3 h-auto">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">Switch to {mainChain.name} to create offers</AlertDescription>
-                  </Alert>
-                )}
               </div>
             </div>
 
