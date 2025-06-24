@@ -110,7 +110,7 @@ export class InteropTransactionBuilder {
         this.feeCallStarters,
         this.execCallStarters,
         {
-          gasLimit: 30_000_000n,
+          gasLimit: 10_000_000n,
           gasPerPubdataByteLimit: BigInt(REQUIRED_L2_GAS_PRICE_PER_PUBDATA),
           refundRecipient: this.senderAddress,
           paymaster: zeroAddress,
