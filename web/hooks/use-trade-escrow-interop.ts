@@ -109,7 +109,7 @@ export default function useTradeEscrowInterop() {
       functionName: "approve",
       args: [TRADE_ESCROW_ADDRESS, tokenAmount],
     });
-    // builder.addTransaction({ contractAddress: mainChainTokenAddress, data: approvalData, value: 0n });
+    builder.addTransaction({ contractAddress: mainChainTokenAddress, data: approvalData, value: 0n });
 
     // 4. Deposit transaction
     const depositData = encodeFunctionData({
