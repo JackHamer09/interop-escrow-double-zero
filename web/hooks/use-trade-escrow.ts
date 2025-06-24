@@ -211,7 +211,7 @@ export default function useTradeEscrow() {
             functionName: "cancelTrade",
             args: [tradeId],
           })
-        : interop.cancelTradeAsync(tradeId),
+        : interop.cancelTradeAsync(trade),
       {
         loading: "Waiting for wallet approval...",
         success: "Transaction approved!",
@@ -292,7 +292,7 @@ export default function useTradeEscrow() {
       });
       return acceptTrade;
     } else {
-      const acceptTrade = await interop.acceptTradeAndDepositAsync(tradeId, trade.tokenB, trade.amountB);
+      const acceptTrade = await interop.acceptTradeAndDepositAsync(trade);
       return acceptTrade;
     }
   };

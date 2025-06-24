@@ -1,11 +1,17 @@
 import { ethers } from "ethers";
 import { type Address, type Hash, erc20Abi, getAddress, zeroAddress } from "viem";
 import { readContract, writeContract } from "wagmi/actions";
-import { systemContracts } from "~~/config/chains-config";
 import { INTEROP_CENTER_ABI } from "~~/contracts/interop-center";
 import { INTEROP_HANDLER_ABI } from "~~/contracts/interop-handler";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
-import { REQUIRED_L2_GAS_PRICE_PER_PUBDATA } from "~~/utils/constants";
+import {
+  L2_ASSET_ROUTER_ADDRESS,
+  L2_INTEROP_CENTER_ADDRESS,
+  L2_INTEROP_HANDLER_ADDRESS,
+  L2_NATIVE_TOKEN_VAULT_ADDRESS,
+  L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
+  REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
+} from "~~/utils/constants";
 import { env } from "~~/utils/env";
 import waitForTransactionReceipt from "~~/utils/wait-for-transaction";
 
@@ -29,11 +35,9 @@ export class InteropTransactionBuilder {
     this.toChainId = toChainId;
     this.senderAddress = senderAddress;
 
-    const l2StandardTriggerAccount = systemContracts.l2StandardTriggerAccount;
-
     this.feeCallStarters.push({
       directCall: true,
-      nextContract: l2StandardTriggerAccount,
+      nextContract: L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
       data: "0x",
       value: 0n,
       requestedInteropCallValue: feeValue,
@@ -44,7 +48,7 @@ export class InteropTransactionBuilder {
     const data = this.getTokenTransferSecondBridgeData(assetId, amount, to);
     this.execCallStarters.push({
       directCall: false,
-      nextContract: systemContracts.l2AssetRouter,
+      nextContract: L2_ASSET_ROUTER_ADDRESS,
       data,
       value: 0n,
       requestedInteropCallValue: 0n,
@@ -67,7 +71,7 @@ export class InteropTransactionBuilder {
       address: tokenAddress,
       abi: erc20Abi,
       functionName: "allowance",
-      args: [this.senderAddress, systemContracts.l2NativeTokenVault],
+      args: [this.senderAddress, L2_NATIVE_TOKEN_VAULT_ADDRESS],
     });
   }
 
@@ -81,7 +85,7 @@ export class InteropTransactionBuilder {
       address: tokenAddress,
       abi: erc20Abi,
       functionName: "approve",
-      args: [systemContracts.l2NativeTokenVault, amount],
+      args: [L2_NATIVE_TOKEN_VAULT_ADDRESS, amount],
     });
 
     const receipt = await waitForTransactionReceipt({ chainId: this.fromChainId, hash: txHash });
@@ -96,13 +100,13 @@ export class InteropTransactionBuilder {
 
     const transactionHash = await writeContract(wagmiConfig, {
       chainId: this.fromChainId,
-      address: systemContracts.l2InteropCenter,
+      address: L2_INTEROP_CENTER_ADDRESS,
       abi: INTEROP_CENTER_ABI,
       functionName: "requestInterop",
       value: totalValue,
       args: [
         BigInt(this.toChainId),
-        systemContracts.l2StandardTriggerAccount,
+        L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
         this.feeCallStarters,
         this.execCallStarters,
         {
@@ -125,8 +129,8 @@ export class InteropTransactionBuilder {
 
   public async getAliasedAddress(address: Address): Promise<Address> {
     return await readContract(wagmiConfig, {
-      // chainId: this.toChainId, // For now its ok to request any chain, since result will be the same
-      address: systemContracts.l2InteropHandler,
+      chainId: this.toChainId,
+      address: L2_INTEROP_HANDLER_ADDRESS,
       abi: INTEROP_HANDLER_ABI,
       functionName: "getAliasedAccount",
       args: [getAddress(address.toLowerCase()), BigInt(this.fromChainId)],
