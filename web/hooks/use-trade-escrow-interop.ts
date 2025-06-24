@@ -21,7 +21,7 @@ async function checkNeedsApproval(
 export default function useTradeEscrowInterop() {
   const { address } = useAccount();
 
-  const feeAmount = parseEther("0.01");
+  const feeAmount = parseEther("0.1");
 
   const getMyExpectedChainId = (trade: EscrowTrade) => {
     // Because trade may only be initiated on main chain
