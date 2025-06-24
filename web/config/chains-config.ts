@@ -1,4 +1,11 @@
-import { type Address, type Chain, getAddress } from "viem";
+import { type Address, type Chain } from "viem";
+import {
+  L2_ASSET_ROUTER_ADDRESS,
+  L2_INTEROP_CENTER_ADDRESS,
+  L2_INTEROP_HANDLER_ADDRESS,
+  L2_NATIVE_TOKEN_VAULT_ADDRESS,
+  L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
+} from "~~/utils/constants";
 import { env } from "~~/utils/env";
 
 export interface SystemContractsConfig {
@@ -7,7 +14,6 @@ export interface SystemContractsConfig {
   l2StandardTriggerAccount: Address;
   l2InteropHandler: Address;
   l2InteropCenter: Address;
-  deployerSystemContract: Address;
 }
 
 // Define chain configurations
@@ -58,12 +64,11 @@ export const allChains = [chain1, chain2] as const satisfies Chain[];
 
 // System contract addresses
 export const systemContracts: SystemContractsConfig = {
-  l2AssetRouter: getAddress("0x0000000000000000000000000000000000010003".toLowerCase()),
-  l2NativeTokenVault: getAddress("0x0000000000000000000000000000000000010004".toLowerCase()),
-  l2StandardTriggerAccount: getAddress("0x000000000000000000000000000000000001000d".toLowerCase()),
-  l2InteropHandler: getAddress("0x000000000000000000000000000000000001000B".toLowerCase()),
-  l2InteropCenter: getAddress("0x000000000000000000000000000000000001000A".toLowerCase()),
-  deployerSystemContract: getAddress("0x0000000000000000000000000000000000008006".toLowerCase()),
+  l2AssetRouter: L2_ASSET_ROUTER_ADDRESS,
+  l2NativeTokenVault: L2_NATIVE_TOKEN_VAULT_ADDRESS,
+  l2StandardTriggerAccount: L2_STANDARD_TRIGGER_ACCOUNT_ADDRESS,
+  l2InteropHandler: L2_INTEROP_HANDLER_ADDRESS,
+  l2InteropCenter: L2_INTEROP_CENTER_ADDRESS,
 };
 
 // Helper functions
