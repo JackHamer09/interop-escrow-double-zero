@@ -87,18 +87,7 @@ export default function useTradeEscrow() {
       // Approve token
       const approveHash = await toast.promise(
         writeContractAsync({
-          abi: [
-            {
-              type: "function",
-              name: "approve",
-              inputs: [
-                { name: "spender", type: "address", internalType: "address" },
-                { name: "value", type: "uint256", internalType: "uint256" },
-              ],
-              outputs: [{ name: "", type: "bool", internalType: "bool" }],
-              stateMutability: "nonpayable",
-            },
-          ],
+          abi: erc20Abi,
           address: token.addresses[walletChainId],
           functionName: "approve",
           args: [TRADE_ESCROW_ADDRESS, amount],

@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import useBalances, { getTokenWithBalanceByAssetId } from "./use-balances";
 import { useInterval } from "./use-interval";
+import useInvoiceContractInterop from "./use-invoice-contract-interop";
 import { readContract } from "@wagmi/core";
 import toast from "react-hot-toast";
 import { Address, erc20Abi, formatUnits } from "viem";
@@ -33,6 +34,7 @@ export type Invoice = {
 
 export default function useInvoiceContract() {
   const { address, chainId: walletChainId } = useAccount();
+  const interop = useInvoiceContractInterop();
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
   const { tokens, refetch: refetchTokens } = useBalances(walletChainId);
@@ -296,11 +298,13 @@ export default function useInvoiceContract() {
     await switchChainIfNotSet(mainChain.id);
 
     const cancelInvoice = await toast.promise(
-      writeContractAsync({
-        ...options,
-        functionName: "cancelInvoice",
-        args: [invoiceId],
-      }),
+      isInvoiceMainChain(walletChainId || 0)
+        ? writeContractAsync({
+            ...options,
+            functionName: "cancelInvoice",
+            args: [invoiceId],
+          })
+        : interop.cancelInvoiceAsync(invoiceId),
       {
         loading: "Waiting for wallet approval...",
         success: "Transaction approved!",
@@ -311,21 +315,24 @@ export default function useInvoiceContract() {
       },
     );
 
-    await toast.promise(waitForTransactionReceipt({ hash: cancelInvoice }), {
-      loading: "Canceling invoice...",
-      success: "Invoice cancelled successfully!",
-      error: err => {
-        console.error(err);
-        return "Failed to cancel invoice";
-      },
-    });
+    if (isInvoiceMainChain(walletChainId || 0)) {
+      await toast.promise(waitForTransactionReceipt({ hash: cancelInvoice }), {
+        loading: "Canceling invoice...",
+        success: "Invoice cancelled successfully!",
+        error: err => {
+          console.error(err);
+          return "Failed to cancel invoice";
+        },
+      });
+    }
 
     return cancelInvoice;
   };
 
   // Pay an invoice
   const payInvoiceAsync = async (invoice: Invoice, paymentToken: Address) => {
-    await switchChainIfNotSet(mainChain.id);
+    const expectedChainId = Number(invoice.recipientChainId);
+    await switchChainIfNotSet(expectedChainId);
 
     // Calculate payment amount using the conversion rate
     const paymentAmount = await getConversionAmount(invoice.billingToken, paymentToken, invoice.amount);
@@ -350,36 +357,44 @@ export default function useInvoiceContract() {
       return false;
     }
 
-    // Approve payment token
-    await checkAndApproveToken(paymentToken, paymentAmount);
+    // Handle token approvals for main chain case
+    if (isInvoiceMainChain(expectedChainId)) {
+      // Approve payment token
+      await checkAndApproveToken(paymentToken, paymentAmount);
+    }
 
-    const payInvoice = await toast.promise(
-      writeContractAsync({
-        ...options,
-        functionName: "payInvoice",
-        args: [invoice.id, paymentToken],
-        value: 0n, // We need to include ETH value for cross-chain transfers
-      }),
-      {
-        loading: "Waiting for wallet approval...",
-        success: "Transaction approved!",
+    if (isInvoiceMainChain(expectedChainId)) {
+      const payInvoice = await toast.promise(
+        writeContractAsync({
+          ...options,
+          functionName: "payInvoice",
+          args: [invoice.id, paymentToken],
+          value: 0n, // We need to include ETH value for cross-chain transfers
+        }),
+        {
+          loading: "Waiting for wallet approval...",
+          success: "Transaction approved!",
+          error: err => {
+            console.error(err);
+            return "Failed to approve transaction";
+          },
+        },
+      );
+
+      await toast.promise(waitForTransactionReceipt({ hash: payInvoice }), {
+        loading: "Processing payment...",
+        success: "Invoice paid successfully!",
         error: err => {
           console.error(err);
-          return "Failed to approve transaction";
+          return "Failed to pay invoice";
         },
-      },
-    );
+      });
 
-    await toast.promise(waitForTransactionReceipt({ hash: payInvoice }), {
-      loading: "Processing payment...",
-      success: "Invoice paid successfully!",
-      error: err => {
-        console.error(err);
-        return "Failed to pay invoice";
-      },
-    });
-
-    return payInvoice;
+      return payInvoice;
+    } else {
+      const payInvoice = await interop.payInvoiceAsync(invoice.id, paymentToken, paymentAmount);
+      return payInvoice;
+    }
   };
 
   const refetchAll = useCallback(() => {

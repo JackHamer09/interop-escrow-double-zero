@@ -86,18 +86,7 @@ export default function useRepoContract() {
       // Approve token
       const approveHash = await toast.promise(
         writeContractAsync({
-          abi: [
-            {
-              type: "function",
-              name: "approve",
-              inputs: [
-                { name: "spender", type: "address", internalType: "address" },
-                { name: "value", type: "uint256", internalType: "uint256" },
-              ],
-              outputs: [{ name: "", type: "bool", internalType: "bool" }],
-              stateMutability: "nonpayable",
-            },
-          ],
+          abi: erc20Abi,
           address: token.addresses[walletChainId],
           functionName: "approve",
           args: [REPO_CONTRACT_ADDRESS, amount],
@@ -250,14 +239,17 @@ export default function useRepoContract() {
 
   // Cancel an existing offer
   const cancelOfferAsync = async (offerId: bigint) => {
-    await switchChainIfNotSet(mainChain.id);
+    const offer = findOffer(offerId, openOffers);
+    await switchChainIfNotSet(Number(offer.lenderChainId));
 
     const cancelOffer = await toast.promise(
-      writeContractAsync({
-        ...options,
-        functionName: "cancelOffer",
-        args: [offerId],
-      }),
+      isRepoMainChain(Number(offer.lenderChainId))
+        ? writeContractAsync({
+            ...options,
+            functionName: "cancelOffer",
+            args: [offerId],
+          })
+        : interop.cancelOfferAsync(offerId),
       {
         loading: "Waiting for wallet approval...",
         success: "Transaction approved!",
@@ -268,21 +260,23 @@ export default function useRepoContract() {
       },
     );
 
-    await toast.promise(waitForTransactionReceipt({ hash: cancelOffer }), {
-      loading: "Canceling offer...",
-      success: "Offer cancelled successfully!",
-      error: err => {
-        console.error(err);
-        return "Failed to cancel offer";
-      },
-    });
+    if (isRepoMainChain(Number(offer.lenderChainId))) {
+      await toast.promise(waitForTransactionReceipt({ hash: cancelOffer }), {
+        loading: "Canceling offer...",
+        success: "Offer cancelled successfully!",
+        error: err => {
+          console.error(err);
+          return "Failed to cancel offer";
+        },
+      });
+    }
 
     return cancelOffer;
   };
 
   // Accept an offer as borrower
   const acceptOfferAsync = async (offerId: bigint, borrowerChainId: number, borrowerRefundAddress: Address) => {
-    await switchChainIfNotSet(mainChain.id);
+    await switchChainIfNotSet(borrowerChainId);
 
     // Find the offer
     const offer = findOffer(offerId, openOffers);
@@ -303,43 +297,56 @@ export default function useRepoContract() {
       return false;
     }
 
-    // Approve collateral token
-    await checkAndApproveToken(offer.collateralToken, offer.collateralAmount);
+    // Handle token approvals for main chain case
+    if (isRepoMainChain(borrowerChainId)) {
+      // Approve collateral token
+      await checkAndApproveToken(offer.collateralToken, offer.collateralAmount);
+    }
 
-    const acceptOffer = await toast.promise(
-      writeContractAsync({
-        ...options,
-        functionName: "acceptOffer",
-        args: [offerId, BigInt(borrowerChainId), borrowerRefundAddress],
-      }),
-      {
-        loading: "Waiting for wallet approval...",
-        success: "Transaction approved!",
+    if (isRepoMainChain(borrowerChainId)) {
+      const acceptOffer = await toast.promise(
+        writeContractAsync({
+          ...options,
+          functionName: "acceptOffer",
+          args: [offerId, BigInt(borrowerChainId), borrowerRefundAddress],
+        }),
+        {
+          loading: "Waiting for wallet approval...",
+          success: "Transaction approved!",
+          error: err => {
+            console.error(err);
+            return "Failed to approve transaction";
+          },
+        },
+      );
+
+      await toast.promise(waitForTransactionReceipt({ hash: acceptOffer }), {
+        loading: "Accepting offer and depositing collateral...",
+        success: "Offer accepted and collateral deposited successfully!",
         error: err => {
           console.error(err);
-          return "Failed to approve transaction";
+          return "Failed to accept offer and deposit collateral";
         },
-      },
-    );
+      });
 
-    await toast.promise(waitForTransactionReceipt({ hash: acceptOffer }), {
-      loading: "Accepting offer and depositing collateral...",
-      success: "Offer accepted and collateral deposited successfully!",
-      error: err => {
-        console.error(err);
-        return "Failed to accept offer and deposit collateral";
-      },
-    });
-
-    return acceptOffer;
+      return acceptOffer;
+    } else {
+      const acceptOffer = await interop.acceptOfferAsync(
+        offerId,
+        offer.collateralToken,
+        offer.collateralAmount,
+        borrowerChainId,
+        borrowerRefundAddress,
+      );
+      return acceptOffer;
+    }
   };
 
   // Repay a loan
   const repayLoanAsync = async (offerId: bigint) => {
-    await switchChainIfNotSet(mainChain.id);
-
     // Find the offer from borrower offers
     const offer = findOffer(offerId, borrowerOffers);
+    await switchChainIfNotSet(Number(offer.borrowerChainId));
 
     // Check if the user has sufficient balance to repay
     const tokenConfig = getTokenByAddress(offer.lendToken);
@@ -357,47 +364,58 @@ export default function useRepoContract() {
       return false;
     }
 
-    // Approve lend token for repayment
-    await checkAndApproveToken(offer.lendToken, offer.lendAmount);
+    // Handle token approvals for main chain case
+    if (isRepoMainChain(Number(offer.borrowerChainId))) {
+      // Approve lend token for repayment
+      await checkAndApproveToken(offer.lendToken, offer.lendAmount);
+    }
 
-    const repayLoan = await toast.promise(
-      writeContractAsync({
-        ...options,
-        functionName: "repayLoan",
-        args: [offerId],
-      }),
-      {
-        loading: "Waiting for wallet approval...",
-        success: "Transaction approved!",
+    if (isRepoMainChain(Number(offer.borrowerChainId))) {
+      const repayLoan = await toast.promise(
+        writeContractAsync({
+          ...options,
+          functionName: "repayLoan",
+          args: [offerId],
+        }),
+        {
+          loading: "Waiting for wallet approval...",
+          success: "Transaction approved!",
+          error: err => {
+            console.error(err);
+            return "Failed to approve transaction";
+          },
+        },
+      );
+
+      await toast.promise(waitForTransactionReceipt({ hash: repayLoan }), {
+        loading: "Repaying loan...",
+        success: "Loan repaid successfully! Your collateral has been released.",
         error: err => {
           console.error(err);
-          return "Failed to approve transaction";
+          return "Failed to repay loan";
         },
-      },
-    );
+      });
 
-    await toast.promise(waitForTransactionReceipt({ hash: repayLoan }), {
-      loading: "Repaying loan...",
-      success: "Loan repaid successfully! Your collateral has been released.",
-      error: err => {
-        console.error(err);
-        return "Failed to repay loan";
-      },
-    });
-
-    return repayLoan;
+      return repayLoan;
+    } else {
+      const repayLoan = await interop.repayLoanAsync(offerId, offer.lendToken, offer.lendAmount);
+      return repayLoan;
+    }
   };
 
   // Claim collateral as lender when loan defaults
   const claimCollateralAsync = async (offerId: bigint) => {
-    await switchChainIfNotSet(mainChain.id);
+    const offer = findOffer(offerId, lenderOffers);
+    await switchChainIfNotSet(Number(offer.lenderChainId));
 
     const claimCollateral = await toast.promise(
-      writeContractAsync({
-        ...options,
-        functionName: "claimCollateral",
-        args: [offerId],
-      }),
+      isRepoMainChain(Number(offer.lenderChainId))
+        ? writeContractAsync({
+            ...options,
+            functionName: "claimCollateral",
+            args: [offerId],
+          })
+        : interop.claimCollateralAsync(offerId),
       {
         loading: "Waiting for wallet approval...",
         success: "Transaction approved!",
@@ -408,14 +426,16 @@ export default function useRepoContract() {
       },
     );
 
-    await toast.promise(waitForTransactionReceipt({ hash: claimCollateral }), {
-      loading: "Claiming collateral...",
-      success: "Collateral claimed successfully!",
-      error: err => {
-        console.error(err);
-        return "Failed to claim collateral";
-      },
-    });
+    if (isRepoMainChain(Number(offer.lenderChainId))) {
+      await toast.promise(waitForTransactionReceipt({ hash: claimCollateral }), {
+        loading: "Claiming collateral...",
+        success: "Collateral claimed successfully!",
+        error: err => {
+          console.error(err);
+          return "Failed to claim collateral";
+        },
+      });
+    }
 
     return claimCollateral;
   };
