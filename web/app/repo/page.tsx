@@ -281,7 +281,7 @@ export default function IntradayRepo() {
   );
 
   // Filter offers that the current user can view (not created by them)
-  const availableOffers = openOffers?.filter(offer => offer.lender !== myAddress) || [];
+  const availableOffers = openOffers?.filter(offer => offer.lenderRefundAddress !== myAddress) || [];
 
   // State for managing the active tab
   const [activeTab, setActiveTab] = useState("offers");

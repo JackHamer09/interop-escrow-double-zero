@@ -154,7 +154,7 @@ contract RepoContract {
         });
         
         // Record this offer for the lender
-        userLenderOffers[msg.sender].push(offerId);
+        userLenderOffers[_lenderRefundAddress].push(offerId);
         
         // Transfer lend tokens from lender to contract
         require(
@@ -162,7 +162,7 @@ contract RepoContract {
             "Lend token transfer failed"
         );
         
-        emit OfferCreated(offerId, msg.sender, _lenderChainId);
+        emit OfferCreated(offerId, _lenderRefundAddress, _lenderChainId);
     }
     
     /// @notice Cancels an open offer and returns funds to the lender.
@@ -210,7 +210,7 @@ contract RepoContract {
         offer.endTime = block.timestamp + offer.duration;
         
         // Add to borrower's offers
-        userBorrowerOffers[msg.sender].push(_offerId);
+        userBorrowerOffers[_borrowerRefundAddress].push(_offerId);
         
         // Transfer collateral from borrower to contract
         require(
@@ -226,7 +226,7 @@ contract RepoContract {
             _borrowerChainId
         );
         
-        emit OfferAccepted(_offerId, msg.sender, _borrowerChainId);
+        emit OfferAccepted(_offerId, _borrowerRefundAddress, _borrowerChainId);
     }
     
     /// @notice Repays the loan and releases collateral.

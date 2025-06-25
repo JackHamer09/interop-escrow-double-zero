@@ -14,26 +14,26 @@ interface RepoProgressProps {
   myAddress?: Address;
 }
 
-export const RepoProgress: React.FC<RepoProgressProps> = ({ 
-  status, 
-  lender, 
-  borrower, 
+export const RepoProgress: React.FC<RepoProgressProps> = ({
+  status,
+  lender,
+  borrower,
   isPastDue,
   startTime,
   endTime,
-  myAddress 
+  myAddress,
 }) => {
   // Format timestamp to date and time
   const formatTimeLeft = () => {
     if (startTime === 0n || endTime === 0n) return null;
-    
+
     const now = Math.floor(Date.now() / 1000);
     const end = Number(endTime);
-    
+
     if (now > end) {
       return "Past due";
     }
-    
+
     const secondsLeft = end - now;
     if (secondsLeft < 60) {
       return `${secondsLeft}s left`;
@@ -54,7 +54,10 @@ export const RepoProgress: React.FC<RepoProgressProps> = ({
         <li
           className={cn(
             "flex w-full items-center after:content-[''] after:w-full after:h-1 after:border-b after:border-4 after:inline-block relative",
-            (status === RepoOfferStatus.Open || status === RepoOfferStatus.Active || status === RepoOfferStatus.Completed) && "after:border-blue-800",
+            (status === RepoOfferStatus.Open ||
+              status === RepoOfferStatus.Active ||
+              status === RepoOfferStatus.Completed) &&
+              "after:border-blue-800",
             status === RepoOfferStatus.Cancelled && "after:border-red-700/50",
             status === RepoOfferStatus.Defaulted && "after:border-yellow-700/50",
           )}
@@ -62,7 +65,10 @@ export const RepoProgress: React.FC<RepoProgressProps> = ({
           <span
             className={cn(
               "flex items-center justify-center w-8 h-8 rounded-full shrink-0",
-              (status === RepoOfferStatus.Open || status === RepoOfferStatus.Active || status === RepoOfferStatus.Completed) && "bg-blue-800",
+              (status === RepoOfferStatus.Open ||
+                status === RepoOfferStatus.Active ||
+                status === RepoOfferStatus.Completed) &&
+                "bg-blue-800",
               status === RepoOfferStatus.Cancelled && "bg-red-800/50",
               status === RepoOfferStatus.Defaulted && "bg-yellow-700",
             )}
@@ -81,7 +87,7 @@ export const RepoProgress: React.FC<RepoProgressProps> = ({
             <span className="absolute top-10 -left-10 italic whitespace-nowrap">Offer Created</span>
           )}
         </li>
-        
+
         <li
           className={cn(
             "flex w-full items-center after:content-[''] after:w-full after:h-1 after:border-b after:border-4 after:inline-block relative",
@@ -107,9 +113,7 @@ export const RepoProgress: React.FC<RepoProgressProps> = ({
             {status === RepoOfferStatus.Defaulted && <ClockIcon className="w-5 h-5 text-yellow-200" />}
             {status === RepoOfferStatus.Open && <Coins className="w-5 h-5 text-gray-400" />}
           </span>
-          <span className="absolute top-10 -translate-x-1/2 left-1/2 whitespace-nowrap italic">
-            Offer Accepted
-          </span>
+          <span className="absolute top-10 -translate-x-1/2 left-1/2 whitespace-nowrap italic">Offer Accepted</span>
         </li>
 
         <li className="flex items-center relative">
@@ -142,10 +146,14 @@ export const RepoProgress: React.FC<RepoProgressProps> = ({
               Cancelled
             </span>
           ) : status === RepoOfferStatus.Active ? (
-            <span className={cn(
-              "absolute top-10 px-2 py-0.5 border rounded whitespace-nowrap -translate-x-1/2 left-1/2",
-              isPastDue ? "text-red-400 border-red-500 bg-red-700 bg-opacity-30" : "text-blue-400 border-blue-500 bg-blue-700 bg-opacity-30"
-            )}>
+            <span
+              className={cn(
+                "absolute top-10 px-2 py-0.5 border rounded whitespace-nowrap -translate-x-1/2 left-1/2",
+                isPastDue
+                  ? "text-red-400 border-red-500 bg-red-700 bg-opacity-30"
+                  : "text-blue-400 border-blue-500 bg-blue-700 bg-opacity-30",
+              )}
+            >
               {isPastDue ? "Past Due" : timeLeft || "Active"}
             </span>
           ) : (

@@ -65,10 +65,10 @@ export const RepoHistoryTable: React.FC<RepoHistoryTableProps> = ({ offers, myAd
       }
 
       // Filter by user role
-      if (userRoleFilter === "lender" && offer.lender !== myAddress) {
+      if (userRoleFilter === "lender" && offer.lenderRefundAddress !== myAddress) {
         return false;
       }
-      if (userRoleFilter === "borrower" && offer.borrower !== myAddress) {
+      if (userRoleFilter === "borrower" && offer.borrowerRefundAddress !== myAddress) {
         return false;
       }
 
@@ -171,7 +171,8 @@ export const RepoHistoryTable: React.FC<RepoHistoryTableProps> = ({ offers, myAd
                     : undefined;
 
                 // Determine which address to show as counterparty
-                const counterparty = myAddress === offer.lender ? offer.borrower : offer.lender;
+                const counterparty =
+                  myAddress === offer.lenderRefundAddress ? offer.borrowerRefundAddress : offer.lenderRefundAddress;
                 const endTimeFormatted = formatTimestamp(offer.endTime);
 
                 return (
@@ -241,7 +242,7 @@ export const RepoHistoryTable: React.FC<RepoHistoryTableProps> = ({ offers, myAd
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">{getStatusBadge(offer.status)}</td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      {offer.lender === myAddress ? (
+                      {offer.lenderRefundAddress === myAddress ? (
                         <Badge variant="secondary">Lender</Badge>
                       ) : (
                         <Badge variant="secondary">Borrower</Badge>

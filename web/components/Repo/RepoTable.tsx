@@ -150,7 +150,7 @@ export const RepoTable: React.FC<RepoTableProps> = ({
       BigInt(currentTime) > offer.endTime + gracePeriod;
 
     if (offer.status === RepoOfferStatus.Open) {
-      if (isMyOffers && offer.lender === myAddress) {
+      if (isMyOffers && offer.lenderRefundAddress === myAddress) {
         return (
           <Button
             variant="destructive"
@@ -173,7 +173,7 @@ export const RepoTable: React.FC<RepoTableProps> = ({
         );
       }
     } else if (offer.status === RepoOfferStatus.Active) {
-      if (offer.borrower === myAddress) {
+      if (offer.borrowerRefundAddress === myAddress) {
         return (
           <Button
             size="sm"
@@ -183,7 +183,7 @@ export const RepoTable: React.FC<RepoTableProps> = ({
             Repay
           </Button>
         );
-      } else if (offer.lender === myAddress) {
+      } else if (offer.lenderRefundAddress === myAddress) {
         if (isPastDue) {
           return (
             <Button
@@ -259,10 +259,10 @@ export const RepoTable: React.FC<RepoTableProps> = ({
 
               // Determine which address to show as counterparty
               const counterparty = isMyOffers
-                ? myAddress === offer.lender
-                  ? offer.borrower
-                  : offer.lender
-                : offer.lender;
+                ? myAddress === offer.lenderRefundAddress
+                  ? offer.borrowerRefundAddress
+                  : offer.lenderRefundAddress
+                : offer.lenderRefundAddress;
 
               return (
                 <tr key={offer.offerId.toString()} className="hover:bg-gray-800/30">

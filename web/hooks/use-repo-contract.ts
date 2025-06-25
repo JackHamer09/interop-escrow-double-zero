@@ -346,6 +346,7 @@ export default function useRepoContract() {
   const repayLoanAsync = async (offerId: bigint) => {
     // Find the offer from borrower offers
     const offer = findOffer(offerId, borrowerOffers);
+    console.log("Repay offer:", offer);
     await switchChainIfNotSet(Number(offer.borrowerChainId));
 
     // Check if the user has sufficient balance to repay

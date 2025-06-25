@@ -62,8 +62,8 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
 
             <RepoProgress
               status={offer.status}
-              lender={offer.lender}
-              borrower={offer.borrower}
+              lender={offer.lenderRefundAddress}
+              borrower={offer.borrowerRefundAddress}
               isPastDue={isPastDue}
               myAddress={myAddress}
               startTime={offer.startTime}
@@ -80,7 +80,7 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
               <RepoTokenDisplay
                 token={lendToken}
                 amount={offer.lendAmount}
-                party={offer.lender}
+                party={offer.lenderRefundAddress}
                 myAddress={myAddress}
                 isRight={false}
                 chainName={chainA.name}
@@ -96,7 +96,7 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
               <RepoTokenDisplay
                 token={collateralToken}
                 amount={offer.collateralAmount}
-                party={offer.borrower === "0x" ? null : offer.borrower}
+                party={offer.borrowerRefundAddress === "0x" ? null : offer.borrowerRefundAddress}
                 myAddress={myAddress}
                 isRight={true}
                 chainName={chainB?.name}
@@ -110,7 +110,7 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
           {/* Open offer actions */}
           {offer.status === RepoOfferStatus.Open && (
             <>
-              {offer.lender === myAddress && (
+              {offer.lenderRefundAddress === myAddress && (
                 <Button
                   className="p-4"
                   variant="destructive"
@@ -120,7 +120,7 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
                   Cancel Offer
                 </Button>
               )}
-              {offer.lender !== myAddress && (
+              {offer.lenderRefundAddress !== myAddress && (
                 <Button className="p-4" loading={isProcessing} onClick={() => onAcceptOffer(offer)}>
                   Accept & Deposit Collateral
                 </Button>
@@ -131,12 +131,12 @@ export const RepoOfferItem: React.FC<RepoOfferItemProps> = ({
           {/* Active loan actions */}
           {offer.status === RepoOfferStatus.Active && (
             <>
-              {offer.borrower === myAddress && (
+              {offer.borrowerRefundAddress === myAddress && (
                 <Button className="p-4" loading={isProcessing} onClick={() => onRepayLoan(offer.offerId)}>
                   Repay Loan
                 </Button>
               )}
-              {offer.lender === myAddress && isPastDue && (
+              {offer.lenderRefundAddress === myAddress && isPastDue && (
                 <Button
                   className="p-4"
                   variant="destructive"
