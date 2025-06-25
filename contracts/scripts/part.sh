@@ -178,26 +178,26 @@ ttbill_asset_id=0x0e48cea25823fda3490def99ff49a13663d1b7d96ba496414995c19d3eb722
 sgd_asset_id=0x39af0188197bcfa7d64452460cbe343ee5522849b7177e0d77c39bae5f8e96ca
 
 #### 2. Request interop transaction with transfer
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 1
-echo "Requesting interop USDC transfer for Deployer to Chain B"
-interop_transfer_usdc_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $usdc_asset_id 1 $DEPLOYER_ADDRESS $DEPLOYER_PRIVATE_KEY 10000000000000000)
-echo "Transfer USDC interop tx hash: $interop_transfer_usdc_tx_hash"
-wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_usdc_tx_hash
+# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1
+# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 1
+# echo "Requesting interop USDC transfer for Deployer to Chain B"
+# interop_transfer_usdc_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $usdc_asset_id 1 $DEPLOYER_ADDRESS $DEPLOYER_PRIVATE_KEY 10000000000000000)
+# echo "Transfer USDC interop tx hash: $interop_transfer_usdc_tx_hash"
+# wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_usdc_tx_hash
 
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 1
-echo "Requesting interop TTBILL transfer for Deployer to Chain B"
-interop_transfer_ttbill_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $ttbill_asset_id 1 $DEPLOYER_ADDRESS $DEPLOYER_PRIVATE_KEY 1000000000000000)
-echo "Transfer TTBILL interop tx hash: $interop_transfer_ttbill_tx_hash"
-wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_ttbill_tx_hash
+# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1
+# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 1
+# echo "Requesting interop TTBILL transfer for Deployer to Chain B"
+# interop_transfer_ttbill_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $ttbill_asset_id 1 $DEPLOYER_ADDRESS $DEPLOYER_PRIVATE_KEY 1000000000000000)
+# echo "Transfer TTBILL interop tx hash: $interop_transfer_ttbill_tx_hash"
+# wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_ttbill_tx_hash
 
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $sgd_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1
-cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $sgd_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 1
-echo "Requesting interop SGD transfer for Deployer to Chain B"
-interop_transfer_sgd_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $sgd_asset_id 1 $DEPLOYER_ADDRESS $DEPLOYER_PRIVATE_KEY 1000000000000000)
-echo "Transfer SGD interop tx hash: $interop_transfer_sgd_tx_hash"
-wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_sgd_tx_hash
+# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $sgd_address "mint(address,uint256)" $DEPLOYER_ADDRESS 1
+# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $sgd_address "approve(address,uint256)" $L2_NATIVE_TOKEN_VAULT_ADDRESS 1
+# echo "Requesting interop SGD transfer for Deployer to Chain B"
+# interop_transfer_sgd_tx_hash=$(request_interop $CHAIN_A_RPC_URL $CHAIN_B_RPC_URL $sgd_asset_id 1 $DEPLOYER_ADDRESS $DEPLOYER_PRIVATE_KEY 1000000000000000)
+# echo "Transfer SGD interop tx hash: $interop_transfer_sgd_tx_hash"
+# wait_for_interop_tx_success $CHAIN_A_RPC_URL $interop_transfer_sgd_tx_hash
 # This creates address on Chain B for all these tokens
 
 ## Get addresses of tokens on Chain B
@@ -208,7 +208,7 @@ sgd_address_chain_b=$(cast parse-bytes32-address $(cast call --rpc-url $CHAIN_B_
 
 # Deploy TradeEscrow contract
 echo "Deploying TradeEscrow contract..."
-trade_escrow_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
+trade_escrow_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
 echo "TradeEscrow deployed at: $trade_escrow_address"
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 0.1ether
 
@@ -220,7 +220,7 @@ cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $repo_c
 
 # Deploy InvoicePayment contract
 echo "Deploying InvoicePayment contract..."
-invoice_payment_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/InvoicePayment.sol:InvoicePayment | extract_deployed_address)
+invoice_payment_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/InvoicePayment.sol:InvoicePayment --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
 echo "InvoicePayment deployed at: $invoice_payment_address"
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address --value 0.1ether
 

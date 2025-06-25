@@ -24,7 +24,7 @@ contract InvoicePayment {
     address constant L2_ASSET_ROUTER_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x03);
     
     // Cross-chain fee in ETH
-    uint256 public constant CROSS_CHAIN_FEE = 0.01 ether; // Same as TradeEscrow
+    uint256 public crossChainFee = 0.001 ether; // Fee for cross-chain transfers
 
     // Admin address
     address public admin;
@@ -86,9 +86,11 @@ contract InvoicePayment {
     // Mapping for exchange rates between tokens
     mapping(address => mapping(address => uint256)) public exchangeRates;
 
-    // Constructor
-    constructor() {
-        admin = msg.sender;
+    /// @notice Contract constructor
+    /// @param _admin Address of the admin who can update contract parameters
+    constructor(address _admin) {
+        require(_admin != address(0), "Admin cannot be zero address");
+        admin = _admin;
     }
 
     // Modifier for admin-only functions
@@ -101,6 +103,13 @@ contract InvoicePayment {
     function setAdmin(address newAdmin) external onlyAdmin {
         require(newAdmin != address(0), "InvoicePayment: new admin is the zero address");
         admin = newAdmin;
+    }
+    
+    /// @notice Sets the cross-chain fee.
+    /// @param _crossChainFee The new cross-chain fee in wei.
+    function setCrossChainFee(uint256 _crossChainFee) external onlyAdmin {
+        crossChainFee = _crossChainFee;
+        emit CrossChainFeeUpdated(_crossChainFee);
     }
 
     // Events
@@ -141,6 +150,8 @@ contract InvoicePayment {
         address indexed token2,
         uint256 rate
     );
+    
+    event CrossChainFeeUpdated(uint256 newFee);
     
     /**
      * @dev Remove the original whitelistToken function since we have an updated version below
@@ -383,7 +394,7 @@ contract InvoicePayment {
             L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
             "",
             0,
-            CROSS_CHAIN_FEE
+            crossChainFee
         );
 
         executionCallStarters[0] = InteropCallStarter(
@@ -412,9 +423,9 @@ contract InvoicePayment {
             ""
         );
 
-        require(address(this).balance >= CROSS_CHAIN_FEE, "Insufficient ETH for interop call");
+        require(address(this).balance >= crossChainFee, "Insufficient ETH for interop call");
 
-        IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: CROSS_CHAIN_FEE }(
+        IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: crossChainFee }(
             _recipientChainId,
             L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
             feePaymentCallStarters,
@@ -601,6 +612,11 @@ contract InvoicePayment {
         });
         
         emit TokenWhitelisted(token, symbol);
+    }
+
+    function withdraw() external onlyAdmin {
+        // Allow admin to withdraw any ETH balance in the contract
+        payable(admin).call{value: address(this).balance}("");
     }
     
     /**

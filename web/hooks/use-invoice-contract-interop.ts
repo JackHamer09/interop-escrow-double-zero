@@ -28,7 +28,7 @@ export default function useInvoiceContractInterop() {
     throw new Error("No supported interop chain found");
   }
 
-  const feeAmount = parseEther("0.01");
+  const feeAmount = parseEther("0.001");
 
   const cancelInvoiceAsync = async (invoiceId: bigint) => {
     if (!address) throw new Error("No address available");

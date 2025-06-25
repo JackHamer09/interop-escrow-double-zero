@@ -22,7 +22,7 @@ contract TradeEscrow {
     uint160 constant USER_CONTRACTS_OFFSET = 0x10000; // 2^16
     address constant L2_NATIVE_TOKEN_VAULT_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x04);
     address constant L2_ASSET_ROUTER_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x03);
-    uint256 constant CROSS_CHAIN_FEE = 0.01 ether; // TODO: Fee can be much lower and actually should estimated, not hardcoded
+    uint256 public crossChainFee = 0.001 ether; // Fee for cross-chain transfers
     
     /// @notice Trade status values.
     enum TradeStatus { PendingCounterpartyDeposit, Complete, Declined }
@@ -45,8 +45,17 @@ contract TradeEscrow {
     uint256 public tradeCounter;
     mapping(uint256 => Trade) public trades;
     
+    // Admin address that can change contract parameters
+    address public admin;
+    
     // Mapping from user address to the list of trade IDs they’re involved in.
     mapping(address => uint256[]) public userTrades;
+    
+    // Modifiers
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin can perform this action");
+        _;
+    }
     
     // --- Events ---
     event TradeProposed(uint256 indexed tradeId, address indexed proposer, address indexed counterparty);
@@ -54,6 +63,15 @@ contract TradeEscrow {
     event DepositRefunded(uint256 indexed tradeId, address indexed party, address token, uint256 amount);
     event TradeSettled(uint256 indexed tradeId);
     event TradeCancelled(uint256 indexed tradeId, address indexed party);
+    event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
+    event CrossChainFeeUpdated(uint256 newFee);
+    
+    /// @notice Contract constructor
+    /// @param _admin Address of the admin who can update contract parameters
+    constructor(address _admin) {
+        require(_admin != address(0), "Admin cannot be zero address");
+        admin = _admin;
+    }
     
     // --- Trade Lifecycle Functions ---
     
@@ -185,7 +203,7 @@ contract TradeEscrow {
             L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
             "",
             0,
-            CROSS_CHAIN_FEE
+            crossChainFee
         );
 
         executionCallStarters[0] = InteropCallStarter(
@@ -214,9 +232,9 @@ contract TradeEscrow {
             ""
         );
 
-        require(address(this).balance >= CROSS_CHAIN_FEE, "Insufficient ETH for interop call");
+        require(address(this).balance >= crossChainFee, "Insufficient ETH for interop call");
 
-        IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: CROSS_CHAIN_FEE }(
+        IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: crossChainFee }(
             _recipientChainId,
             L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
             feePaymentCallStarters,
@@ -266,6 +284,27 @@ contract TradeEscrow {
         for (uint256 i = 0; i < count; i++) {
             myTrades[i] = trades[myTradeIds[i]];
         }
+    }
+
+    /// @notice Updates the admin address.
+    /// @param _newAdmin The new admin address.
+    function setAdmin(address _newAdmin) external onlyAdmin {
+        require(_newAdmin != address(0), "New admin cannot be zero address");
+        address oldAdmin = admin;
+        admin = _newAdmin;
+        emit AdminChanged(oldAdmin, _newAdmin);
+    }
+    
+    /// @notice Sets the cross-chain fee.
+    /// @param _crossChainFee The new cross-chain fee in wei.
+    function setCrossChainFee(uint256 _crossChainFee) external onlyAdmin {
+        crossChainFee = _crossChainFee;
+        emit CrossChainFeeUpdated(_crossChainFee);
+    }
+    
+    function withdraw() external onlyAdmin {
+        // Allow admin to withdraw any ETH balance in the contract
+        payable(admin).call{value: address(this).balance}("");
     }
 
     receive() external payable {}

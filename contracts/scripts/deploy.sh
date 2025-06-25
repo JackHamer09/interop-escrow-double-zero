@@ -227,7 +227,7 @@ sgd_address_chain_b=$(cast parse-bytes32-address $(cast call --rpc-url $CHAIN_B_
 
 # Deploy TradeEscrow contract
 echo "Deploying TradeEscrow contract..."
-trade_escrow_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow | extract_deployed_address)
+trade_escrow_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
 echo "TradeEscrow deployed at: $trade_escrow_address"
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 0.1ether
 
@@ -239,7 +239,7 @@ cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $repo_c
 
 # Deploy InvoicePayment contract
 echo "Deploying InvoicePayment contract..."
-invoice_payment_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/InvoicePayment.sol:InvoicePayment | extract_deployed_address)
+invoice_payment_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/InvoicePayment.sol:InvoicePayment --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
 echo "InvoicePayment deployed at: $invoice_payment_address"
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address --value 0.1ether
 
@@ -266,7 +266,7 @@ cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $sgd_ad
 
 echo ""
 echo "Accounts:"
-echo "Deployer: $DEPLOYER_ADDRESS"
+echo "Deployer (admin): $DEPLOYER_ADDRESS"
 echo ""
 echo "Contracts:"
 echo "TradeEscrow: $trade_escrow_address"

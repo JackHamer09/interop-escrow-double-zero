@@ -41,7 +41,7 @@ contract RepoContract {
     uint160 constant USER_CONTRACTS_OFFSET = 0x10000; // 2^16
     address constant L2_NATIVE_TOKEN_VAULT_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x04);
     address constant L2_ASSET_ROUTER_ADDRESS = address(USER_CONTRACTS_OFFSET + 0x03);
-    uint256 constant CROSS_CHAIN_FEE = 0.01 ether; // Fee for cross-chain transfers
+    uint256 public crossChainFee = 0.001 ether; // Fee for cross-chain transfers
     
     /// @notice Repo offer status values.
     enum OfferStatus { Open, Active, Completed, Cancelled, Defaulted }
@@ -101,6 +101,7 @@ contract RepoContract {
     event GracePeriodUpdated(uint256 newGracePeriod);
     event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
     event CrossChainTransferInitiated(address token, uint256 amount, address recipient, uint256 chainId);
+    event CrossChainFeeUpdated(uint256 newFee);
     
     // --- Offer Creation ---
     
@@ -317,7 +318,7 @@ contract RepoContract {
             L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
             "",
             0,
-            CROSS_CHAIN_FEE
+            crossChainFee
         );
 
         executionCallStarters[0] = InteropCallStarter(
@@ -346,9 +347,9 @@ contract RepoContract {
             ""
         );
 
-        require(address(this).balance >= CROSS_CHAIN_FEE, "Insufficient ETH for interop call");
+        require(address(this).balance >= crossChainFee, "Insufficient ETH for interop call");
 
-        IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: CROSS_CHAIN_FEE }(
+        IInteropCenter(address(L2_INTEROP_CENTER)).requestInterop{ value: crossChainFee }(
             _recipientChainId,
             L2_STANDARD_TRIGGER_ACCOUNT_ADDR,
             feePaymentCallStarters,
@@ -427,6 +428,18 @@ contract RepoContract {
         address oldAdmin = admin;
         admin = _newAdmin;
         emit AdminChanged(oldAdmin, _newAdmin);
+    }
+    
+    /// @notice Sets the cross-chain fee.
+    /// @param _crossChainFee The new cross-chain fee in wei.
+    function setCrossChainFee(uint256 _crossChainFee) external onlyAdmin {
+        crossChainFee = _crossChainFee;
+        emit CrossChainFeeUpdated(_crossChainFee);
+    }
+
+    function withdraw() external onlyAdmin {
+        // Allow admin to withdraw any ETH balance in the contract
+        payable(admin).call{value: address(this).balance}("");
     }
     
     // Function to receive ETH for cross-chain fees
