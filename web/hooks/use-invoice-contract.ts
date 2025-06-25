@@ -370,13 +370,11 @@ export default function useInvoiceContract() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
-  // Setup automatic refresh interval with a longer delay to prevent update loops
   useInterval(() => {
-    // Only refetch if we're not in the middle of another operation
     if (address) {
       refetchAll();
     }
-  }, 10000); // Increased to 10 seconds to reduce update frequency
+  }, 3000);
 
   return {
     whitelistedTokens: whitelistedTokensData,

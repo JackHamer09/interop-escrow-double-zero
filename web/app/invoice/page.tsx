@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { Hash, parseUnits } from "viem";
-import { useAccount, useChainId } from "wagmi";
+import { useAccount } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
 import { CreateInvoiceModal, InvoiceFormState, InvoiceTable, PayInvoiceModal } from "~~/components/Invoice";
 import { TokenBalances } from "~~/components/Trade";
@@ -39,7 +39,6 @@ export default function InvoicePaymentPage() {
   } = useInvoiceContract();
 
   const { address: myAddress } = useAccount();
-  const walletChainId = useChainId();
 
   const mainChain = invoiceMainChain;
   const supportedChain = invoiceSupportedChains.find(chain => chain.id !== mainChain.id);
