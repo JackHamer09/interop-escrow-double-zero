@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { ExplanationButton } from "./ExplanationScreen";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { HeartIcon } from "@heroicons/react/24/solid";
 import { chain1, chain2 } from "~~/config/chains-config";
@@ -33,8 +32,6 @@ export const Footer = ({ className }: { className?: string }) => {
       >
         <span className="hover:underline">Moonsong Labs</span>
       </a>
-      <div className="mx-2">|</div>
-      <ExplanationButton />
       <div className="mx-2">|</div>
       <a
         className="flex justify-center items-center gap-1 whitespace-nowrap"

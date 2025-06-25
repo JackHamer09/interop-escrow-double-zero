@@ -42,27 +42,10 @@ export const ExplanationScreen: React.FC<ExplanationScreenProps> = ({ onClose, i
         )}
 
         <CardHeader>
-          <CardTitle className="text-xl">ZKsync Prividium Escrow Trade</CardTitle>
-          <CardDescription>Cross-chain confidential trading</CardDescription>
+          <CardTitle className="text-xl">ZKsync Prividium</CardTitle>
+          <CardDescription>Institutional Usecases Demo</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 -mt-3">
-          <p>
-            In this demo, you&apos;ll experience confidential trading between two parties through 2 Private Validium
-            chains with interoperability powered by ZKsync.
-          </p>
-
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Watch this video to learn more</p>
-            <div className="relative w-full pb-[56.25%] rounded-md overflow-hidden">
-              <iframe
-                src="https://www.loom.com/embed/aae22568e7f049abb1916fcc85dc5816?sid=3065d203-8a1e-477c-a80d-45384b046f1c"
-                frameBorder="0"
-                allowFullScreen
-                className="absolute top-0 left-0 w-full h-full rounded-md"
-              ></iframe>
-            </div>
-          </div>
-
           <div className="mt-4">
             <h3 className="font-semibold mb-2">Prerequisites:</h3>
             <ul className="list-disc pl-5 space-y-2">
@@ -129,26 +112,5 @@ export const ExplanationScreen: React.FC<ExplanationScreenProps> = ({ onClose, i
         </CardFooter>
       </Card>
     </div>
-  );
-};
-
-export const ExplanationButton: React.FC = () => {
-  const [showExplanation, setShowExplanation] = useState(false);
-
-  const handleOpen = () => {
-    setShowExplanation(true);
-  };
-
-  const handleClose = () => {
-    setShowExplanation(false);
-  };
-
-  return (
-    <>
-      <Button variant="ghost" size="sm" onClick={handleOpen}>
-        How it works
-      </Button>
-      {showExplanation && <ExplanationScreen onClose={handleClose} isFirstVisit={false} />}
-    </>
   );
 };

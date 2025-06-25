@@ -1,9 +1,11 @@
 import React from "react";
 import Image from "next/image";
+import { X } from "lucide-react";
 import { Hash } from "viem";
 import { Button } from "~~/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -64,7 +66,14 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Invoice</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Create Invoice</DialogTitle>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          </div>
           <DialogDescription>Create a new invoice to bill another address</DialogDescription>
         </DialogHeader>
 

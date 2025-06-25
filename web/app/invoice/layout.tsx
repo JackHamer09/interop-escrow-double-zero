@@ -1,5 +1,20 @@
-import React from "react";
+import { Metadata } from "next";
+import { FirstVisitExplanation } from "~~/components/FirstVisitExplanation";
+import { Footer } from "~~/components/Footer";
+import "~~/styles/globals.css";
 
-export default function InvoiceLayout({ children }: { children: React.ReactNode }) {
-  return <div className="flex-1 flex flex-col">{children}</div>;
-}
+export const metadata: Metadata = {
+  title: "ZKsync Prividium Invoice Payment",
+  description: "ZKsync Prividium Invoice Payment Demo",
+};
+
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <FirstVisitExplanation>
+      {children}
+      <Footer />
+    </FirstVisitExplanation>
+  );
+};
+
+export default Layout;

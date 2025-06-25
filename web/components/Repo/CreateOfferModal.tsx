@@ -57,7 +57,7 @@ export const CreateOfferModal: React.FC<CreateOfferModalProps> = ({
           <div className="flex items-center justify-between">
             <DialogTitle>Create Lending Offer</DialogTitle>
             <DialogClose asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>
             </DialogClose>
