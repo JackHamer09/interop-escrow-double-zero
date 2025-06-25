@@ -45,6 +45,11 @@ export class InteropTransactionBuilder {
   }
 
   addTransfer({ assetId, amount, to }: { assetId: Hash; amount: bigint; to: Address }) {
+    console.log("Adding transfer to interop transaction:", {
+      assetId,
+      amount: amount.toString(),
+      to: getAddress(to),
+    });
     const data = this.getTokenTransferSecondBridgeData(assetId, amount, to);
     this.execCallStarters.push({
       directCall: false,
@@ -56,6 +61,11 @@ export class InteropTransactionBuilder {
   }
 
   addTransaction({ contractAddress, data, value }: { contractAddress: Address; data: Hash; value: bigint }) {
+    console.log("Adding transaction to interop transaction:", {
+      contractAddress: getAddress(contractAddress),
+      data,
+      value: value.toString(),
+    });
     this.execCallStarters.push({
       directCall: true,
       nextContract: contractAddress,

@@ -1,7 +1,7 @@
 import { InteropTransactionBuilder } from "./use-interop-builder";
 import { options } from "./use-invoice-contract";
 import toast from "react-hot-toast";
-import { type Address, Hash, encodeFunctionData, erc20Abi, parseEther } from "viem";
+import { type Address, encodeFunctionData, erc20Abi, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { invoiceMainChain, invoiceSupportedChains } from "~~/config/invoice-config";
 import { getTokenByAddress } from "~~/config/tokens-config";
@@ -92,7 +92,7 @@ export default function useInvoiceContractInterop() {
     // 2. Transfer funds to aliased address
     const aliasAddress = await builder.getAliasedAddress(address);
     console.log(`Alias of ${address} is ${aliasAddress}`);
-    builder.addTransfer({ assetId: token.assetId as Hash, amount: paymentAmount, to: aliasAddress });
+    builder.addTransfer({ assetId: token.assetId, amount: paymentAmount, to: aliasAddress });
 
     // 3. Approve allowance for token at Main Chain
     const mainChainTokenAddress = token.addresses[mainChain.id];
@@ -111,7 +111,7 @@ export default function useInvoiceContractInterop() {
       functionName: "payInvoice",
       args: [invoiceId, paymentTokenAddress],
     });
-    builder.addTransaction({ contractAddress: options.address, data: payData, value: feeAmount }); // Include fee value for cross-chain transfers
+    builder.addTransaction({ contractAddress: options.address, data: payData, value: 0n }); // Include fee value for cross-chain transfers
 
     const txHash = await toast.promise(builder.send(), {
       loading: "Waiting for wallet approval...",
