@@ -56,6 +56,13 @@ export const REPO_CONTRACT_ABI = [
   },
   {
     type: "function",
+    name: "crossChainFee",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "getBorrowerOffers",
     inputs: [{ name: "_user", type: "address", internalType: "address" }],
     outputs: [
@@ -197,6 +204,13 @@ export const REPO_CONTRACT_ABI = [
   },
   {
     type: "function",
+    name: "setCrossChainFee",
+    inputs: [{ name: "_crossChainFee", type: "uint256", internalType: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "setGracePeriod",
     inputs: [{ name: "_gracePeriod", type: "uint256", internalType: "uint256" }],
     outputs: [],
@@ -222,6 +236,7 @@ export const REPO_CONTRACT_ABI = [
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
+  { type: "function", name: "withdraw", inputs: [], outputs: [], stateMutability: "nonpayable" },
   {
     type: "event",
     name: "AdminChanged",
@@ -241,6 +256,12 @@ export const REPO_CONTRACT_ABI = [
     type: "event",
     name: "CollateralReleased",
     inputs: [{ name: "offerId", type: "uint256", indexed: true, internalType: "uint256" }],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "CrossChainFeeUpdated",
+    inputs: [{ name: "newFee", type: "uint256", indexed: false, internalType: "uint256" }],
     anonymous: false,
   },
   {

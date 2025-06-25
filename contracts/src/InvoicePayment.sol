@@ -41,6 +41,8 @@ contract InvoicePayment {
         uint256 id;                 // Unique invoice ID
         address creator;            // Address that created the invoice
         address recipient;          // Address that needs to pay the invoice
+        address creatorRefundAddress; // Address to refund payment to (on creator's chain)
+        address recipientRefundAddress; // Address to refund tokens to (on recipient's chain)
         uint256 creatorChainId;     // Chain ID where the creator is
         uint256 recipientChainId;   // Chain ID where the recipient is
         address billingToken;       // Token address in which the invoice is billed
@@ -71,10 +73,10 @@ contract InvoicePayment {
     // Mapping from invoice ID to Invoice data
     mapping(uint256 => Invoice) public invoices;
     
-    // Mapping from user address to their invoice IDs (as creator)
+    // Mapping from user refund address to their invoice IDs (as creator)
     mapping(address => uint256[]) public userCreatedInvoices;
     
-    // Mapping from user address to their invoice IDs (as recipient)
+    // Mapping from user refund address to their invoice IDs (as recipient)
     mapping(address => uint256[]) public userPendingInvoices;
     
     // Mapping for whitelisted tokens
@@ -115,8 +117,8 @@ contract InvoicePayment {
     // Events
     event InvoiceCreated(
         uint256 indexed id,
-        address indexed creator,
-        address indexed recipient,
+        address indexed creatorRefundAddress,
+        address indexed recipientRefundAddress,
         uint256 creatorChainId,
         uint256 recipientChainId,
         address billingToken,
@@ -218,22 +220,38 @@ contract InvoicePayment {
      * @param recipientChainId Chain ID where the recipient is
      * @param billingToken Address of the token in which the invoice is billed
      * @param amount Amount of billing token
+     * @param creatorChainId Chain ID where the creator is
+     * @param creatorRefundAddress Address to refund payment to (on creator's chain)
+     * @param recipientRefundAddress Address to refund tokens to (on recipient's chain)
      * @return id The ID of the created invoice
      */
     function createInvoice(
         address recipient,
         uint256 recipientChainId,
         address billingToken,
-        uint256 amount
+        uint256 amount,
+        uint256 creatorChainId,
+        address creatorRefundAddress,
+        address recipientRefundAddress
     ) external returns (uint256) {
         require(recipient != address(0), "InvoicePayment: recipient is the zero address");
         require(amount > 0, "InvoicePayment: amount must be greater than zero");
         require(whitelistedTokens[billingToken].isWhitelisted, "InvoicePayment: billing token is not whitelisted");
+        require(creatorChainId > 0, "InvoicePayment: invalid creator chain ID");
+        require(creatorRefundAddress != address(0), "InvoicePayment: creator refund address is the zero address");
+        require(recipientRefundAddress != address(0), "InvoicePayment: recipient refund address is the zero address");
         
-        // Get current chain ID
-        uint256 creatorChainId;
-        assembly {
-            creatorChainId := chainid()
+        // Verify that msg.sender is the correct caller based on chain
+        // If on the same chain as creator, msg.sender should equal creatorRefundAddress
+        // If on a different chain, msg.sender should be the aliased account of creatorRefundAddress
+        if (creatorChainId == block.chainid) {
+            require(msg.sender == creatorRefundAddress, "InvoicePayment: msg.sender must be creator refund address");
+        } else {
+            address expectedSender = IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
+                creatorRefundAddress,
+                creatorChainId
+            );
+            require(msg.sender == expectedSender, "InvoicePayment: msg.sender must be aliased account of creator refund address");
         }
         
         // Create new invoice
@@ -242,6 +260,8 @@ contract InvoicePayment {
         newInvoice.id = invoiceId;
         newInvoice.creator = msg.sender;
         newInvoice.recipient = recipient;
+        newInvoice.creatorRefundAddress = creatorRefundAddress;
+        newInvoice.recipientRefundAddress = recipientRefundAddress;
         newInvoice.creatorChainId = creatorChainId;
         newInvoice.recipientChainId = recipientChainId;
         newInvoice.billingToken = billingToken;
@@ -249,22 +269,15 @@ contract InvoicePayment {
         newInvoice.status = InvoiceStatus.Created;
         newInvoice.createdAt = block.timestamp;
         
-        // Add to user created invoices
-        userCreatedInvoices[msg.sender].push(invoiceId);
-        
-        // Check if recipient is on the same chain
-        if (creatorChainId == recipientChainId) {
-            // Add to recipient's pending invoices directly
-            userPendingInvoices[recipient].push(invoiceId);
-        } else {
-            // For cross-chain invoices, the recipient will need to query the contract on their chain
-            // The front-end will handle showing cross-chain invoices
-        }
+        // Add to user created invoices using refund address
+        userCreatedInvoices[creatorRefundAddress].push(invoiceId);
+        // Add to recipient's pending invoices directly using refund address
+        userPendingInvoices[recipientRefundAddress].push(invoiceId);
         
         emit InvoiceCreated(
             invoiceId,
-            msg.sender,
-            recipient,
+            creatorRefundAddress,
+            recipientRefundAddress,
             creatorChainId,
             recipientChainId,
             billingToken,
@@ -284,14 +297,16 @@ contract InvoicePayment {
         require(invoice.id == invoiceId, "InvoicePayment: invoice does not exist");
         require(invoice.status == InvoiceStatus.Created, "InvoicePayment: invoice is not in Created status");
         
-        // Check if sender is the creator, handling cross-chain aliased accounts
-        address expectedSender = block.chainid == invoice.creatorChainId 
-            ? invoice.creator 
-            : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
-                invoice.creator, 
+        // Verify that msg.sender is the correct caller based on chain
+        if (invoice.creatorChainId == block.chainid) {
+            require(msg.sender == invoice.creatorRefundAddress, "InvoicePayment: msg.sender must be creator refund address");
+        } else {
+            address expectedSender = IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
+                invoice.creatorRefundAddress,
                 invoice.creatorChainId
             );
-        require(msg.sender == expectedSender, "InvoicePayment: only creator can cancel");
+            require(msg.sender == expectedSender, "InvoicePayment: msg.sender must be aliased account of creator refund address");
+        }
         
         invoice.status = InvoiceStatus.Cancelled;
         
@@ -309,22 +324,18 @@ contract InvoicePayment {
         require(invoice.id == invoiceId, "InvoicePayment: invoice does not exist");
         require(invoice.status == InvoiceStatus.Created, "InvoicePayment: invoice is not in Created status");
         
-        // Check if sender is the recipient, handling cross-chain aliased accounts
-        address expectedSender = block.chainid == invoice.recipientChainId 
-            ? invoice.recipient 
-            : IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
-                invoice.recipient, 
+        // Verify that msg.sender is the correct caller based on chain
+        if (invoice.recipientChainId == block.chainid) {
+            require(msg.sender == invoice.recipientRefundAddress, "InvoicePayment: msg.sender must be recipient refund address");
+        } else {
+            address expectedSender = IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
+                invoice.recipientRefundAddress,
                 invoice.recipientChainId
             );
-        require(msg.sender == expectedSender, "InvoicePayment: only recipient can pay");
+            require(msg.sender == expectedSender, "InvoicePayment: msg.sender must be aliased account of recipient refund address");
+        }
         
         require(whitelistedTokens[paymentToken].isWhitelisted, "InvoicePayment: payment token is not whitelisted");
-        
-        // Get current chain ID
-        uint256 currentChainId;
-        assembly {
-            currentChainId := chainid()
-        }
         
         // Calculate payment amount based on exchange rate
         uint256 paymentAmount = getConversionAmount(invoice.billingToken, paymentToken, invoice.amount);
@@ -339,16 +350,16 @@ contract InvoicePayment {
         IERC20(paymentToken).transferFrom(msg.sender, address(this), paymentAmount);
         
         // Transfer billing token to creator (handle cross-chain if needed)
-        if (currentChainId == invoice.creatorChainId) {
-            // Same chain - direct transfer
-            IERC20(invoice.billingToken).transfer(invoice.creator, invoice.amount);
+        if (invoice.creatorChainId == block.chainid) {
+            // Same chain - direct transfer to creator refund address
+            IERC20(invoice.billingToken).transfer(invoice.creatorRefundAddress, invoice.amount);
         } else {
-            // Cross-chain transfer
+            // Cross-chain transfer to creator refund address
             _transferTokensCrossChain(
                 invoice.billingToken, 
                 invoice.amount, 
                 invoice.creatorChainId, 
-                invoice.creator
+                invoice.creatorRefundAddress
             );
         }
         
@@ -545,52 +556,77 @@ contract InvoicePayment {
     /**
      * @dev Get detailed invoice information
      * @param invoiceId ID of the invoice
-     * @return id Invoice ID
-     * @return creator Address that created the invoice
-     * @return recipient Address that needs to pay the invoice
-     * @return creatorChainId Chain ID where the creator is
-     * @return recipientChainId Chain ID where the recipient is
-     * @return billingToken Token address in which the invoice is billed
-     * @return amount Billing amount
-     * @return paymentToken Token used for payment (if already paid)
-     * @return paymentAmount Amount paid (if already paid)
-     * @return status Current status of the invoice
-     * @return createdAt Timestamp when invoice was created
-     * @return paidAt Timestamp when invoice was paid (if paid)
+     * @return invoice Invoice struct
      */
-    function getInvoiceDetails(uint256 invoiceId) external view returns (
-        uint256 id,
-        address creator,
-        address recipient,
-        uint256 creatorChainId,
-        uint256 recipientChainId,
-        address billingToken,
-        uint256 amount,
-        address paymentToken,
-        uint256 paymentAmount,
-        InvoiceStatus status,
-        uint256 createdAt,
-        uint256 paidAt
-    ) {
-        Invoice storage invoice = invoices[invoiceId];
+    function getInvoiceDetails(uint256 invoiceId) external view returns (Invoice memory invoice) {
+        invoice = invoices[invoiceId];
         require(invoice.id == invoiceId, "InvoicePayment: invoice does not exist");
-        
-        return (
-            invoice.id,
-            invoice.creator,
-            invoice.recipient,
-            invoice.creatorChainId,
-            invoice.recipientChainId,
-            invoice.billingToken,
-            invoice.amount,
-            invoice.paymentToken,
-            invoice.paymentAmount,
-            invoice.status,
-            invoice.createdAt,
-            invoice.paidAt
-        );
+        return invoice;
     }
     
+    /**
+     * @dev Get multiple invoices details at once
+     * @param invoiceIds Array of invoice IDs to fetch
+     * @return invoiceDetails Array of invoice details
+     */
+    function getMultipleInvoiceDetails(uint256[] calldata invoiceIds) external view returns (Invoice[] memory) {
+        Invoice[] memory invoiceDetails = new Invoice[](invoiceIds.length);
+        
+        for (uint256 i = 0; i < invoiceIds.length; i++) {
+            Invoice storage invoice = invoices[invoiceIds[i]];
+            require(invoice.id == invoiceIds[i], "InvoicePayment: invoice does not exist");
+            invoiceDetails[i] = invoice;
+        }
+        
+        return invoiceDetails;
+    }
+    
+    /**
+     * @dev Get all invoices for a user (both created and pending) with pagination
+     * @param user Address of the user
+     * @param createdStartIndex Start index for created invoices
+     * @param createdEndIndex End index for created invoices (exclusive)
+     * @param pendingStartIndex Start index for pending invoices  
+     * @param pendingEndIndex End index for pending invoices (exclusive)
+     * @return createdInvoices Array of created invoices
+     * @return pendingInvoices Array of pending invoices
+     */
+    function getUserAllInvoices(
+        address user,
+        uint256 createdStartIndex,
+        uint256 createdEndIndex,
+        uint256 pendingStartIndex,
+        uint256 pendingEndIndex
+    ) external view returns (Invoice[] memory createdInvoices, Invoice[] memory pendingInvoices) {
+        // Get created invoices
+        uint256[] storage createdIds = userCreatedInvoices[user];
+        require(createdStartIndex <= createdEndIndex, "InvoicePayment: invalid created range");
+        require(createdEndIndex <= createdIds.length, "InvoicePayment: created index out of bounds");
+        
+        uint256 createdCount = createdEndIndex - createdStartIndex;
+        createdInvoices = new Invoice[](createdCount);
+        
+        for (uint256 i = 0; i < createdCount; i++) {
+            uint256 invoiceId = createdIds[createdStartIndex + i];
+            createdInvoices[i] = invoices[invoiceId];
+        }
+        
+        // Get pending invoices
+        uint256[] storage pendingIds = userPendingInvoices[user];
+        require(pendingStartIndex <= pendingEndIndex, "InvoicePayment: invalid pending range");
+        require(pendingEndIndex <= pendingIds.length, "InvoicePayment: pending index out of bounds");
+        
+        uint256 pendingCount = pendingEndIndex - pendingStartIndex;
+        pendingInvoices = new Invoice[](pendingCount);
+        
+        for (uint256 i = 0; i < pendingCount; i++) {
+            uint256 invoiceId = pendingIds[pendingStartIndex + i];
+            pendingInvoices[i] = invoices[invoiceId];
+        }
+        
+        return (createdInvoices, pendingInvoices);
+    }
+
     /**
      * @dev Modified whitelistToken function to track token addresses
      * @param token Address of the token to whitelist

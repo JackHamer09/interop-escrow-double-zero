@@ -144,20 +144,20 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm">
-                        {invoice.creator === myAddress ? (
+                        {invoice.creatorRefundAddress === myAddress ? (
                           <span className="text-blue-400">You</span>
                         ) : (
-                          <ShortAddress address={invoice.creator} isRight={false} />
+                          <ShortAddress address={invoice.creatorRefundAddress} isRight={false} />
                         )}
                         <span className="ml-1 text-xs text-gray-500">({creatorChain?.name})</span>
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm">
-                        {invoice.recipient === myAddress ? (
+                        {invoice.recipientRefundAddress === myAddress ? (
                           <span className="text-blue-400">You</span>
                         ) : (
-                          <ShortAddress address={invoice.recipient} isRight={false} />
+                          <ShortAddress address={invoice.recipientRefundAddress} isRight={false} />
                         )}
                         <span className="ml-1 text-xs text-gray-500">({recipientChain?.name})</span>
                       </div>
@@ -198,7 +198,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                     <td className="px-4 py-4 whitespace-nowrap text-right">
                       {invoice.status === InvoiceStatus.Created && (
                         <>
-                          {invoice.creator === myAddress && onCancelInvoice && (
+                          {invoice.creatorRefundAddress === myAddress && onCancelInvoice && (
                             <Button
                               variant="destructive"
                               size="sm"
@@ -208,7 +208,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                               Cancel
                             </Button>
                           )}
-                          {invoice.recipient === myAddress && onPayInvoice && (
+                          {invoice.recipientRefundAddress === myAddress && onPayInvoice && (
                             <Button
                               size="sm"
                               loading={isProcessing && processingInvoiceId === invoice.id}

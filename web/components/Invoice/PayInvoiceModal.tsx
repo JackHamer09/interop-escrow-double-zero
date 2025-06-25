@@ -76,7 +76,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({
             <div className="flex justify-between items-center mb-3">
               <div className="text-sm text-muted-foreground">Billed by</div>
               <div className="text-sm">
-                <ShortAddress address={invoice.creator} isRight={false} />
+                <ShortAddress address={invoice.creatorRefundAddress} isRight={false} />
               </div>
             </div>
 

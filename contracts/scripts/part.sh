@@ -219,31 +219,31 @@ echo "RepoContract deployed at: $repo_contract_address"
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $repo_contract_address --value 0.1ether
 
 # Deploy InvoicePayment contract
-# echo "Deploying InvoicePayment contract..."
-# invoice_payment_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/InvoicePayment.sol:InvoicePayment --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
-# echo "InvoicePayment deployed at: $invoice_payment_address"
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address --value 0.1ether
+echo "Deploying InvoicePayment contract..."
+invoice_payment_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/InvoicePayment.sol:InvoicePayment --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
+echo "InvoicePayment deployed at: $invoice_payment_address"
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address --value 0.1ether
 
 # Whitelist tokens in InvoicePayment contract
-# echo "Whitelisting tokens in InvoicePayment contract..."
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "whitelistToken(address,string)" $usdc_address "USDC"
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "whitelistToken(address,string)" $ttbill_address "TTBILL"
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "whitelistToken(address,string)" $sgd_address "SGD"
+echo "Whitelisting tokens in InvoicePayment contract..."
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "whitelistToken(address,string)" $usdc_address "USDC"
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "whitelistToken(address,string)" $ttbill_address "TTBILL"
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "whitelistToken(address,string)" $sgd_address "SGD"
 
 # Set exchange rates between tokens (with 18 decimal precision)
-# echo "Setting exchange rates in InvoicePayment contract..."
+echo "Setting exchange rates in InvoicePayment contract..."
 # 1 SGD = 0.74 USD (1 SGD token = 0.74 USDC tokens)
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $sgd_address $usdc_address 740000000000000000
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $sgd_address $usdc_address 740000000000000000
 # 1 TTBILL = 1.02 USD (1 TTBILL token = 1.02 USDC tokens)
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $ttbill_address $usdc_address 1020000000000000000
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $ttbill_address $usdc_address 1020000000000000000
 # 1 TTBILL = 1.38 SGD (1 TTBILL token = 1.38 SGD tokens)
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $ttbill_address $sgd_address 1380000000000000000
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $ttbill_address $sgd_address 1380000000000000000
 
 # Mint large amounts of tokens to InvoicePayment contract for liquidity
-# echo "Adding liquidity to InvoicePayment contract..."
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "mint(address,uint256)" $invoice_payment_address 10000000000000000000000000 # 10,000,000 USDC
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "mint(address,uint256)" $invoice_payment_address 10000000000000000000000000 # 10,000,000 TTBILL
-# cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $sgd_address "mint(address,uint256)" $invoice_payment_address 10000000000000000000000000 # 10,000,000 SGD
+echo "Adding liquidity to InvoicePayment contract..."
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $usdc_address "mint(address,uint256)" $invoice_payment_address 10000000000000000000000000 # 10,000,000 USDC
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $ttbill_address "mint(address,uint256)" $invoice_payment_address 10000000000000000000000000 # 10,000,000 TTBILL
+cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $sgd_address "mint(address,uint256)" $invoice_payment_address 10000000000000000000000000 # 10,000,000 SGD
 
 echo ""
 echo "Accounts:"
@@ -252,7 +252,7 @@ echo ""
 echo "Contracts:"
 # echo "TradeEscrow: $trade_escrow_address"
 echo "RepoContract: $repo_contract_address"
-# echo "InvoicePayment: $invoice_payment_address"
+echo "InvoicePayment: $invoice_payment_address"
 echo ""
 echo "Tokens:"
 echo "USDC: "

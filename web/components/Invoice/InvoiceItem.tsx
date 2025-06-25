@@ -74,12 +74,13 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
 
             <div className="flex mt-2 text-sm justify-between">
               <div>
-                <span className="text-gray-400">From:</span> {invoice.creator.slice(0, 6)}...{invoice.creator.slice(-4)}
+                <span className="text-gray-400">From:</span> {invoice.creatorRefundAddress.slice(0, 6)}...
+                {invoice.creatorRefundAddress.slice(-4)}
                 <span className="ml-1 text-xs text-gray-500">({creatorChain?.name})</span>
               </div>
               <div>
-                <span className="text-gray-400">To:</span> {invoice.recipient.slice(0, 6)}...
-                {invoice.recipient.slice(-4)}
+                <span className="text-gray-400">To:</span> {invoice.recipientRefundAddress.slice(0, 6)}...
+                {invoice.recipientRefundAddress.slice(-4)}
                 <span className="ml-1 text-xs text-gray-500">({recipientChain?.name})</span>
               </div>
             </div>
@@ -96,7 +97,7 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
                 <TokenDisplay
                   token={billingToken}
                   amount={invoice.amount}
-                  party={invoice.creator}
+                  party={invoice.creatorRefundAddress}
                   myAddress={myAddress}
                 />
               </div>
@@ -110,7 +111,7 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
                 <TokenDisplay
                   token={paymentToken}
                   amount={invoice.paymentAmount}
-                  party={invoice.recipient}
+                  party={invoice.recipientRefundAddress}
                   myAddress={myAddress}
                 />
               </div>
@@ -135,7 +136,7 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
           {/* Pending invoice actions */}
           {invoice.status === InvoiceStatus.Created && (
             <>
-              {invoice.creator === myAddress && onCancelInvoice && (
+              {invoice.creatorRefundAddress === myAddress && onCancelInvoice && (
                 <Button
                   className="p-4"
                   variant="destructive"
@@ -145,7 +146,7 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
                   Cancel Invoice
                 </Button>
               )}
-              {invoice.recipient === myAddress && onPayInvoice && (
+              {invoice.recipientRefundAddress === myAddress && onPayInvoice && (
                 <Button className="p-4" loading={isProcessing} onClick={() => onPayInvoice(invoice)}>
                   Pay Invoice
                 </Button>

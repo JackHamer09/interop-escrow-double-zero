@@ -21,6 +21,8 @@ export type Invoice = {
   id: bigint;
   creator: Address;
   recipient: Address;
+  creatorRefundAddress: Address;
+  recipientRefundAddress: Address;
   creatorChainId: bigint;
   recipientChainId: bigint;
   billingToken: Address;
@@ -150,103 +152,50 @@ export default function useInvoiceContract() {
     args: [address || "0x"],
   });
 
-  // Function to fetch all created invoices
+  // Function to fetch all invoices for the user at once
+  const fetchAllInvoices = useCallback(async (): Promise<{ created: Invoice[]; pending: Invoice[] }> => {
+    if (!address || (!createdInvoiceCount && !pendingInvoiceCount)) {
+      return { created: [], pending: [] };
+    }
+
+    try {
+      const createdCount = Number(createdInvoiceCount || 0);
+      const pendingCount = Number(pendingInvoiceCount || 0);
+
+      if (createdCount === 0 && pendingCount === 0) {
+        return { created: [], pending: [] };
+      }
+
+      // Use the new batch function to get all invoices at once
+      const result = (await readContract(wagmiConfig as any, {
+        ...options,
+        chainId: mainChain.id,
+        functionName: "getUserAllInvoices",
+        args: [address, 0n, BigInt(createdCount), 0n, BigInt(pendingCount)],
+      })) as readonly [readonly Invoice[], readonly Invoice[]];
+
+      const [createdInvoices, pendingInvoices] = result;
+
+      return {
+        created: [...createdInvoices],
+        pending: [...pendingInvoices],
+      };
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      return { created: [], pending: [] };
+    }
+  }, [address, createdInvoiceCount, pendingInvoiceCount, mainChain.id]);
+
+  // Legacy functions for backward compatibility
   const fetchCreatedInvoices = useCallback(async (): Promise<Invoice[]> => {
-    if (!address || !createdInvoiceCount) return [];
+    const result = await fetchAllInvoices();
+    return result.created;
+  }, [fetchAllInvoices]);
 
-    try {
-      // Get created invoice IDs
-      const count = Number(createdInvoiceCount);
-      if (count === 0) return [];
-
-      const createdInvoiceIds = (await readContract(wagmiConfig as any, {
-        ...options,
-        chainId: mainChain.id,
-        functionName: "getUserCreatedInvoices",
-        args: [address, 0n, BigInt(count)],
-      })) as bigint[];
-
-      // Fetch details for each invoice
-      const invoicePromises = createdInvoiceIds.map(id =>
-        readContract(wagmiConfig as any, {
-          ...options,
-          chainId: mainChain.id,
-          functionName: "getInvoiceDetails",
-          args: [id],
-        }),
-      );
-
-      const invoiceDetailsArray = await Promise.all(invoicePromises);
-
-      // Convert array of results to Invoice objects
-      return invoiceDetailsArray.map(details => ({
-        id: details[0],
-        creator: details[1],
-        recipient: details[2],
-        creatorChainId: details[3],
-        recipientChainId: details[4],
-        billingToken: details[5],
-        amount: details[6],
-        paymentToken: details[7],
-        paymentAmount: details[8],
-        status: details[9] as InvoiceStatus,
-        createdAt: details[10],
-        paidAt: details[11],
-      }));
-    } catch (error) {
-      console.error("Error fetching created invoices:", error);
-      return [];
-    }
-  }, [address, createdInvoiceCount]);
-
-  // Function to fetch all pending invoices
   const fetchPendingInvoices = useCallback(async (): Promise<Invoice[]> => {
-    if (!address || !pendingInvoiceCount) return [];
-
-    try {
-      // Get pending invoice IDs
-      const count = Number(pendingInvoiceCount);
-      if (count === 0) return [];
-
-      const pendingInvoiceIds = (await readContract(wagmiConfig as any, {
-        ...options,
-        chainId: mainChain.id,
-        functionName: "getUserPendingInvoices",
-        args: [address, 0n, BigInt(count)],
-      })) as bigint[];
-
-      // Fetch details for each invoice
-      const invoicePromises = pendingInvoiceIds.map(id =>
-        readContract(wagmiConfig as any, {
-          ...options,
-          chainId: mainChain.id,
-          functionName: "getInvoiceDetails",
-          args: [id],
-        }),
-      );
-
-      const invoiceDetailsArray = await Promise.all(invoicePromises);
-
-      // Convert array of results to Invoice objects
-      return invoiceDetailsArray.map(details => ({
-        id: details[0],
-        creator: details[1],
-        recipient: details[2],
-        creatorChainId: details[3],
-        recipientChainId: details[4],
-        billingToken: details[5],
-        amount: details[6],
-        paymentToken: details[7],
-        paymentAmount: details[8],
-        status: details[9] as InvoiceStatus,
-        createdAt: details[10],
-        paidAt: details[11],
-      }));
-    } catch (error) {
-      console.error("Error fetching pending invoices:", error);
-      return [];
-    }
-  }, [address, pendingInvoiceCount]);
+    const result = await fetchAllInvoices();
+    return result.pending;
+  }, [fetchAllInvoices]);
 
   // Create a new invoice
   const createInvoiceAsync = async (
@@ -261,6 +210,8 @@ export default function useInvoiceContract() {
       return false;
     }
 
+    if (!address) throw new Error("No address available");
+
     // Find token by address
     const tokenConfig = getTokenByAddress(billingToken);
     if (!tokenConfig) throw new Error("Token not found");
@@ -269,7 +220,15 @@ export default function useInvoiceContract() {
       writeContractAsync({
         ...options,
         functionName: "createInvoice",
-        args: [recipient, BigInt(recipientChainId), billingToken, amount],
+        args: [
+          recipient,
+          BigInt(recipientChainId),
+          billingToken,
+          amount,
+          BigInt(walletChainId || mainChain.id),
+          address, // creatorRefundAddress
+          recipient, // recipientRefundAddress
+        ],
       }),
       {
         loading: "Waiting for wallet approval...",
@@ -423,6 +382,7 @@ export default function useInvoiceContract() {
     whitelistedTokens: whitelistedTokensData,
     createdInvoiceCount,
     pendingInvoiceCount,
+    fetchAllInvoices,
     fetchCreatedInvoices,
     fetchPendingInvoices,
     getConversionAmount,

@@ -131,6 +131,17 @@ contract RepoContract {
         require(_lenderChainId > 0, "Invalid lender chain ID");
         require(_lenderRefundAddress != address(0), "Invalid lender refund address");
         
+        // Verify that msg.sender is the correct caller based on chain
+        if (_lenderChainId == block.chainid) {
+            require(msg.sender == _lenderRefundAddress, "RepoContract: msg.sender must be lender refund address");
+        } else {
+            address expectedSender = IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
+                _lenderRefundAddress,
+                _lenderChainId
+            );
+            require(msg.sender == expectedSender, "RepoContract: msg.sender must be aliased account of lender refund address");
+        }
+        
         // Create the offer
         offerCounter++;
         offerId = offerCounter;
@@ -169,8 +180,18 @@ contract RepoContract {
     /// @param _offerId The identifier of the offer to cancel.
     function cancelOffer(uint256 _offerId) external {
         RepoOffer storage offer = offers[_offerId];
-        require(msg.sender == offer.lender, "Only lender can cancel");
         require(offer.status == OfferStatus.Open, "Offer is not open");
+        
+        // Verify that msg.sender is the correct caller based on chain
+        if (offer.lenderChainId == block.chainid) {
+            require(msg.sender == offer.lenderRefundAddress, "RepoContract: msg.sender must be lender refund address");
+        } else {
+            address expectedSender = IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
+                offer.lenderRefundAddress,
+                offer.lenderChainId
+            );
+            require(msg.sender == expectedSender, "RepoContract: msg.sender must be aliased account of lender refund address");
+        }
         
         // Update status
         offer.status = OfferStatus.Cancelled;
@@ -200,6 +221,17 @@ contract RepoContract {
         require(msg.sender != offer.lender, "Lender cannot borrow own offer");
         require(_borrowerChainId > 0, "Invalid borrower chain ID");
         require(_borrowerRefundAddress != address(0), "Invalid borrower refund address");
+        
+        // Verify that msg.sender is the correct caller based on chain
+        if (_borrowerChainId == block.chainid) {
+            require(msg.sender == _borrowerRefundAddress, "RepoContract: msg.sender must be borrower refund address");
+        } else {
+            address expectedSender = IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
+                _borrowerRefundAddress,
+                _borrowerChainId
+            );
+            require(msg.sender == expectedSender, "RepoContract: msg.sender must be aliased account of borrower refund address");
+        }
         
         // Update offer details
         offer.borrower = msg.sender;
@@ -234,7 +266,17 @@ contract RepoContract {
     function repayLoan(uint256 _offerId) external {
         RepoOffer storage offer = offers[_offerId];
         require(offer.status == OfferStatus.Active, "Loan is not active");
-        require(msg.sender == offer.borrower, "Only borrower can repay");
+        
+        // Verify that msg.sender is the correct caller based on chain
+        if (offer.borrowerChainId == block.chainid) {
+            require(msg.sender == offer.borrowerRefundAddress, "RepoContract: msg.sender must be borrower refund address");
+        } else {
+            address expectedSender = IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
+                offer.borrowerRefundAddress,
+                offer.borrowerChainId
+            );
+            require(msg.sender == expectedSender, "RepoContract: msg.sender must be aliased account of borrower refund address");
+        }
         
         // Transfer lend tokens from borrower back to contract
         require(
@@ -270,8 +312,18 @@ contract RepoContract {
     function claimCollateral(uint256 _offerId) external {
         RepoOffer storage offer = offers[_offerId];
         require(offer.status == OfferStatus.Active, "Loan is not active");
-        require(msg.sender == offer.lender, "Only lender can claim collateral");
         require(block.timestamp > offer.endTime + gracePeriod, "Loan still in grace period");
+        
+        // Verify that msg.sender is the correct caller based on chain
+        if (offer.lenderChainId == block.chainid) {
+            require(msg.sender == offer.lenderRefundAddress, "RepoContract: msg.sender must be lender refund address");
+        } else {
+            address expectedSender = IInteropHandler(address(L2_INTEROP_HANDLER)).getAliasedAccount(
+                offer.lenderRefundAddress,
+                offer.lenderChainId
+            );
+            require(msg.sender == expectedSender, "RepoContract: msg.sender must be aliased account of lender refund address");
+        }
         
         // Update status
         offer.status = OfferStatus.Defaulted;

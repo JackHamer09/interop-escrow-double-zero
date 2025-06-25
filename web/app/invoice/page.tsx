@@ -1,16 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AlertCircle, Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { Hash, parseUnits } from "viem";
 import { useAccount, useChainId } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
 import { CreateInvoiceModal, InvoiceFormState, InvoiceTable, PayInvoiceModal } from "~~/components/Invoice";
 import { TokenBalances } from "~~/components/Trade";
-import { Alert, AlertDescription } from "~~/components/ui/alert";
 import { Button } from "~~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs";
-import { InvoiceStatus, invoiceMainChain, invoiceSupportedChains, isInvoiceMainChain } from "~~/config/invoice-config";
+import { InvoiceStatus, invoiceMainChain, invoiceSupportedChains } from "~~/config/invoice-config";
 import { defaultBillingToken, defaultPaymentToken } from "~~/config/invoice-config";
 import { TokenConfig, getTokenByAddress, getTokenByAssetId } from "~~/config/tokens-config";
 import useInvoiceContract, { Invoice } from "~~/hooks/use-invoice-contract";
@@ -29,8 +28,7 @@ export default function InvoicePaymentPage() {
     whitelistedTokens,
     createdInvoiceCount,
     pendingInvoiceCount,
-    fetchCreatedInvoices,
-    fetchPendingInvoices,
+    fetchAllInvoices,
     getConversionAmount,
     refetchAll,
     refetchTokens,
@@ -63,19 +61,10 @@ export default function InvoicePaymentPage() {
   // Load invoices when counts change
   useEffect(() => {
     const loadInvoices = async () => {
-      let createdInvoices: Invoice[] = [];
-      let pendingInvoices: Invoice[] = [];
-
-      if (createdInvoiceCount && Number(createdInvoiceCount) > 0) {
-        createdInvoices = await fetchCreatedInvoices();
-      }
-
-      if (pendingInvoiceCount && Number(pendingInvoiceCount) > 0) {
-        pendingInvoices = await fetchPendingInvoices();
-      }
+      const { created, pending } = await fetchAllInvoices();
 
       // Combine all invoices into a single array
-      const combined = [...createdInvoices, ...pendingInvoices];
+      const combined = [...created, ...pending];
 
       // Sort by created timestamp (newest first)
       combined.sort((a, b) => Number(b.createdAt - a.createdAt));
@@ -84,7 +73,7 @@ export default function InvoicePaymentPage() {
     };
 
     loadInvoices();
-  }, [createdInvoiceCount, pendingInvoiceCount, fetchCreatedInvoices, fetchPendingInvoices]);
+  }, [createdInvoiceCount, pendingInvoiceCount, fetchAllInvoices]);
 
   // Update conversion amount when selected payment token changes
   useEffect(() => {
@@ -296,23 +285,10 @@ export default function InvoicePaymentPage() {
             {/* Create Invoice Button and Info */}
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-4">
-                <Button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  disabled={!isInvoiceMainChain(walletChainId || 0)}
-                  className="flex items-center gap-2"
-                >
+                <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   Create Invoice
                 </Button>
-
-                {!isInvoiceMainChain(walletChainId || 0) && (
-                  <Alert variant="warning" className="py-1 px-3 h-auto">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
-                      Switch to {mainChain.name} to create invoices
-                    </AlertDescription>
-                  </Alert>
-                )}
               </div>
 
               <Button
