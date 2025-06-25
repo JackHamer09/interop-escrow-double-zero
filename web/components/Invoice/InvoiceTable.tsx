@@ -18,7 +18,7 @@ interface InvoiceTableProps {
   isProcessing: boolean;
   processingInvoiceId?: bigint;
   onPayInvoice?: (invoice: Invoice) => void;
-  onCancelInvoice?: (invoiceId: bigint) => void;
+  onCancelInvoice?: (invoice: Invoice) => void;
   showFilters?: boolean;
 }
 
@@ -203,7 +203,7 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                               variant="destructive"
                               size="sm"
                               loading={isProcessing && processingInvoiceId === invoice.id}
-                              onClick={() => onCancelInvoice(invoice.id)}
+                              onClick={() => onCancelInvoice(invoice)}
                             >
                               Cancel
                             </Button>

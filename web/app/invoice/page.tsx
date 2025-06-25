@@ -19,16 +19,14 @@ export default function InvoicePaymentPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [processingInvoiceId, setProcessingInvoiceId] = useState<bigint | undefined>(undefined);
-  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [selectedPaymentToken, setSelectedPaymentToken] = useState<`0x${string}` | null>(null);
   const [conversionAmount, setConversionAmount] = useState<bigint | null>(null);
 
   const {
     whitelistedTokens,
-    createdInvoiceCount,
-    pendingInvoiceCount,
-    fetchAllInvoices,
+    createdInvoices,
+    pendingInvoices,
     getConversionAmount,
     refetchAll,
     refetchTokens,
@@ -56,23 +54,6 @@ export default function InvoicePaymentPage() {
     displayAmount: "",
   });
   const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
-
-  // Load invoices when counts change
-  useEffect(() => {
-    const loadInvoices = async () => {
-      const { created, pending } = await fetchAllInvoices();
-
-      // Combine all invoices into a single array
-      const combined = [...created, ...pending];
-
-      // Sort by created timestamp (newest first)
-      combined.sort((a, b) => Number(b.createdAt - a.createdAt));
-
-      setAllInvoices(combined);
-    };
-
-    loadInvoices();
-  }, [createdInvoiceCount, pendingInvoiceCount, fetchAllInvoices]);
 
   // Update conversion amount when selected payment token changes
   useEffect(() => {
@@ -199,12 +180,12 @@ export default function InvoicePaymentPage() {
     }
   };
 
-  const handleCancelInvoice = async (invoiceId: bigint) => {
+  const handleCancelInvoice = async (invoice: Invoice) => {
     setIsCreatingInvoice(true);
-    setProcessingInvoiceId(invoiceId);
+    setProcessingInvoiceId(invoice.id);
 
     try {
-      await cancelInvoiceAsync(invoiceId);
+      await cancelInvoiceAsync(invoice);
       refetchAll();
     } finally {
       refetchTokens();
@@ -260,6 +241,11 @@ export default function InvoicePaymentPage() {
         })
         .filter((token): token is TokenConfig => token !== null)
     : [];
+
+  // Combine invoices locally for filtering
+  const allInvoices = [...(createdInvoices || []), ...(pendingInvoices || [])].sort((a, b) =>
+    Number(b.createdAt - a.createdAt),
+  );
 
   // Separate invoices for tabs
   const recentInvoices = allInvoices.filter(

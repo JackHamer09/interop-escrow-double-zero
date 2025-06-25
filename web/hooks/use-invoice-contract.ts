@@ -152,51 +152,6 @@ export default function useInvoiceContract() {
     args: [address || "0x"],
   });
 
-  // Function to fetch all invoices for the user at once
-  const fetchAllInvoices = useCallback(async (): Promise<{ created: Invoice[]; pending: Invoice[] }> => {
-    if (!address || (!createdInvoiceCount && !pendingInvoiceCount)) {
-      return { created: [], pending: [] };
-    }
-
-    try {
-      const createdCount = Number(createdInvoiceCount || 0);
-      const pendingCount = Number(pendingInvoiceCount || 0);
-
-      if (createdCount === 0 && pendingCount === 0) {
-        return { created: [], pending: [] };
-      }
-
-      // Use the new batch function to get all invoices at once
-      const result = (await readContract(wagmiConfig as any, {
-        ...options,
-        chainId: mainChain.id,
-        functionName: "getUserAllInvoices",
-        args: [address, 0n, BigInt(createdCount), 0n, BigInt(pendingCount)],
-      })) as readonly [readonly Invoice[], readonly Invoice[]];
-
-      const [createdInvoices, pendingInvoices] = result;
-
-      return {
-        created: [...createdInvoices],
-        pending: [...pendingInvoices],
-      };
-    } catch (error) {
-      console.error("Error fetching invoices:", error);
-      return { created: [], pending: [] };
-    }
-  }, [address, createdInvoiceCount, pendingInvoiceCount, mainChain.id]);
-
-  // Legacy functions for backward compatibility
-  const fetchCreatedInvoices = useCallback(async (): Promise<Invoice[]> => {
-    const result = await fetchAllInvoices();
-    return result.created;
-  }, [fetchAllInvoices]);
-
-  const fetchPendingInvoices = useCallback(async (): Promise<Invoice[]> => {
-    const result = await fetchAllInvoices();
-    return result.pending;
-  }, [fetchAllInvoices]);
-
   // Create a new invoice
   const createInvoiceAsync = async (
     recipient: Address,
@@ -253,17 +208,18 @@ export default function useInvoiceContract() {
   };
 
   // Cancel an invoice
-  const cancelInvoiceAsync = async (invoiceId: bigint) => {
-    await switchChainIfNotSet(mainChain.id);
+  const cancelInvoiceAsync = async (invoice: Invoice) => {
+    const expectedChainId = Number(invoice.recipientChainId);
+    await switchChainIfNotSet(expectedChainId);
 
     const cancelInvoice = await toast.promise(
       isInvoiceMainChain(walletChainId || 0)
         ? writeContractAsync({
             ...options,
             functionName: "cancelInvoice",
-            args: [invoiceId],
+            args: [invoice.id],
           })
-        : interop.cancelInvoiceAsync(invoiceId),
+        : interop.cancelInvoiceAsync(invoice.id),
       {
         loading: "Waiting for wallet approval...",
         success: "Transaction approved!",
@@ -356,12 +312,6 @@ export default function useInvoiceContract() {
     }
   };
 
-  const refetchAll = useCallback(() => {
-    refetchCreatedInvoiceCount();
-    refetchPendingInvoiceCount();
-    refetchWhitelistedTokens();
-  }, [refetchCreatedInvoiceCount, refetchPendingInvoiceCount, refetchWhitelistedTokens]);
-
   // Refetch all when the address changes
   useEffect(() => {
     if (address) {
@@ -376,13 +326,50 @@ export default function useInvoiceContract() {
     }
   }, 3000);
 
+  // Get created invoices directly
+  const { data: createdInvoices, refetch: refetchCreatedInvoices } = useReadContract({
+    ...options,
+    chainId: mainChain.id,
+    functionName: "getUserAllInvoices",
+    args: [address || "0x", 0n, createdInvoiceCount || 0n, 0n, 0n],
+    query: {
+      enabled: !!address && !!createdInvoiceCount,
+      select: data => data[0],
+    },
+  });
+
+  // Get pending invoices directly
+  const { data: pendingInvoices, refetch: refetchPendingInvoices } = useReadContract({
+    ...options,
+    chainId: mainChain.id,
+    functionName: "getUserAllInvoices",
+    args: [address || "0x", 0n, 0n, 0n, pendingInvoiceCount || 0n],
+    query: {
+      enabled: !!address && !!pendingInvoiceCount,
+      select: data => data[1],
+    },
+  });
+
+  const refetchAll = useCallback(() => {
+    refetchCreatedInvoiceCount();
+    refetchPendingInvoiceCount();
+    refetchWhitelistedTokens();
+    refetchCreatedInvoices();
+    refetchPendingInvoices();
+  }, [
+    refetchCreatedInvoiceCount,
+    refetchPendingInvoiceCount,
+    refetchWhitelistedTokens,
+    refetchCreatedInvoices,
+    refetchPendingInvoices,
+  ]);
+
   return {
     whitelistedTokens: whitelistedTokensData,
+    createdInvoices,
+    pendingInvoices,
     createdInvoiceCount,
     pendingInvoiceCount,
-    fetchAllInvoices,
-    fetchCreatedInvoices,
-    fetchPendingInvoices,
     getConversionAmount,
     refetchAll,
     refetchTokens,
