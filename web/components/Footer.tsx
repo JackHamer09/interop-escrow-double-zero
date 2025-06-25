@@ -23,15 +23,6 @@ export const Footer = ({ className }: { className?: string }) => {
       >
         <span className="hover:underline">Matter Labs</span>
       </a>
-      and
-      <a
-        className="flex justify-center items-center gap-1"
-        href="https://moonsonglabs.com/"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <span className="hover:underline">Moonsong Labs</span>
-      </a>
       <div className="mx-2">|</div>
       <a
         className="flex justify-center items-center gap-1 whitespace-nowrap"
