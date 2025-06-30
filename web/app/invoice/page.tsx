@@ -52,6 +52,7 @@ export default function InvoicePaymentPage() {
     billingToken: defaultBillingToken,
     amount: 0n,
     displayAmount: "",
+    text: "",
   });
   const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
 
@@ -134,6 +135,13 @@ export default function InvoicePaymentPage() {
     }));
   };
 
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvoiceState(prev => ({
+      ...prev,
+      text: e.target.value,
+    }));
+  };
+
   const handleChainChange = (value: number) => {
     setInvoiceState(prev => ({
       ...prev,
@@ -161,6 +169,7 @@ export default function InvoicePaymentPage() {
         invoiceState.recipientChainId,
         billingTokenAddress,
         invoiceState.amount,
+        invoiceState.text,
       );
 
       // Only reset fields if successful
@@ -170,6 +179,7 @@ export default function InvoicePaymentPage() {
           recipientAddress: "",
           amount: 0n,
           displayAmount: "",
+          text: "",
         }));
         setIsCreateModalOpen(false);
         refetchAll();
@@ -330,6 +340,7 @@ export default function InvoicePaymentPage() {
               onRecipientChange={handleRecipientChange}
               onTokenChange={handleTokenChange}
               onAmountChange={handleAmountChange}
+              onTextChange={handleTextChange}
               onChainChange={handleChainChange}
               onSubmit={handleCreateInvoice}
               whitelistedTokens={formattedWhitelistedTokens}

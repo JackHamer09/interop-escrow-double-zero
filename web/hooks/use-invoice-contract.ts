@@ -32,6 +32,7 @@ export type Invoice = {
   status: InvoiceStatus;
   createdAt: bigint;
   paidAt: bigint;
+  text: string;
 };
 
 export default function useInvoiceContract() {
@@ -158,6 +159,7 @@ export default function useInvoiceContract() {
     recipientChainId: number,
     billingToken: Address,
     amount: bigint,
+    text: string,
   ) => {
     // Check if user is on main chain and show toast error if not
     if (!isInvoiceMainChain(walletChainId || 0)) {
@@ -183,6 +185,7 @@ export default function useInvoiceContract() {
           BigInt(walletChainId || mainChain.id),
           address, // creatorRefundAddress
           recipient, // recipientRefundAddress
+          text,
         ],
       }),
       {

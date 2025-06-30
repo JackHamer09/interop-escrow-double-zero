@@ -25,6 +25,7 @@ interface CreateInvoiceModalProps {
   onRecipientChange: (recipient: string) => void;
   onTokenChange: (tokenAssetId: Hash) => void;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTextChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onChainChange: (value: number) => void;
   onSubmit: () => void;
   whitelistedTokens: TokenConfig[];
@@ -36,6 +37,7 @@ export interface InvoiceFormState {
   billingToken: TokenConfig;
   amount: bigint;
   displayAmount: string;
+  text: string;
 }
 
 export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
@@ -46,6 +48,7 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
   onRecipientChange,
   onTokenChange,
   onAmountChange,
+  onTextChange,
   onChainChange,
   onSubmit,
   whitelistedTokens,
@@ -89,6 +92,20 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
               placeholder="0x..."
               value={invoiceState.recipientAddress}
               onChange={handleAddressChange}
+            />
+          </div>
+
+          {/* Invoice description */}
+          <div className="flex flex-col items-start gap-2">
+            <Label htmlFor="description" className="text-right">
+              Invoice Description
+            </Label>
+            <input
+              id="description"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors"
+              placeholder="Enter invoice description..."
+              value={invoiceState.text}
+              onChange={onTextChange}
             />
           </div>
 

@@ -52,6 +52,7 @@ contract InvoicePayment {
         InvoiceStatus status;       // Current status of the invoice
         uint256 createdAt;          // Timestamp when invoice was created
         uint256 paidAt;             // Timestamp when invoice was paid (if paid)
+        string text;                // Invoice description/text
     }
     
     // Whitelisted token structure
@@ -223,6 +224,7 @@ contract InvoicePayment {
      * @param creatorChainId Chain ID where the creator is
      * @param creatorRefundAddress Address to refund payment to (on creator's chain)
      * @param recipientRefundAddress Address to refund tokens to (on recipient's chain)
+     * @param text Invoice description/text
      * @return id The ID of the created invoice
      */
     function createInvoice(
@@ -232,7 +234,8 @@ contract InvoicePayment {
         uint256 amount,
         uint256 creatorChainId,
         address creatorRefundAddress,
-        address recipientRefundAddress
+        address recipientRefundAddress,
+        string calldata text
     ) external returns (uint256) {
         require(recipient != address(0), "InvoicePayment: recipient is the zero address");
         require(amount > 0, "InvoicePayment: amount must be greater than zero");
@@ -268,6 +271,7 @@ contract InvoicePayment {
         newInvoice.amount = amount;
         newInvoice.status = InvoiceStatus.Created;
         newInvoice.createdAt = block.timestamp;
+        newInvoice.text = text;
         
         // Add to user created invoices using refund address
         userCreatedInvoices[creatorRefundAddress].push(invoiceId);

@@ -114,6 +114,9 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">From</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">To</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Description
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Amount
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -160,6 +163,11 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                           <ShortAddress address={invoice.recipientRefundAddress} isRight={false} />
                         )}
                         <span className="ml-1 text-xs text-gray-500">({recipientChain?.name})</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-300 max-w-xs truncate" title={invoice.text}>
+                        {invoice.text || "-"}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
