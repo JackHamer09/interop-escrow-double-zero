@@ -140,7 +140,7 @@ export default function useRepoContractInterop() {
     return txHash;
   };
 
-  const repayLoanAsync = async (offerId: bigint, lendTokenAddress: Address, lendAmount: bigint) => {
+  const repayLoanAsync = async (offerId: bigint, lendTokenAddress: Address, totalRepaymentAmount: bigint) => {
     if (!address) throw new Error("No address available");
     const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
 
@@ -155,10 +155,10 @@ export default function useRepoContractInterop() {
 
     // 1. Approve NativeTokenVault if needed
     const tokenSymbol = token.symbol;
-    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnSupportedChain, lendAmount);
+    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnSupportedChain, totalRepaymentAmount);
 
     if (needsApproval) {
-      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnSupportedChain, lendAmount), {
+      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnSupportedChain, totalRepaymentAmount), {
         loading: `Approving use of ${tokenSymbol} funds...`,
         success: `${tokenSymbol} approved!`,
         error: err => {
@@ -171,7 +171,7 @@ export default function useRepoContractInterop() {
     // 2. Transfer funds to aliased address
     const aliasAddress = await builder.getAliasedAddress(address);
     console.log(`Alias of ${address} is ${aliasAddress}`);
-    builder.addTransfer({ assetId: token.assetId as Hash, amount: lendAmount, to: aliasAddress });
+    builder.addTransfer({ assetId: token.assetId as Hash, amount: totalRepaymentAmount, to: aliasAddress });
 
     // 3. Approve allowance for token at Main Chain
     const mainChainTokenAddress = token.addresses[mainChain.id];
@@ -180,7 +180,7 @@ export default function useRepoContractInterop() {
     const approvalData = encodeFunctionData({
       abi: erc20Abi,
       functionName: "approve",
-      args: [options.address, lendAmount],
+      args: [options.address, totalRepaymentAmount],
     });
     builder.addTransaction({ contractAddress: mainChainTokenAddress, data: approvalData, value: 0n });
 

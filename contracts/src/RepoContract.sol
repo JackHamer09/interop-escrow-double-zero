@@ -62,6 +62,7 @@ contract RepoContract {
         uint256 duration;        // Duration in seconds
         uint256 startTime;       // Timestamp when borrowing started
         uint256 endTime;         // Timestamp when repayment is due
+        uint256 lenderFee;       // Fee percentage in basis points (e.g., 30 = 0.3%)
         OfferStatus status;      // Current status of the offer
     }
     
@@ -113,6 +114,7 @@ contract RepoContract {
     /// @param _duration The duration in seconds for which the funds can be borrowed.
     /// @param _lenderChainId The chain ID of the lender.
     /// @param _lenderRefundAddress The address to refund lend tokens to (on lender's chain).
+    /// @param _lenderFee The fee percentage in basis points (e.g., 30 = 0.3%).
     /// @return offerId The unique identifier for the created offer.
     function createOffer(
         address _lendToken,
@@ -121,7 +123,8 @@ contract RepoContract {
         uint256 _collateralAmount,
         uint256 _duration,
         uint256 _lenderChainId,
-        address _lenderRefundAddress
+        address _lenderRefundAddress,
+        uint256 _lenderFee
     ) external returns (uint256 offerId) {
         require(_lendToken != address(0), "Invalid lend token");
         require(_collateralToken != address(0), "Invalid collateral token");
@@ -130,6 +133,7 @@ contract RepoContract {
         require(_duration > 0, "Duration must be greater than 0");
         require(_lenderChainId > 0, "Invalid lender chain ID");
         require(_lenderRefundAddress != address(0), "Invalid lender refund address");
+        require(_lenderFee <= 10000, "Lender fee cannot exceed 100%");
         
         // Verify that msg.sender is the correct caller based on chain
         if (_lenderChainId == block.chainid) {
@@ -161,6 +165,7 @@ contract RepoContract {
             duration: _duration,
             startTime: 0,
             endTime: 0,
+            lenderFee: _lenderFee,
             status: OfferStatus.Open
         });
         
@@ -278,9 +283,13 @@ contract RepoContract {
             require(msg.sender == expectedSender, "RepoContract: msg.sender must be aliased account of borrower refund address");
         }
         
-        // Transfer lend tokens from borrower back to contract
+        // Calculate the total repayment amount (lend amount + fee)
+        uint256 feeAmount = (offer.lendAmount * offer.lenderFee) / 10000;
+        uint256 totalRepaymentAmount = offer.lendAmount + feeAmount;
+        
+        // Transfer total repayment amount from borrower back to contract
         require(
-            IERC20(offer.lendToken).transferFrom(msg.sender, address(this), offer.lendAmount),
+            IERC20(offer.lendToken).transferFrom(msg.sender, address(this), totalRepaymentAmount),
             "Repayment transfer failed"
         );
         
@@ -295,10 +304,10 @@ contract RepoContract {
             offer.borrowerChainId
         );
         
-        // Return lend tokens to lender
+        // Return lend tokens + fee to lender
         _transferTokens(
             offer.lendToken,
-            offer.lendAmount,
+            totalRepaymentAmount,
             offer.lenderRefundAddress,
             offer.lenderChainId
         );
@@ -466,6 +475,15 @@ contract RepoContract {
         return borrowerOffers;
     }
     
+    /// @notice Calculates the total repayment amount for a given offer.
+    /// @param _offerId The identifier of the offer.
+    /// @return totalAmount The total amount to be repaid (lend amount + fee).
+    function calculateRepaymentAmount(uint256 _offerId) external view returns (uint256 totalAmount) {
+        RepoOffer storage offer = offers[_offerId];
+        uint256 feeAmount = (offer.lendAmount * offer.lenderFee) / 10000;
+        totalAmount = offer.lendAmount + feeAmount;
+    }
+
     /// @notice Sets the grace period for loan repayments.
     /// @param _gracePeriod The new grace period in seconds.
     function setGracePeriod(uint256 _gracePeriod) external onlyAdmin {

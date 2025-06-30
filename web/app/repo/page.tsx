@@ -25,6 +25,8 @@ interface RepoOfferState {
   displayLendAmount: string;
   displayCollateralAmount: string;
   duration: number;
+  lenderFee: bigint;
+  displayLenderFee: string;
 }
 
 export default function IntradayRepo() {
@@ -77,6 +79,8 @@ export default function IntradayRepo() {
     displayLendAmount: "",
     displayCollateralAmount: "",
     duration: repoDurationOptions[0].value,
+    lenderFee: 0n,
+    displayLenderFee: "",
   });
   const { value: isCreatingOffer, setValue: setIsCreatingOffer } = useBoolean(false);
 
@@ -154,6 +158,31 @@ export default function IntradayRepo() {
     }));
   };
 
+  const handleFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fee = e.target.value.replace(/,/g, "");
+
+    // Just update the fee field, even if empty
+    if (!fee) {
+      setOfferState(prev => ({
+        ...prev,
+        lenderFee: 0n,
+        displayLenderFee: "",
+      }));
+      return;
+    }
+
+    // Parse fee as percentage and convert to basis points (multiply by 100)
+    // For example: 0.3% becomes 30 basis points
+    const feeAsNumber = parseFloat(fee);
+    if (isNaN(feeAsNumber) || feeAsNumber < 0 || feeAsNumber > 100) return;
+
+    setOfferState(prev => ({
+      ...prev,
+      lenderFee: BigInt(Math.round(feeAsNumber * 100)), // Convert percentage to basis points
+      displayLenderFee: fee,
+    }));
+  };
+
   const handleChainChange = async (value: number, chainType: "chainA" | "chainB") => {
     // We only update chainA now, chainB is fixed
     if (chainType === "chainA") {
@@ -195,6 +224,7 @@ export default function IntradayRepo() {
         BigInt(offerState.duration),
         offerState.chainA,
         myAddress as Address,
+        offerState.lenderFee,
       );
 
       // Only reset amount fields if the offer was successful (not false)
@@ -205,6 +235,8 @@ export default function IntradayRepo() {
           collateralAmount: 0n,
           displayLendAmount: "",
           displayCollateralAmount: "",
+          lenderFee: 0n,
+          displayLenderFee: "",
         }));
         setIsCreateModalOpen(false);
       }
@@ -361,6 +393,7 @@ export default function IntradayRepo() {
               onAmountChange={handleAmountChange}
               onChainChange={handleChainChange}
               onDurationChange={handleDurationChange}
+              onFeeChange={handleFeeChange}
               onSubmit={handleCreateOffer}
             />
           </div>

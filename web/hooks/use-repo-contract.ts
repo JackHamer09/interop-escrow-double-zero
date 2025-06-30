@@ -32,6 +32,7 @@ export type RepoOffer = {
   duration: bigint;
   startTime: bigint;
   endTime: bigint;
+  lenderFee: bigint;
   status: RepoOfferStatus;
 };
 
@@ -147,6 +148,22 @@ export default function useRepoContract() {
     functionName: "gracePeriod",
   });
 
+  // Helper function to calculate repayment amount
+  const calculateRepaymentAmount = async (offerId: bigint): Promise<bigint> => {
+    try {
+      const result = await readContract(wagmiConfig as any, {
+        ...options,
+        chainId: mainChain.id,
+        functionName: "calculateRepaymentAmount",
+        args: [offerId],
+      });
+      return result as bigint;
+    } catch (error) {
+      console.error("Error calculating repayment amount:", error);
+      return 0n;
+    }
+  };
+
   const refetchAll = useCallback(() => {
     refetchOpenOffers();
     refetchLenderOffers();
@@ -177,6 +194,7 @@ export default function useRepoContract() {
     duration: bigint,
     lenderChainId: number,
     lenderRefundAddress: Address,
+    lenderFee: bigint,
   ) => {
     // Check if user is on main chain and show toast error if not
     if (!isRepoMainChain(walletChainId || 0)) {
@@ -213,6 +231,7 @@ export default function useRepoContract() {
           duration,
           BigInt(lenderChainId),
           lenderRefundAddress,
+          lenderFee,
         ],
       }),
       {
@@ -349,6 +368,9 @@ export default function useRepoContract() {
     console.log("Repay offer:", offer);
     await switchChainIfNotSet(Number(offer.borrowerChainId));
 
+    // Calculate the total repayment amount (including fee)
+    const totalRepaymentAmount = await calculateRepaymentAmount(offerId);
+
     // Check if the user has sufficient balance to repay
     const tokenConfig = getTokenByAddress(offer.lendToken);
     if (!tokenConfig) throw new Error("Lend token not found");
@@ -357,18 +379,18 @@ export default function useRepoContract() {
     const token = getTokenWithBalanceByAssetId(tokens, tokenConfig.assetId);
     if (!token) throw new Error("Lend token not found in wallet");
 
-    // Check if we have enough balance
-    if ((token.balance || 0n) < offer.lendAmount) {
+    // Check if we have enough balance for the total repayment amount
+    if ((token.balance || 0n) < totalRepaymentAmount) {
       toast.error(
-        `Insufficient ${token.symbol} balance to repay loan. You need ${formatUnits(offer.lendAmount, tokenConfig.decimals)} ${token.symbol}.`,
+        `Insufficient ${token.symbol} balance to repay loan. You need ${formatUnits(totalRepaymentAmount, tokenConfig.decimals)} ${token.symbol}.`,
       );
       return false;
     }
 
     // Handle token approvals for main chain case
     if (isRepoMainChain(Number(offer.borrowerChainId))) {
-      // Approve lend token for repayment
-      await checkAndApproveToken(offer.lendToken, offer.lendAmount);
+      // Approve lend token for repayment (total amount including fee)
+      await checkAndApproveToken(offer.lendToken, totalRepaymentAmount);
     }
 
     if (isRepoMainChain(Number(offer.borrowerChainId))) {
@@ -399,7 +421,7 @@ export default function useRepoContract() {
 
       return repayLoan;
     } else {
-      const repayLoan = await interop.repayLoanAsync(offerId, offer.lendToken, offer.lendAmount);
+      const repayLoan = await interop.repayLoanAsync(offerId, offer.lendToken, totalRepaymentAmount);
       return repayLoan;
     }
   };
@@ -481,6 +503,7 @@ export default function useRepoContract() {
     acceptOfferAsync,
     repayLoanAsync,
     claimCollateralAsync,
+    calculateRepaymentAmount,
     tokens,
     gracePeriod,
   };

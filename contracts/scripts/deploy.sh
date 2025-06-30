@@ -186,11 +186,11 @@ echo "Deployer Chain C balance: $deployer_chain_3_balance"
 
 # Deploy ERC20 tokens
 echo "Deploying ERC20 tokens to Chain A first..."
-usdc_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "USD Coin" "USDC" 18 | extract_deployed_address)
+usdc_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --verifier zksync --verifier-url "https://explorer.sepolia.era.zksync.dev/contract_verification" --verify --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "USD Coin" "USDC" 18 | extract_deployed_address)
 echo "USDC deployed at: $usdc_address"
-ttbill_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Tokenized Treasury Bill" "TTBILL" 18 | extract_deployed_address)
+ttbill_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --verifier zksync --verifier-url "https://explorer.sepolia.era.zksync.dev/contract_verification" --verify --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Tokenized Treasury Bill" "TTBILL" 18 | extract_deployed_address)
 echo "TTBILL deployed at: $ttbill_address"
-sgd_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Singapore Dollar" "SGD" 18 | extract_deployed_address)
+sgd_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --verifier zksync --verifier-url "https://explorer.sepolia.era.zksync.dev/contract_verification" --verify --zk-gas-per-pubdata "1" src/TestnetERC20Token.sol:TestnetERC20Token --constructor-args "Singapore Dollar" "SGD" 18 | extract_deployed_address)
 echo "SGD deployed at: $sgd_address"
 
 # Register tokens in Native Token Vault
@@ -251,13 +251,13 @@ sgd_address_chain_c=$(cast parse-bytes32-address $(cast call --rpc-url $CHAIN_C_
 
 # Deploy TradeEscrow contract
 echo "Deploying TradeEscrow contract..."
-trade_escrow_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
+trade_escrow_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync  --verifier zksync --verifier-url "https://explorer.sepolia.era.zksync.dev/contract_verification" --verify --zk-gas-per-pubdata "1" src/TradeEscrow.sol:TradeEscrow --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
 echo "TradeEscrow deployed at: $trade_escrow_address"
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $trade_escrow_address --value 0.1ether
 
 # Deploy RepoContract
 echo "Deploying RepoContract..."
-repo_contract_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/RepoContract.sol:RepoContract --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
+repo_contract_address=$(forge create --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync  --verifier zksync --verifier-url "https://explorer.sepolia.era.zksync.dev/contract_verification" --verify --zk-gas-per-pubdata "1" src/RepoContract.sol:RepoContract --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
 echo "RepoContract deployed at: $repo_contract_address"
 cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $repo_contract_address --value 0.1ether
 
@@ -275,7 +275,7 @@ cast send --rpc-url $CHAIN_A_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $sgd_ad
 
 # Deploy InvoicePayment contract on Chain C
 echo "Deploying InvoicePayment contract on Chain C..."
-invoice_payment_address=$(forge create --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync --zk-gas-per-pubdata "1" src/InvoicePayment.sol:InvoicePayment --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
+invoice_payment_address=$(forge create --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY --zksync  --verifier zksync --verifier-url "https://explorer.sepolia.era.zksync.dev/contract_verification" --verify --zk-gas-per-pubdata "1" src/InvoicePayment.sol:InvoicePayment --constructor-args $DEPLOYER_ADDRESS | extract_deployed_address)
 echo "InvoicePayment deployed at: $invoice_payment_address"
 cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address --value 0.1ether
 

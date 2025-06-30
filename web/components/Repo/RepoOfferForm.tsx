@@ -3,9 +3,9 @@ import { RepoPoolCard } from "./RepoPoolCard";
 import { Hash } from "viem";
 import { ArrowsUpDownIcon } from "@heroicons/react/24/outline";
 import { Button } from "~~/components/ui/button";
-import { getChainById } from "~~/config/chains-config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
-import { repoDurationOptions, repoMainChain, repoSupportedChains, isRepoMainChain } from "~~/config/repo-config";
+import { getChainById } from "~~/config/chains-config";
+import { isRepoMainChain, repoDurationOptions, repoMainChain, repoSupportedChains } from "~~/config/repo-config";
 import { TokenConfig } from "~~/config/tokens-config";
 
 interface RepoOfferFormProps {
@@ -19,6 +19,8 @@ interface RepoOfferFormProps {
     lendAmount: bigint;
     collateralAmount: bigint;
     duration: number;
+    lenderFee: bigint;
+    displayLenderFee: string;
   };
   lendTokenBalance: bigint;
   collateralTokenBalance: bigint;
@@ -27,6 +29,7 @@ interface RepoOfferFormProps {
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>, tokenType: "lendToken" | "collateralToken") => void;
   onChainChange: (value: number, chainType: "chainA" | "chainB") => void;
   onDurationChange: (value: number) => void;
+  onFeeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
 }
 
@@ -39,6 +42,7 @@ export const RepoOfferForm: React.FC<RepoOfferFormProps> = ({
   onAmountChange,
   onChainChange,
   onDurationChange,
+  onFeeChange,
   onSubmit,
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
@@ -70,6 +74,25 @@ export const RepoOfferForm: React.FC<RepoOfferFormProps> = ({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Lender Fee (%)</label>
+        <input
+          type="number"
+          value={offerState.displayLenderFee}
+          onChange={onFeeChange}
+          disabled={isCreatingOffer}
+          placeholder="0.00"
+          min="0"
+          max="100"
+          step="0.01"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Fee percentage that borrowers will pay on top of the loan amount (e.g., 0.3% means borrowers repay 100.3% of
+          the loan)
+        </p>
       </div>
 
       <RepoPoolCard

@@ -19,6 +19,8 @@ interface CreateOfferModalProps {
     displayLendAmount: string;
     displayCollateralAmount: string;
     duration: number;
+    lenderFee: bigint;
+    displayLenderFee: string;
   };
   lendTokenBalance: bigint;
   collateralTokenBalance: bigint;
@@ -27,6 +29,7 @@ interface CreateOfferModalProps {
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>, tokenType: "lendToken" | "collateralToken") => void;
   onChainChange: (value: number, chainType: "chainA" | "chainB") => void;
   onDurationChange: (value: number) => void;
+  onFeeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
 }
 
@@ -41,6 +44,7 @@ export const CreateOfferModal: React.FC<CreateOfferModalProps> = ({
   onAmountChange,
   onChainChange,
   onDurationChange,
+  onFeeChange,
   onSubmit,
 }) => {
   const handleSubmit = async () => {
@@ -73,6 +77,7 @@ export const CreateOfferModal: React.FC<CreateOfferModalProps> = ({
             onAmountChange={onAmountChange}
             onChainChange={onChainChange}
             onDurationChange={onDurationChange}
+            onFeeChange={onFeeChange}
             onSubmit={handleSubmit}
           />
         </div>
