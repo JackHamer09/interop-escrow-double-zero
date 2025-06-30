@@ -1,4 +1,4 @@
-import { chain1, chain2 } from "./chains-config";
+import { chain1, chain2, chain3 } from "./chains-config";
 import { type Address, type Hash, getAddress } from "viem";
 import { env } from "~~/utils/env";
 
@@ -21,6 +21,7 @@ export const usdcToken: TokenConfig = {
   addresses: {
     [chain1.id]: getAddress(env.NEXT_PUBLIC_USDC_CHAIN_A_ADDRESS),
     [chain2.id]: getAddress(env.NEXT_PUBLIC_USDC_CHAIN_B_ADDRESS),
+    [chain3.id]: getAddress(env.NEXT_PUBLIC_USDC_CHAIN_C_ADDRESS),
   },
 };
 
@@ -33,6 +34,7 @@ export const ttbillToken: TokenConfig = {
   addresses: {
     [chain1.id]: getAddress(env.NEXT_PUBLIC_TTBILL_CHAIN_A_ADDRESS),
     [chain2.id]: getAddress(env.NEXT_PUBLIC_TTBILL_CHAIN_B_ADDRESS),
+    [chain3.id]: getAddress(env.NEXT_PUBLIC_TTBILL_CHAIN_C_ADDRESS),
   },
 };
 
@@ -45,6 +47,7 @@ export const sgdToken: TokenConfig = {
   addresses: {
     [chain1.id]: getAddress(env.NEXT_PUBLIC_SGD_CHAIN_A_ADDRESS || "0x0"), // Replace with actual address
     [chain2.id]: getAddress(env.NEXT_PUBLIC_SGD_CHAIN_B_ADDRESS || "0x0"), // Replace with actual address
+    [chain3.id]: getAddress(env.NEXT_PUBLIC_SGD_CHAIN_C_ADDRESS || "0x0"), // Replace with actual address
   },
 };
 

@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 import useTradeEscrow from "./use-trade-escrow";
 import { useAccount } from "wagmi";
-import { chain1, chain2 } from "~~/config/chains-config";
+import { chain1, chain2, chain3 } from "~~/config/chains-config";
+import { useRpcLogin } from "./use-rpc-login";
 
 export function useConnectionStatus() {
   const account = useAccount();
   const { successfullyReceivedSwaps, refetchMySwaps } = useTradeEscrow();
+  const { isChainAAuthenticated, isChainCAuthenticated } = useRpcLogin();
   const [isAbleToRequestWalletChain, setIsAbleToRequestWalletChain] = useState<boolean>(false);
 
-  // Check if current chain is supported (either chain1 or chain2)
-  const isSupportedChainSelected = account.chainId ? [chain1.id, chain2.id].includes(account.chainId) : false;
+  // Check if current chain is supported (chain1, chain2, or chain3)
+  const isSupportedChainSelected = account.chainId ? [chain1.id, chain2.id, chain3.id].includes(account.chainId) : false;
 
   // Check if ethereum.request works for eth_getBalance
   useEffect(() => {
@@ -55,6 +57,7 @@ export function useConnectionStatus() {
     isWalletConnected: account.isConnected,
     isAbleToRequestWalletChain,
     hasChain1RpcConnection: successfullyReceivedSwaps,
+    hasChainCRpcConnection: isChainCAuthenticated,
     isSupportedChainSelected,
   };
 }

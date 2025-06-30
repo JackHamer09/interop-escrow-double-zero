@@ -33,9 +33,25 @@ export const chain2 = defineChain({
     },
   },
 });
+export const chain3 = defineChain({
+  ...chainConfig,
+  id: 514,
+  name: 'Chain C',
+  network: 'chain-c',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: [process.env.CHAIN_C_RPC_URL || "http://127.0.0.1:3250"],
+    },
+  },
+});
 
 
-export const supportedChains = [chain1, chain2];
+export const supportedChains = [chain1, chain2, chain3];
 
 export type SupportedChainId = typeof supportedChains[number]["id"];
 

@@ -44,8 +44,29 @@ export const chain2 = {
   },
 } as const satisfies Chain;
 
+export const chain3 = {
+  id: env.NEXT_PUBLIC_CHAIN_C_ID,
+  name: env.NEXT_PUBLIC_CHAIN_C_NAME,
+  nativeCurrency: {
+    name: "Ethereum",
+    symbol: "ETH",
+    decimals: 18,
+  },
+  blockExplorers: {
+    default: {
+      name: "Default Explorer",
+      url: env.NEXT_PUBLIC_CHAIN_C_BLOCK_EXPLORER_URL,
+    },
+  },
+  rpcUrls: {
+    default: {
+      http: [],
+    },
+  },
+} as const satisfies Chain;
+
 // All available chains
-export const allChains = [chain1, chain2] as const satisfies Chain[];
+export const allChains = [chain1, chain2, chain3] as const satisfies Chain[];
 
 // Helper functions
 export function getChainById(chainId: number): Chain | undefined {
