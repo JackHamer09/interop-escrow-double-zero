@@ -27,34 +27,50 @@ export default function HiddenContent({ children, className }: { children: React
   const [showExplanation, setShowExplanation] = useState(false);
 
   const handleAuthorizeChainA = async () => {
-    await login();
+    try {
+      await login();
+    } catch (error) {
+      console.error("Failed to authorize Chain A:", error);
+    }
   };
 
   const handleAuthorizeChainC = async () => {
-    await loginToChainC();
-  };
-
-  const useChain1InWallet = () => {
-    if (!hasChain1RpcConnection) {
-      throw new Error(`${chain1.name} RPC wasn't authorized`);
-    }
-    if (!isRpcAuthenticated) {
-      // This means user has authorized chain A in their wallet and we just need to switch it
-      switchChainAsync({ chainId: chain1.id });
-    } else {
-      saveChainToWallet();
+    try {
+      await loginToChainC();
+    } catch (error) {
+      console.error("Failed to authorize Chain C:", error);
     }
   };
 
-  const useChain3InWallet = () => {
-    if (!hasChainCRpcConnection) {
-      throw new Error(`${chain3.name} RPC wasn't authorized`);
+  const useChain1InWallet = async () => {
+    try {
+      if (!hasChain1RpcConnection) {
+        throw new Error(`${chain1.name} RPC wasn't authorized`);
+      }
+      if (!isRpcAuthenticated) {
+        // This means user has authorized chain A in their wallet and we just need to switch it
+        await switchChainAsync({ chainId: chain1.id });
+      } else {
+        await saveChainToWallet();
+      }
+    } catch (error) {
+      console.error("Failed to use Chain A in wallet:", error);
     }
-    if (!isChainCAuthenticated) {
-      // This means user has authorized chain C in their wallet and we just need to switch it
-      switchChainAsync({ chainId: chain3.id });
-    } else {
-      saveChainCToWallet();
+  };
+
+  const useChain3InWallet = async () => {
+    try {
+      if (!hasChainCRpcConnection) {
+        throw new Error(`${chain3.name} RPC wasn't authorized`);
+      }
+      if (!isChainCAuthenticated) {
+        // This means user has authorized chain C in their wallet and we just need to switch it
+        await switchChainAsync({ chainId: chain3.id });
+      } else {
+        await saveChainCToWallet();
+      }
+    } catch (error) {
+      console.error("Failed to use Chain C in wallet:", error);
     }
   };
 
