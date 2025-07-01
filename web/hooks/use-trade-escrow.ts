@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react";
 import useBalances, { getTokenWithBalanceByAssetId } from "./use-balances";
+import { useRpcLogin } from "./use-rpc-login";
 import useTradeEscrowInterop from "./use-trade-escrow-interop";
 import { readContract } from "@wagmi/core";
 import toast from "react-hot-toast";
@@ -42,6 +43,7 @@ export default function useTradeEscrow() {
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
   const { tokens, refetch: refetchTokens } = useBalances(walletChainId);
+  const { isChainAAuthenticated } = useRpcLogin();
 
   const mainChain = escrowMainChain;
 
@@ -128,11 +130,11 @@ export default function useTradeEscrow() {
     refetchMySwaps();
   }, [refetchMySwaps]);
 
-  // Refetch all when the address changes
+  // Refetch all when the address or authentication state changes
   useEffect(() => {
     refetchMySwaps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, refetchAll]);
+  }, [address, refetchAll, isChainAAuthenticated]);
 
   const findTrade = (tradeId: bigint) => {
     const trade = myTrades?.find(trade => trade.tradeId === tradeId);

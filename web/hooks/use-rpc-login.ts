@@ -194,32 +194,6 @@ export function useRpcLogin() {
   const loginToChainA = useCallback(() => loginToChain(chain1.id), [loginToChain]);
   const loginToChainC = useCallback(() => loginToChain(chain3.id), [loginToChain]);
 
-  // Legacy login method (defaults to Chain A)
-  const login = useCallback(() => loginToChainA(), [loginToChainA]);
-  /* const login = useCallback(async () => {
-    if (!address) return;
-
-    setIsLoginPending(true);
-
-    const message = new SiweMessage({
-      domain: window.location.host,
-      address,
-      statement: "Sign in with Ethereum",
-      uri: window.location.href,
-      version: "1",
-      chainId: chain1.id,
-      nonce: generateNonce(),
-    }).prepareMessage();
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _signature = await signMessageAsync({ message });
-
-    const newAuth = { address, rpcToken: "test" };
-    setAuth(newAuth);
-    setStoredAuth(newAuth);
-    setIsLoginPending(false);
-  }, [address, signMessageAsync]); */
-
   const getFullRpcUrl = useCallback(
     (chainId: number) => {
       if (!auth?.activeAddress || !address) return null;
@@ -287,7 +261,6 @@ export function useRpcLogin() {
     // Legacy methods (Chain A)
     isRpcAuthenticated,
     isLoginPending,
-    login,
     logout,
     auth,
     fullRpcUrl,

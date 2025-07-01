@@ -20,15 +20,21 @@ export default function HiddenContent({ children, className }: { children: React
     hasChainCRpcConnection,
     isSupportedChainSelected,
   } = useConnectionStatus();
-  const { isRpcAuthenticated, login, saveChainToWallet, loginToChainC, saveChainCToWallet, isChainCAuthenticated } =
-    useRpcLogin();
+  const {
+    isRpcAuthenticated,
+    saveChainToWallet,
+    loginToChainC,
+    loginToChainA,
+    saveChainCToWallet,
+    isChainCAuthenticated,
+  } = useRpcLogin();
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const [showExplanation, setShowExplanation] = useState(false);
 
   const handleAuthorizeChainA = async () => {
     try {
-      await login();
+      await loginToChainA();
     } catch (error) {
       console.error("Failed to authorize Chain A:", error);
     }
@@ -191,21 +197,23 @@ export default function HiddenContent({ children, className }: { children: React
 
                 {/* Authorization buttons */}
                 <div className="flex flex-col gap-2 mt-2">
-                  {!hasChain1RpcConnection ? (
+                  {!hasChain1RpcConnection && (
                     <Button onClick={handleAuthorizeChainA} className="w-full h-10">
                       Authorize {chain1.name} RPC in the app
                     </Button>
-                  ) : (
+                  )}
+                  {hasChainCRpcConnection && chainId !== chain1.id && (
                     <Button variant="outline" onClick={useChain1InWallet} className="w-full h-10">
                       Use {chain1.name} in connected MetaMask
                     </Button>
                   )}
 
-                  {!hasChainCRpcConnection ? (
+                  {!hasChainCRpcConnection && (
                     <Button onClick={handleAuthorizeChainC} className="w-full h-10">
                       Authorize {chain3.name} RPC in the app
                     </Button>
-                  ) : (
+                  )}
+                  {hasChainCRpcConnection && chainId !== chain3.id && (
                     <Button variant="outline" onClick={useChain3InWallet} className="w-full h-10">
                       Use {chain3.name} in connected MetaMask
                     </Button>
