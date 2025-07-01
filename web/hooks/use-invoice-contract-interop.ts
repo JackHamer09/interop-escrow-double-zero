@@ -134,8 +134,59 @@ export default function useInvoiceContractInterop() {
     return txHash;
   };
 
+  const createInvoiceAsync = async (
+    recipient: Address,
+    recipientChainId: number,
+    billingToken: Address,
+    amount: bigint,
+    text: string,
+    creatorRefundAddress: Address,
+    recipientRefundAddress: Address,
+    creatorChainId: number,
+  ) => {
+    if (!address) throw new Error("No address available");
+    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+    
+    const data = encodeFunctionData({
+      abi: options.abi,
+      functionName: "createInvoice",
+      args: [
+        recipient,
+        BigInt(recipientChainId),
+        billingToken,
+        amount,
+        BigInt(creatorChainId),
+        creatorRefundAddress,
+        recipientRefundAddress,
+        text,
+      ],
+    });
+    builder.addTransaction({ contractAddress: options.address, data, value: 0n });
+
+    const txHash = await toast.promise(builder.send(), {
+      loading: "Waiting for wallet approval...",
+      success: "Transaction approved!",
+      error: err => {
+        console.error(err);
+        return "Failed to process transaction";
+      },
+    });
+
+    await toast.promise(builder.waitUntilInteropTxProcessed(txHash), {
+      loading: "Creating invoice...",
+      success: "Invoice created successfully!",
+      error: err => {
+        console.error(err);
+        return "Failed to create invoice";
+      },
+    });
+
+    return txHash;
+  };
+
   return {
     cancelInvoiceAsync,
     payInvoiceAsync,
+    createInvoiceAsync,
   };
 }

@@ -161,53 +161,61 @@ export default function useInvoiceContract() {
     amount: bigint,
     text: string,
   ) => {
-    // Check if user is on main chain and show toast error if not
-    if (!isInvoiceMainChain(walletChainId || 0)) {
-      toast.error(`Invoices can only be created on ${mainChain.name}. Please switch network in your wallet.`);
-      return false;
-    }
-
     if (!address) throw new Error("No address available");
 
     // Find token by address
     const tokenConfig = getTokenByAddress(billingToken);
     if (!tokenConfig) throw new Error("Token not found");
 
-    const createInvoice = await toast.promise(
-      writeContractAsync({
-        ...options,
-        functionName: "createInvoice",
-        args: [
-          recipient,
-          BigInt(recipientChainId),
-          billingToken,
-          amount,
-          BigInt(walletChainId || mainChain.id),
-          address, // creatorRefundAddress
-          recipient, // recipientRefundAddress
-          text,
-        ],
-      }),
-      {
-        loading: "Waiting for wallet approval...",
-        success: "Transaction approved!",
+    if (isInvoiceMainChain(walletChainId || 0)) {
+      const createInvoice = await toast.promise(
+        writeContractAsync({
+          ...options,
+          functionName: "createInvoice",
+          args: [
+            recipient,
+            BigInt(recipientChainId),
+            billingToken,
+            amount,
+            BigInt(walletChainId || mainChain.id),
+            address, // creatorRefundAddress
+            recipient, // recipientRefundAddress
+            text,
+          ],
+        }),
+        {
+          loading: "Waiting for wallet approval...",
+          success: "Transaction approved!",
+          error: err => {
+            console.error(err);
+            return "Failed to approve transaction";
+          },
+        },
+      );
+
+      await toast.promise(waitForTransactionReceipt({ hash: createInvoice }), {
+        loading: "Creating invoice...",
+        success: "Invoice created successfully!",
         error: err => {
           console.error(err);
-          return "Failed to approve transaction";
+          return "Failed to create invoice";
         },
-      },
-    );
+      });
 
-    await toast.promise(waitForTransactionReceipt({ hash: createInvoice }), {
-      loading: "Creating invoice...",
-      success: "Invoice created successfully!",
-      error: err => {
-        console.error(err);
-        return "Failed to create invoice";
-      },
-    });
-
-    return createInvoice;
+      return createInvoice;
+    } else {
+      const createInvoice = await interop.createInvoiceAsync(
+        recipient,
+        recipientChainId,
+        billingToken,
+        amount,
+        text,
+        address, // creatorRefundAddress
+        recipient, // recipientRefundAddress
+        walletChainId || mainChain.id,
+      );
+      return createInvoice;
+    }
   };
 
   // Cancel an invoice
