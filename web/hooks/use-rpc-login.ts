@@ -225,6 +225,15 @@ export function useRpcLogin() {
     return isChainAuthenticated(chain1.id);
   }, [isChainAuthenticated]);
 
+  // Chain-specific authentication status (reactive)
+  const isChainAAuthenticated = useMemo(() => {
+    return isChainAuthenticated(chain1.id);
+  }, [isChainAuthenticated]);
+
+  const isChainCAuthenticated = useMemo(() => {
+    return isChainAuthenticated(chain3.id);
+  }, [isChainAuthenticated]);
+
   const saveChainToWallet = useCallback(
     async (chainId?: number) => {
       const targetChainId = chainId || chain1.id;
@@ -278,8 +287,8 @@ export function useRpcLogin() {
     saveChainCToWallet,
 
     // Chain-specific authentication status
-    isChainAAuthenticated: isChainAuthenticated(chain1.id),
-    isChainCAuthenticated: isChainAuthenticated(chain3.id),
+    isChainAAuthenticated,
+    isChainCAuthenticated,
     chainAFullRpcUrl: getFullRpcUrl(chain1.id),
     chainCFullRpcUrl: getFullRpcUrl(chain3.id),
   };

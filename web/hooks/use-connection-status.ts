@@ -56,7 +56,7 @@ export function useConnectionStatus() {
   return {
     isWalletConnected: account.isConnected,
     isAbleToRequestWalletChain,
-    hasChain1RpcConnection: successfullyReceivedSwaps,
+    hasChain1RpcConnection: isChainAAuthenticated,
     hasChainCRpcConnection: isChainCAuthenticated,
     isSupportedChainSelected,
   };
