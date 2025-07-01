@@ -45,7 +45,7 @@ export const chain3 = defineChain({
   },
   rpcUrls: {
     default: {
-      http: [process.env.CHAIN_C_RPC_URL || "http://127.0.0.1:3250"],
+      http: [process.env.CHAIN_C_RPC_URL || "http://127.0.0.1:5001"],
     },
   },
 });
