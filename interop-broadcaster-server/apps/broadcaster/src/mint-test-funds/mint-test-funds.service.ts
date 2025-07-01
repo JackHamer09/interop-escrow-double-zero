@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createWalletClient, getAddress, http, PublicClient, WalletClient, parseEther, erc20Abi, Hash, Address, formatEther } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { ClientService } from '../client';
-import { chain1, chain2 } from '@app/common/chains';
+import { chain1, chain2, chain3 } from '@app/common/chains';
 import { InteropBroadcasterService } from '../interop-broadcaster/interop-broadcaster.service';
 import { InteropTransactionBuilder } from '@app/common/utils/interop-builder';
 import { L2_NATIVE_TOKEN_VAULT_ADDRESS } from '@app/common/utils/constants';
@@ -207,6 +207,9 @@ export class MintTestFundsService {
       
       // 4. Send tokens to chain2 via interop
       await this.sendTokensToChain2ViaInterop(minterAddress, address);
+
+      // 5. Send tokens to chain3 via interop
+      await this.sendTokensToChain3ViaInterop(minterAddress, address);
     } catch (error) {
       this.logger.error(error);
       this.logger.error(`Error minting funds for ${address}`);
@@ -375,6 +378,68 @@ export class MintTestFundsService {
       
       // Wait for interop transaction to be processed
       this.logger.log(`Waiting for interop transaction to be processed on ${chain2.name}...`);
+      
+      // Use the waitUntilInteropTxProcessed method from our builder
+      await builder.waitUntilInteropTxProcessed(
+        async (hash) => await this.interopBroadcasterService.getInteropTransactionStatus(chain1.id, hash),
+        txHash,
+      );
+      
+      this.logger.log(`Interop transaction completed successfully: ${txHash}`);
+
+    } catch (error) {
+      this.logger.error(`Error sending tokens via interop: ${error}`);
+      throw error;
+    }
+  }
+  private async sendTokensToChain3ViaInterop(
+    minterAddress: Address,
+    userAddress: Address
+  ): Promise<void> {    
+    try {
+      // Fee amount for interop transaction
+      const feeAmount = parseEther("0.001");
+      const tokensToSend = this.supportedTokens;
+      
+      // Log which tokens are being sent
+      const tokenNames = tokensToSend.map(t => t.name).join(', ');
+      this.logger.log(`Sending ${tokenNames} to ${userAddress} on ${chain3.name} via interop`);
+      
+      // Create the interop transaction builder
+      const publicClient = this.clientService.getClient({ chainId: chain1.id });
+      const minterClient = this.getMinterClient();
+      const builder = new InteropTransactionBuilder(
+        chain1.id,
+        chain3.id,
+        feeAmount,
+        minterAddress,
+        publicClient,
+        minterClient,
+      );
+      
+      builder.addTransaction({
+        directCall: true,
+        nextContract: userAddress,
+        data: '0x',
+        value: BigInt(0),
+        requestedInteropCallValue: this.ethMintAmount,
+      });
+
+      // Add token transfers for each token
+      for (const token of tokensToSend) {
+        builder.addTransfer({
+          assetId: token.assetId,
+          amount: token.mintAmount,
+          to: userAddress
+        });
+      }
+      
+      // Send the interop transaction
+      const txHash = await builder.send();
+      this.logger.log(`Interop transaction sent: ${txHash}`);
+      
+      // Wait for interop transaction to be processed
+      this.logger.log(`Waiting for interop transaction to be processed on ${chain3.name}...`);
       
       // Use the waitUntilInteropTxProcessed method from our builder
       await builder.waitUntilInteropTxProcessed(
