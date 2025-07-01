@@ -35,7 +35,7 @@ export const chain2 = defineChain({
 });
 export const chain3 = defineChain({
   ...chainConfig,
-  id: 514,
+  id: 513,
   name: 'Chain C',
   network: 'chain-c',
   nativeCurrency: {
