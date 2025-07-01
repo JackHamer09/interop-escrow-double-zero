@@ -126,17 +126,12 @@ export function useRpcLogin() {
 
       // Check if we already have a token for this address and chain
       if (hasAuthToken(chainId, address)) {
-        setAuth(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            activeAddress: lowerAddress,
-          };
-        });
-        setStoredAuth({
+        const updatedAuth = {
           ...(auth || { tokens: {} }),
           activeAddress: lowerAddress,
-        });
+        };
+        setAuth(updatedAuth);
+        setStoredAuth(updatedAuth);
         return;
       }
 
