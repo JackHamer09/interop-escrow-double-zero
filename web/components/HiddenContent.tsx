@@ -183,6 +183,13 @@ export default function HiddenContent({ children, className }: { children: React
                     <span className="text-xs">{hasChainCRpcConnection ? "Connected" : "No access"}</span>
                   </div>
                 </div>
+                <div className="flex items-center gap-5 justify-between text-sm">
+                  <span>{chain3.name} connection 2:</span>
+                  <div className="flex items-center gap-1">
+                    {renderConnectionStatusIndicator(isChainCAuthenticated ? "connected" : "not-connected")}
+                    <span className="text-xs">{isChainCAuthenticated ? "Connected" : "No access"}</span>
+                  </div>
+                </div>
 
                 {/* Authorization buttons */}
                 <div className="flex flex-col gap-2 mt-2">

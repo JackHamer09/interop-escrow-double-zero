@@ -45,6 +45,8 @@ export function useRpcLogin() {
   const { signMessageAsync } = useSignMessage();
   const client = useClient();
   const [auth, _setAuth] = useState<AuthData | null>(() => getStoredAuth());
+  
+  console.log('useRpcLogin hook called, auth state:', auth);
   const setAuth = useCallback((data: AuthData | null) => {
     console.log('setAuth called with:', data);
     _setAuth(data);
