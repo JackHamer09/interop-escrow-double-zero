@@ -112,12 +112,12 @@ export default function useTradeEscrowInterop() {
     builder.addTransaction({ contractAddress: mainChainTokenAddress, data: approvalData, value: 0n });
 
     // 4. Deposit transaction
-    const depositData = encodeFunctionData({
-      abi: TRADE_ESCROW_ABI,
-      functionName: "acceptAndDeposit",
-      args: [trade.tradeId],
-    });
-    builder.addTransaction({ contractAddress: TRADE_ESCROW_ADDRESS, data: depositData, value: 0n });
+    // const depositData = encodeFunctionData({
+    //   abi: TRADE_ESCROW_ABI,
+    //   functionName: "acceptAndDeposit",
+    //   args: [trade.tradeId],
+    // });
+    // builder.addTransaction({ contractAddress: TRADE_ESCROW_ADDRESS, data: depositData, value: 0n });
 
     const txHash = await toast.promise(builder.send(), {
       loading: "Waiting for wallet approval...",
