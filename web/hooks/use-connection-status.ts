@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useRpcLogin } from "./use-rpc-login";
 import useTradeEscrow from "./use-trade-escrow";
 import { useAccount, useBalance } from "wagmi";
-import { allChains } from "~~/config/chains-config";
+import { allChains, chain1 } from "~~/config/chains-config";
 
 export function useConnectionStatus() {
   const account = useAccount();
@@ -26,10 +26,21 @@ export function useConnectionStatus() {
       refetchIntervalInBackground: true,
     },
   });
+  const { isSuccess: successfullyReceivedBalance2, refetch: refetchWalletChainBalances2 } = useBalance({
+    address: account.address,
+    chainId: chain1.id,
+    query: {
+      // enabled: true,
+      gcTime: 500,
+      refetchInterval: 500,
+      refetchIntervalInBackground: true,
+    },
+  });
 
   useEffect(() => {
     const interval = setInterval(() => {
       refetchMySwaps();
+      refetchWalletChainBalances2();
       refetchWalletChainBalances();
     }, 500);
 
@@ -42,7 +53,8 @@ export function useConnectionStatus() {
     isWalletConnected: account.isConnected,
     isSupportedWalletChainSelected: account.isConnected && isSupportedWalletChainSelected,
     isAbleToRequestWalletChain: account.isConnected && successfullyReceivedBalance,
-    hasChainARpcConnection: isChainAAuthenticated && successfullyReceivedSwaps,
+    // hasChainARpcConnection: isChainAAuthenticated && successfullyReceivedSwaps,
+    hasChainARpcConnection: isChainAAuthenticated && successfullyReceivedBalance2,
     hasChainCRpcConnection: isChainCAuthenticated,
   };
 }
