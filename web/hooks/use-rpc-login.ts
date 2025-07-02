@@ -184,12 +184,21 @@ export function useRpcLogin() {
 
   const getFullRpcUrl = useCallback(
     (chainId: number) => {
-      if (!auth?.activeAddress || !address) return null;
+      if (!auth?.activeAddress || !address) {
+        console.log(chainId, "getFullRpcUrl 1");
+        return null;
+      }
       const authToken = getAuthToken(chainId, address);
-      if (!authToken) return null;
+      if (!authToken) {
+        console.log(chainId, "getFullRpcUrl 2");
+        return null;
+      }
 
       const chainAuthEndpoints = chainsAuthEndpoints[chainId];
-      if (!chainAuthEndpoints) return null;
+      if (!chainAuthEndpoints) {
+        console.log(chainId, "getFullRpcUrl 3");
+        return null;
+      }
 
       return `${chainAuthEndpoints.baseRpcUrl}/${authToken}`;
     },
@@ -215,8 +224,15 @@ export function useRpcLogin() {
   // }, [isChainAuthenticated]);
 
   // Chain-specific authentication status (reactive)
-  const isChainAAuthenticated = isChainAuthenticated(chain1.id);
-  const isChainCAuthenticated = isChainAuthenticated(chain3.id);
+  const isChainAAuthenticated = useMemo(() => {
+    return isChainAuthenticated(chain1.id);
+  }, [isChainAuthenticated]);
+
+  const isChainCAuthenticated = useMemo(() => {
+    const result = isChainAuthenticated(chain3.id);
+    console.log(`Chain C authentication status: ${result}`);
+    return result;
+  }, [isChainAuthenticated]);
 
   const saveChainToWallet = useCallback(
     async (chainId: number) => {
