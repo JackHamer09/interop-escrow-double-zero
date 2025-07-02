@@ -27,7 +27,7 @@ export default function HiddenContent({ children, className }: { children: React
     hasChainARpcConnection,
     hasChainCRpcConnection,
     isSupportedWalletChainSelected,
-  } = useConnectionStatus();
+  } = useConnectionStatus(isChainAAuthenticated, isChainCAuthenticated);
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const [showExplanation, setShowExplanation] = useState(false);

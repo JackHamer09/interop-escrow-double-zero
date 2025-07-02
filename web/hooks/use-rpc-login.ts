@@ -45,10 +45,7 @@ export function useRpcLogin() {
   const { signMessageAsync } = useSignMessage();
   const client = useClient();
   const [auth, _setAuth] = useState<AuthData | null>(() => getStoredAuth());
-  
-  console.log('useRpcLogin hook called, auth state:', auth);
   const setAuth = useCallback((data: AuthData | null) => {
-    console.log('setAuth called with:', data);
     _setAuth(data);
     setStoredAuth(data);
   }, []);
@@ -187,23 +184,13 @@ export function useRpcLogin() {
 
   const getFullRpcUrl = useCallback(
     (chainId: number) => {
-      if (!auth?.activeAddress || !address) {
-        console.log(chainId, "getFullRpcUrl 1");
-        return null;
-      }
+      if (!auth?.activeAddress || !address) return null;
       const authToken = getAuthToken(chainId, address);
-      if (!authToken) {
-        console.log(chainId, "getFullRpcUrl 2");
-        return null;
-      }
+      if (!authToken) return null;
 
       const chainAuthEndpoints = chainsAuthEndpoints[chainId];
-      if (!chainAuthEndpoints) {
-        console.log(chainId, "getFullRpcUrl 3");
-        return null;
-      }
+      if (!chainAuthEndpoints) return null;
 
-      console.log(chainId, "getFullRpcUrl 4");
       return `${chainAuthEndpoints.baseRpcUrl}/${authToken}`;
     },
     [address, auth, getAuthToken],
@@ -229,11 +216,7 @@ export function useRpcLogin() {
 
   // Chain-specific authentication status (reactive)
   const isChainAAuthenticated = isChainAuthenticated(chain1.id);
-  const isChainCAuthenticated = (() => {
-    const result = isChainAuthenticated(chain3.id);
-    console.log(`Chain C authentication status: ${result}`);
-    return result;
-  })();
+  const isChainCAuthenticated = isChainAuthenticated(chain3.id);
 
   const saveChainToWallet = useCallback(
     async (chainId: number) => {

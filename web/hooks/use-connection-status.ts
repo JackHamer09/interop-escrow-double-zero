@@ -1,21 +1,13 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useRpcLogin } from "./use-rpc-login";
 import useTradeEscrow from "./use-trade-escrow";
 import { useAccount, useBalance } from "wagmi";
 import { allChains } from "~~/config/chains-config";
 
-export function useConnectionStatus() {
+export function useConnectionStatus(isChainAAuthenticated?: boolean, isChainCAuthenticated?: boolean) {
   const account = useAccount();
   const { successfullyReceivedSwaps, refetchMySwaps } = useTradeEscrow();
-  const { isChainAAuthenticated, isChainCAuthenticated } = useRpcLogin();
-  
-  console.log('useConnectionStatus hook called, isChainCAuthenticated:', isChainCAuthenticated);
-
-  useEffect(() => {
-    console.log('useConnectionStatus - auth values changed:', { isChainAAuthenticated, isChainCAuthenticated });
-  }, [isChainAAuthenticated, isChainCAuthenticated]);
 
   // Check if current wallet chain is supported
   const isSupportedWalletChainSelected = useMemo(() => {
@@ -44,8 +36,6 @@ export function useConnectionStatus() {
     };
   }, [refetchMySwaps, refetchWalletChainBalances]);
 
-  console.log('useConnectionStatus - isChainCAuthenticated:', isChainCAuthenticated);
-  
   return {
     isWalletConnected: account.isConnected,
     isSupportedWalletChainSelected: account.isConnected && isSupportedWalletChainSelected,
