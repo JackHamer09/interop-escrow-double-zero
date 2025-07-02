@@ -227,13 +227,13 @@ export function useRpcLogin() {
   // Chain-specific authentication status (reactive)
   const isChainAAuthenticated = useMemo(() => {
     return isChainAuthenticated(chain1.id);
-  }, [isChainAuthenticated]);
+  }, [isChainAuthenticated, auth, address]);
 
   const isChainCAuthenticated = useMemo(() => {
     const result = isChainAuthenticated(chain3.id);
     console.log(`Chain C authentication status: ${result}`);
     return result;
-  }, [isChainAuthenticated]);
+  }, [isChainAuthenticated, auth, address]);
 
   const saveChainToWallet = useCallback(
     async (chainId: number) => {
