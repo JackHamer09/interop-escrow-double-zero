@@ -67,6 +67,16 @@ export const chain3 = {
 
 // All available chains
 export const allChains = [chain1, chain2, chain3] as const satisfies Chain[];
+export const chainsAuthEndpoints = {
+  [chain1.id]: {
+    baseRpcUrl: env.NEXT_PUBLIC_CHAIN_A_BASE_RPC_URL,
+    authApiUrl: env.NEXT_PUBLIC_CHAIN_A_AUTH_API_URL,
+  },
+  [chain3.id]: {
+    baseRpcUrl: env.NEXT_PUBLIC_CHAIN_C_BASE_RPC_URL,
+    authApiUrl: env.NEXT_PUBLIC_CHAIN_C_AUTH_API_URL,
+  },
+} satisfies Record<number, { baseRpcUrl: string; authApiUrl: string }>;
 
 // Helper functions
 export function getChainById(chainId: number): Chain | undefined {

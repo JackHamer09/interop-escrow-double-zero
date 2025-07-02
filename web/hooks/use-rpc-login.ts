@@ -3,16 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { $fetch } from "ofetch";
 import { SiweMessage } from "siwe";
+import { getAddress } from "viem";
 import { addChain } from "viem/actions";
 import { useAccount, useClient, useSignMessage } from "wagmi";
-import { chain1, chain3 } from "~~/config/chains-config";
-import { env } from "~~/utils/env";
+import { allChains, chain1, chain3, chainsAuthEndpoints } from "~~/config/chains-config";
 
-const STORAGE_KEY = "rpc_auth";
-const CHAIN_A_AUTH_API_URL = env.NEXT_PUBLIC_CHAIN_A_AUTH_API_URL;
-const CHAIN_A_BASE_RPC_URL = env.NEXT_PUBLIC_CHAIN_A_BASE_RPC_URL;
-const CHAIN_C_AUTH_API_URL = env.NEXT_PUBLIC_CHAIN_C_AUTH_API_URL;
-const CHAIN_C_BASE_RPC_URL = env.NEXT_PUBLIC_CHAIN_C_BASE_RPC_URL;
+const STORAGE_KEY = "rpc_auth_v2";
 
 type ChainAuthRecord = Record<string, string>; // address -> rpcToken
 type AuthRecord = Record<number, ChainAuthRecord>; // chainId -> (address -> rpcToken)
@@ -27,28 +23,9 @@ export const getStoredAuth = (): AuthData | null => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-
-    // Handle migration from old format
-    const parsed = JSON.parse(raw);
-    if (parsed && "address" in parsed && "rpcToken" in parsed) {
-      // Convert old format to new format (single chain format)
-      const oldAddress = parsed.address.toLowerCase();
-      return {
-        activeAddress: oldAddress,
-        tokens: { [chain1.id]: { [oldAddress]: parsed.rpcToken } },
-      };
-    }
-
-    // Handle migration from single chain format to multi-chain format
-    if (parsed && parsed.tokens && !parsed.tokens[chain1.id] && !parsed.tokens[chain3.id]) {
-      // This is the single-chain format, migrate to multi-chain
-      return {
-        activeAddress: parsed.activeAddress,
-        tokens: { [chain1.id]: parsed.tokens },
-      };
-    }
-
-    return parsed;
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object") return null;
+    return data;
   } catch {
     return null;
   }
@@ -67,27 +44,22 @@ export function useRpcLogin() {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const client = useClient();
-  const [auth, setAuth] = useState<AuthData | null>(() => getStoredAuth());
+  const [auth, _setAuth] = useState<AuthData | null>(() => getStoredAuth());
+  const setAuth = useCallback((data: AuthData | null) => {
+    _setAuth(data);
+    setStoredAuth(data);
+  }, []);
   const [isLoginPending, setIsLoginPending] = useState(false);
 
   const logout = useCallback(() => {
-    if (auth && address) {
-      console.log("Removing active address");
-      const newAuth = {
-        ...auth,
-        activeAddress: null,
-      };
-      setAuth(newAuth);
-      setStoredAuth(newAuth);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    console.log("Logging out from RPC auth");
+    setAuth(null);
+  }, [setAuth]);
 
   const getAuthToken = useCallback(
     (chainId: number, address: string): string | null => {
       if (!auth) return null;
-      const lowerAddress = address.toLowerCase();
-      return auth.tokens[chainId]?.[lowerAddress] || null;
+      return auth.tokens[chainId]?.[address.toLowerCase()] || null;
     },
     [auth],
   );
@@ -101,28 +73,36 @@ export function useRpcLogin() {
 
   // Update active address when it changes
   useEffect(() => {
-    if (!address || !auth) return;
+    if (!auth) return;
+
+    if (!address) {
+      logout();
+      return;
+    }
 
     const lowerAddress = address.toLowerCase();
     if (auth.activeAddress !== lowerAddress) {
-      setAuth(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          activeAddress: lowerAddress,
-        };
-      });
-      setStoredAuth({
+      setAuth({
         ...auth,
         activeAddress: lowerAddress,
       });
     }
-  }, [address, auth]);
+  }, [address, auth, setAuth, logout]);
 
   const loginToChain = useCallback(
     async (chainId: number) => {
       if (!address) return;
       const lowerAddress = address.toLowerCase();
+
+      const targetChain = allChains.find(chain => chain.id === chainId);
+      if (!targetChain) {
+        throw new Error(`Chain with ID ${chainId} not found`);
+      }
+
+      const authEndpoints = chainsAuthEndpoints[chainId];
+      if (!authEndpoints) {
+        throw new Error(`No auth endpoints configured for chain ${chainId}`);
+      }
 
       // Check if we already have a token for this address and chain
       if (hasAuthToken(chainId, address)) {
@@ -138,56 +118,64 @@ export function useRpcLogin() {
       setIsLoginPending(true);
 
       try {
-        const isChainA = chainId === chain1.id;
-        const authApiUrl = isChainA ? CHAIN_A_AUTH_API_URL : CHAIN_C_AUTH_API_URL;
-        const chain = isChainA ? chain1 : chain3;
-
-        const nonce = await $fetch<string>(`${authApiUrl}/auth/nonce`, {
+        /* 1. Get nonce */
+        const nonce = await $fetch<string>(`${authEndpoints.authApiUrl}/auth/nonce`, {
           credentials: "include",
+        }).catch(error => {
+          throw new Error(`Nonce fetch failed: ${error.message}`);
         });
 
+        /* 2. Sign message */
         const message = new SiweMessage({
           domain: window.location.host,
-          address,
+          address: getAddress(lowerAddress),
           statement: "Sign in with Ethereum",
           uri: window.location.href,
           version: "1",
-          chainId: chain.id,
+          chainId: targetChain.id,
           nonce,
         }).prepareMessage();
-
         const signature = await signMessageAsync({ message });
 
-        await $fetch(`${authApiUrl}/auth/verify`, {
+        /* 3. Verify signature */
+        await $fetch(`${authEndpoints.authApiUrl}/auth/verify`, {
           method: "POST",
           body: { message, signature },
           credentials: "include",
+        }).catch(error => {
+          throw new Error(`Signature verification failed: ${error.message}`);
         });
 
-        const tokenRes = await $fetch<{ ok: true; token: string }>(`${authApiUrl}/auth/token`, {
+        /* 4. Fetch token */
+        const tokenRes = await $fetch<{ ok: true; token: string }>(`${authEndpoints.authApiUrl}/auth/token`, {
           credentials: "include",
+        }).catch(error => {
+          throw new Error(`Token fetch failed: ${error.message}`);
         });
 
-        const newTokens = { ...(auth?.tokens || {}) };
-        if (!newTokens[chainId]) {
-          newTokens[chainId] = {};
-        }
-        newTokens[chainId][lowerAddress] = tokenRes.token;
+        console.log(`Login successful for chain ${chainId}. New RPC token:`, tokenRes);
 
-        const newAuth = {
-          activeAddress: lowerAddress,
-          tokens: newTokens,
+        /* 5. Save tokens to auth state */
+        const getUpdatedTokens = () => {
+          const tokens = { ...(auth?.tokens || {}) };
+          if (!tokens[chainId]) {
+            tokens[chainId] = {};
+          }
+          tokens[chainId][lowerAddress] = tokenRes.token;
+          const newAuth: AuthData = {
+            activeAddress: lowerAddress,
+            tokens,
+          };
+          return newAuth;
         };
-
-        setAuth(newAuth);
-        setStoredAuth(newAuth);
+        setAuth(getUpdatedTokens());
       } catch (error) {
         console.error(`Login failed for chain ${chainId}`, error);
       } finally {
         setIsLoginPending(false);
       }
     },
-    [address, signMessageAsync, auth, hasAuthToken],
+    [address, signMessageAsync, auth, hasAuthToken, setAuth],
   );
 
   // Convenience methods for specific chains
@@ -197,33 +185,34 @@ export function useRpcLogin() {
   const getFullRpcUrl = useCallback(
     (chainId: number) => {
       if (!auth?.activeAddress || !address) return null;
-      const token = getAuthToken(chainId, address);
-      if (!token) return null;
+      const authToken = getAuthToken(chainId, address);
+      if (!authToken) return null;
 
-      const baseRpcUrl = chainId === chain1.id ? CHAIN_A_BASE_RPC_URL : CHAIN_C_BASE_RPC_URL;
-      return `${baseRpcUrl}/${token}`;
+      const chainAuthEndpoints = chainsAuthEndpoints[chainId];
+      if (!chainAuthEndpoints) return null;
+
+      return `${chainAuthEndpoints.baseRpcUrl}/${authToken}`;
     },
-    [auth?.activeAddress, address, getAuthToken],
+    [address, auth, getAuthToken],
   );
 
   // Legacy fullRpcUrl for Chain A
-  const fullRpcUrl = useMemo(() => {
-    return getFullRpcUrl(chain1.id);
-  }, [getFullRpcUrl]);
+  // const fullRpcUrl = useMemo(() => {
+  //   return getFullRpcUrl(chain1.id);
+  // }, [getFullRpcUrl]);
 
   const isChainAuthenticated = useCallback(
     (chainId: number) => {
-      if (!auth?.activeAddress || !address) return false;
-      const lowerAddress = address.toLowerCase();
-      return auth.activeAddress === lowerAddress && hasAuthToken(chainId, address);
+      const rpcUrl = getFullRpcUrl(chainId);
+      return rpcUrl ? true : false;
     },
-    [auth, address, hasAuthToken],
+    [getFullRpcUrl],
   );
 
   // Legacy isRpcAuthenticated for Chain A
-  const isRpcAuthenticated = useMemo(() => {
-    return isChainAuthenticated(chain1.id);
-  }, [isChainAuthenticated]);
+  // const isRpcAuthenticated = useMemo(() => {
+  //   return isChainAuthenticated(chain1.id);
+  // }, [isChainAuthenticated]);
 
   // Chain-specific authentication status (reactive)
   const isChainAAuthenticated = useMemo(() => {
@@ -235,13 +224,15 @@ export function useRpcLogin() {
   }, [isChainAuthenticated]);
 
   const saveChainToWallet = useCallback(
-    async (chainId?: number) => {
-      const targetChainId = chainId || chain1.id;
-      const targetChain = targetChainId === chain1.id ? chain1 : chain3;
-      const rpcUrl = getFullRpcUrl(targetChainId);
+    async (chainId: number) => {
+      const targetChain = allChains.find(chain => chain.id === chainId);
+      if (!targetChain) {
+        throw new Error(`Chain with ID ${chainId} not found`);
+      }
 
-      if (!isChainAuthenticated(targetChainId) || !rpcUrl) {
-        throw new Error(`User is not authenticated for chain ${targetChainId}`);
+      const rpcUrl = getFullRpcUrl(chainId);
+      if (!rpcUrl) {
+        throw new Error(`User is not authenticated for chain ${chainId}`);
       }
 
       try {
@@ -259,7 +250,7 @@ export function useRpcLogin() {
         console.warn(`Add network to wallet error: ${error}`);
       }
     },
-    [client, getFullRpcUrl, isChainAuthenticated],
+    [client, getFullRpcUrl],
   );
 
   // Convenience methods for specific chains
@@ -268,12 +259,12 @@ export function useRpcLogin() {
 
   return {
     // Legacy methods (Chain A)
-    isRpcAuthenticated,
+    // isRpcAuthenticated,
+    // auth,
+    // fullRpcUrl,
+    // saveChainToWallet,
     isLoginPending,
     logout,
-    auth,
-    fullRpcUrl,
-    saveChainToWallet,
 
     // Multi-chain methods
     loginToChain,

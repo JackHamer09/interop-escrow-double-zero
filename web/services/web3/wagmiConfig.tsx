@@ -1,9 +1,8 @@
 import { type Chain, createWalletClient, custom, http } from "viem";
 import { createConfig } from "wagmi";
 import { metaMask } from "wagmi/connectors";
-import { allChains, chain1, chain3 } from "~~/config/chains-config";
+import { allChains, chainsAuthEndpoints } from "~~/config/chains-config";
 import { getStoredAuth } from "~~/hooks/use-rpc-login";
-import { env } from "~~/utils/env";
 
 /**
  * Helper function to check if MetaMask is available
@@ -25,24 +24,24 @@ export const createMetaMaskClient = ({ chain }: { chain: Chain }) => {
           throw new Error("MetaMask is not available");
         }
 
-        const supportedPrivateChains = [chain1.id, chain3.id];
-        const isPrivateChain = supportedPrivateChains.includes(chain.id);
+        const supportedPrivateChains = Object.keys(chainsAuthEndpoints);
+        const isPrivateChain = supportedPrivateChains.map(id => parseInt(id)).includes(chain.id);
 
+        // Signature request or non-private-chain requests
         if (params?.from || !isPrivateChain || method === "wallet_addEthereumChain") {
-          // Signature request or non-private-chain requests
-          const response = await window.ethereum!.request({ method, params });
+          const response = await window.ethereum.request({ method, params });
           return response;
         }
 
-        const walletChainId: number =
-          (await window.ethereum
-            ?.request({ method: "eth_chainId" })
-            .then((res: string) => parseInt(res, 16))
-            .catch(() => 0)) || 0;
+        const walletChainId: number = (
+          await window.ethereum.request({ method: "eth_chainId" }).then((res: string) => parseInt(res, 16))
+        ).catch((err: string) => {
+          throw new Error("Failed to get wallet chain ID: " + err);
+        });
 
         if (walletChainId === chain.id) {
           try {
-            const response = await window.ethereum!.request({ method, params });
+            const response = await window.ethereum.request({ method, params });
             return response;
           } catch (error) {
             console.warn(
@@ -53,17 +52,10 @@ export const createMetaMaskClient = ({ chain }: { chain: Chain }) => {
           }
         }
 
-        const auth = getStoredAuth();
-        if (!auth || !auth.activeAddress) {
-          throw {
-            code: -32001,
-            message: "User is not authenticated",
-          };
-        }
-
         // Check if user has auth token for the requested chain
-        const chainTokens = auth.tokens[chain.id];
-        const authToken = chainTokens?.[auth.activeAddress];
+        const auth = getStoredAuth();
+        const chainTokens = auth?.tokens[chain.id] || {};
+        const authToken = auth ? chainTokens[auth.activeAddress || ""] : undefined;
 
         if (!authToken) {
           throw {
@@ -72,11 +64,12 @@ export const createMetaMaskClient = ({ chain }: { chain: Chain }) => {
           };
         }
 
-        // Get the appropriate RPC URL for the chain
-        const baseRpcUrl =
-          chain.id === chain1.id ? env.NEXT_PUBLIC_CHAIN_A_BASE_RPC_URL : env.NEXT_PUBLIC_CHAIN_C_BASE_RPC_URL;
+        const authEndpoints = chainsAuthEndpoints[chain.id];
+        if (!authEndpoints) {
+          throw new Error(`No auth endpoints configured for chain ${chain.id}`);
+        }
 
-        const fullRpcUrl = `${baseRpcUrl}/${authToken}`;
+        const fullRpcUrl = `${authEndpoints.baseRpcUrl}/${authToken}`;
         const provider = http(fullRpcUrl)({ chain });
         const response = await provider.request({ method, params });
         return response;

@@ -16,48 +16,32 @@ export default function HiddenContent({ children, className }: { children: React
   const {
     isWalletConnected,
     isAbleToRequestWalletChain,
-    hasChain1RpcConnection,
+    hasChainARpcConnection,
     hasChainCRpcConnection,
-    isSupportedChainSelected,
+    isSupportedWalletChainSelected,
   } = useConnectionStatus();
   const {
-    isRpcAuthenticated,
-    saveChainToWallet,
-    loginToChainC,
     loginToChainA,
+    loginToChainC,
+    saveChainAToWallet,
     saveChainCToWallet,
+    isChainAAuthenticated,
     isChainCAuthenticated,
   } = useRpcLogin();
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const [showExplanation, setShowExplanation] = useState(false);
 
-  const handleAuthorizeChainA = async () => {
-    try {
-      await loginToChainA();
-    } catch (error) {
-      console.error("Failed to authorize Chain A:", error);
-    }
-  };
-
-  const handleAuthorizeChainC = async () => {
-    try {
-      await loginToChainC();
-    } catch (error) {
-      console.error("Failed to authorize Chain C:", error);
-    }
-  };
-
   const useChain1InWallet = async () => {
     try {
-      if (!hasChain1RpcConnection) {
+      if (!hasChainARpcConnection) {
         throw new Error(`${chain1.name} RPC wasn't authorized`);
       }
-      if (!isRpcAuthenticated) {
+      if (!isChainAAuthenticated) {
         // This means user has authorized chain A in their wallet and we just need to switch it
         await switchChainAsync({ chainId: chain1.id });
       } else {
-        await saveChainToWallet();
+        await saveChainAToWallet();
       }
     } catch (error) {
       console.error("Failed to use Chain A in wallet:", error);
@@ -86,7 +70,12 @@ export default function HiddenContent({ children, className }: { children: React
       return "wallet-disconnected";
     }
 
-    if (isAbleToRequestWalletChain && hasChain1RpcConnection && hasChainCRpcConnection && isSupportedChainSelected) {
+    if (
+      isAbleToRequestWalletChain &&
+      hasChainARpcConnection &&
+      hasChainCRpcConnection &&
+      isSupportedWalletChainSelected
+    ) {
       return "connected";
     }
 
@@ -152,7 +141,7 @@ export default function HiddenContent({ children, className }: { children: React
           {contentState === "connection-issues" && (
             <>
               <div className="text-center">
-                {!isSupportedChainSelected ? "Unsupported chain selected" : "Additional authorization required"}
+                {!isSupportedWalletChainSelected ? "Unsupported chain selected" : "Additional authorization required"}
               </div>
 
               <div className="w-full mt-2 flex flex-col gap-3">
@@ -163,12 +152,12 @@ export default function HiddenContent({ children, className }: { children: React
                     {renderConnectionStatusIndicator(
                       !isAbleToRequestWalletChain
                         ? "not-connected"
-                        : !isSupportedChainSelected
+                        : !isSupportedWalletChainSelected
                           ? "not-connected"
                           : "connected",
                     )}
                     <span className="text-xs">
-                      {!isSupportedChainSelected
+                      {!isSupportedWalletChainSelected
                         ? "Unsupported chain selected"
                         : isAbleToRequestWalletChain
                           ? `${getCurrentChainName()} connected`
@@ -181,8 +170,8 @@ export default function HiddenContent({ children, className }: { children: React
                 <div className="flex items-center gap-5 justify-between text-sm">
                   <span>{chain1.name} connection:</span>
                   <div className="flex items-center gap-1">
-                    {renderConnectionStatusIndicator(hasChain1RpcConnection ? "connected" : "not-connected")}
-                    <span className="text-xs">{hasChain1RpcConnection ? "Connected" : "No access"}</span>
+                    {renderConnectionStatusIndicator(hasChainARpcConnection ? "connected" : "not-connected")}
+                    <span className="text-xs">{hasChainARpcConnection ? "Connected" : "No access"}</span>
                   </div>
                 </div>
 
@@ -197,8 +186,8 @@ export default function HiddenContent({ children, className }: { children: React
 
                 {/* Authorization buttons */}
                 <div className="flex flex-col gap-2 mt-2">
-                  {!hasChain1RpcConnection && (
-                    <Button onClick={handleAuthorizeChainA} className="w-full h-10">
+                  {!hasChainARpcConnection && (
+                    <Button onClick={loginToChainA} className="w-full h-10">
                       Authorize {chain1.name} RPC in the app
                     </Button>
                   )}
@@ -209,7 +198,7 @@ export default function HiddenContent({ children, className }: { children: React
                   )}
 
                   {!hasChainCRpcConnection && (
-                    <Button onClick={handleAuthorizeChainC} className="w-full h-10">
+                    <Button onClick={loginToChainC} className="w-full h-10">
                       Authorize {chain3.name} RPC in the app
                     </Button>
                   )}
@@ -221,7 +210,7 @@ export default function HiddenContent({ children, className }: { children: React
                 </div>
 
                 {/* Context-specific tip */}
-                {(!isSupportedChainSelected || !isAbleToRequestWalletChain) && (
+                {(!isSupportedWalletChainSelected || !isAbleToRequestWalletChain) && (
                   <Alert variant="info">
                     <InfoIcon className="h-4 w-4" />
                     <AlertDescription>
@@ -248,16 +237,16 @@ export default function HiddenContent({ children, className }: { children: React
                   </Alert>
                 )}
 
-                {isSupportedChainSelected &&
+                {isSupportedWalletChainSelected &&
                   isAbleToRequestWalletChain &&
-                  (!hasChain1RpcConnection || !hasChainCRpcConnection) && (
+                  (!hasChainARpcConnection || !hasChainCRpcConnection) && (
                     <Alert variant="info">
                       <InfoIcon className="h-4 w-4" />
                       <AlertDescription>
                         <span className="text-xs">
-                          {!hasChain1RpcConnection && !hasChainCRpcConnection
+                          {!hasChainARpcConnection && !hasChainCRpcConnection
                             ? `Authorize both ${chain1.name} and ${chain3.name} RPC connections using buttons above`
-                            : !hasChain1RpcConnection
+                            : !hasChainARpcConnection
                               ? `Authorize ${chain1.name} RPC connection using button above`
                               : `Authorize ${chain3.name} RPC connection using button above`}
                         </span>

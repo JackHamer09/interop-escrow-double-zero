@@ -119,8 +119,9 @@ export default function useRepoContract() {
     chainId: mainChain.id,
     functionName: "getOpenOffers",
     query: {
+      // enabled: true,
       gcTime: 1000,
-      refetchInterval: 1000, // Refresh every second
+      refetchInterval: 1000,
       refetchIntervalInBackground: true,
     },
   });

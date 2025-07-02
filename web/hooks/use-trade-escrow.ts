@@ -51,21 +51,28 @@ export default function useTradeEscrow() {
     if (walletChainId !== chainId) {
       await switchChainAsync({ chainId });
     }
+    const checkRetries = 10;
+    const retryDelay = 500;
+    for (let i = 0; i < checkRetries; i++) {
+      if (walletChainId === chainId) return;
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
+    throw new Error(`Failed to switch to chain ${chainId}`);
   }
 
-  // Check allowance directly when needed
-  async function checkAllowance(tokenAddress: Address, owner: Address, spender: Address): Promise<bigint> {
+  async function checkEscrowAllowance(tokenAddress: Address): Promise<bigint> {
     try {
       const result = await readContract(wagmiConfig as any, {
+        chainId: escrowMainChain.id,
         address: tokenAddress,
         abi: erc20Abi,
         functionName: "allowance",
-        args: [owner, spender],
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        args: [address!, TRADE_ESCROW_ADDRESS],
       });
       return result as bigint;
     } catch (error) {
-      console.error("Error checking allowance:", error);
-      return 0n;
+      throw new Error(`Failed to check Escrow allowance for token ${tokenAddress}: ${error}`);
     }
   }
 
@@ -82,13 +89,14 @@ export default function useTradeEscrow() {
     if (!token) throw new Error("Token not found in wallet");
 
     // Check allowance directly when needed
-    const currentAllowance = await checkAllowance(token.addresses[walletChainId], address, TRADE_ESCROW_ADDRESS);
+    const currentAllowance = await checkEscrowAllowance(token.addresses[walletChainId]);
 
     // Check if we need to approve
     if (currentAllowance < amount) {
       // Approve token
       const approveHash = await toast.promise(
         writeContractAsync({
+          chainId: escrowMainChain.id,
           abi: erc20Abi,
           address: token.addresses[walletChainId],
           functionName: "approve",
@@ -98,17 +106,17 @@ export default function useTradeEscrow() {
           loading: `Approving use of ${token.symbol} funds...`,
           success: `${token.symbol} approved!`,
           error: err => {
-            console.error(err);
+            console.error(`Error approving Escrow allowance for token ${token.symbol}:`, err);
             return `Failed to approve ${token.symbol}`;
           },
         },
       );
 
-      await toast.promise(waitForTransactionReceipt({ hash: approveHash }), {
+      await toast.promise(waitForTransactionReceipt({ chainId: mainChain.id, hash: approveHash }), {
         loading: `Waiting for ${token.symbol} approval confirmation...`,
         success: `${token.symbol} approval confirmed!`,
         error: err => {
-          console.error(err);
+          console.error(`Error confirming Escrow allowance for token ${token.symbol}:`, err);
           return `Failed to approve ${token.symbol}`;
         },
       });
@@ -132,9 +140,8 @@ export default function useTradeEscrow() {
 
   // Refetch all when the address or authentication state changes
   useEffect(() => {
-    refetchMySwaps();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, refetchAll, isChainAAuthenticated]);
+    refetchAll();
+  }, [address, isChainAAuthenticated, refetchAll]);
 
   const findTrade = (tradeId: bigint) => {
     const trade = myTrades?.find(trade => trade.tradeId === tradeId);
@@ -177,6 +184,7 @@ export default function useTradeEscrow() {
     const createTrade = await toast.promise(
       writeContractAsync({
         ...options,
+        chainId: mainChain.id,
         functionName: "proposeTradeAndDeposit",
         args: [partyB, BigInt(partyBChainId), tokenA, amountA, tokenB, amountB],
       }),
@@ -184,17 +192,17 @@ export default function useTradeEscrow() {
         loading: "Waiting for wallet approval...",
         success: "Transaction approved!",
         error: err => {
-          console.error(err);
+          console.error(`Error approving proposeTradeAndDeposit transaction:`, err);
           return "Failed to approve transaction";
         },
       },
     );
 
-    await toast.promise(waitForTransactionReceipt({ hash: createTrade }), {
+    await toast.promise(waitForTransactionReceipt({ chainId: mainChain.id, hash: createTrade }), {
       loading: "Creating trade and depositing funds...",
       success: "Trade created and funds deposited successfully!",
       error: err => {
-        console.error(err);
+        console.error(`Error confirming proposeTradeAndDeposit transaction:`, err);
         return "Failed to create trade and deposit funds";
       },
     });
@@ -210,6 +218,7 @@ export default function useTradeEscrow() {
       isEscrowMainChain(Number(trade.myExpectedChainId))
         ? writeContractAsync({
             ...options,
+            chainId: mainChain.id,
             functionName: "cancelTrade",
             args: [tradeId],
           })
@@ -218,18 +227,18 @@ export default function useTradeEscrow() {
         loading: "Waiting for wallet approval...",
         success: "Transaction approved!",
         error: err => {
-          console.error(err);
+          console.error(`Error approving cancelTrade transaction:`, err);
           return "Failed to approve transaction";
         },
       },
     );
 
     if (isEscrowMainChain(Number(trade.myExpectedChainId))) {
-      await toast.promise(waitForTransactionReceipt({ hash: cancelTrade }), {
+      await toast.promise(waitForTransactionReceipt({ chainId: mainChain.id, hash: cancelTrade }), {
         loading: "Canceling trade...",
         success: "Trade cancelled successfully!",
         error: err => {
-          console.error(err);
+          console.error(`Error confirming cancelTrade transaction:`, err);
           return "Failed to cancel trade";
         },
       });
@@ -279,16 +288,16 @@ export default function useTradeEscrow() {
           loading: "Waiting for wallet approval...",
           success: "Transaction approved!",
           error: err => {
-            console.error(err);
+            console.error(`Error approving acceptAndDeposit transaction:`, err);
             return "Failed to approve transaction";
           },
         },
       );
-      await toast.promise(waitForTransactionReceipt({ hash: acceptTrade }), {
+      await toast.promise(waitForTransactionReceipt({ chainId: mainChain.id, hash: acceptTrade }), {
         loading: "Processing transaction...",
         success: "Transaction confirmed! Funds deposited successfully.",
         error: err => {
-          console.error(err);
+          console.error(`Error confirming acceptAndDeposit transaction:`, err);
           return "Failed to process transaction";
         },
       });
