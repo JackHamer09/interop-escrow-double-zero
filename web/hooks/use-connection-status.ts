@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useRpcLogin } from "./use-rpc-login";
 import useTradeEscrow from "./use-trade-escrow";
 import { useAccount, useBalance } from "wagmi";
-import { allChains, chain1 } from "~~/config/chains-config";
+import { allChains } from "~~/config/chains-config";
 
 export function useConnectionStatus() {
   const account = useAccount();
