@@ -15,13 +15,14 @@ export const Balance = ({ address, className = "" }: BalanceProps) => {
   const {
     data: balance,
     isError,
+    error,
     isLoading,
   } = useWatchBalance({
     address,
   });
 
   if (isLoading) return <div className="text-xs">Loading...</div>;
-  if (isError) return null;
+  if (isError) return <div className="text-xs">Error: {error.message}</div>;
 
   const formattedBalance = balance ? Number(formatEther(balance.value)) : 0;
 

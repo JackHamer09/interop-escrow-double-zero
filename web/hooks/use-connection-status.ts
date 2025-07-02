@@ -47,7 +47,7 @@ export function useConnectionStatus() {
     return () => {
       clearInterval(interval);
     };
-  }, [refetchMySwaps, refetchWalletChainBalances]);
+  }, [refetchMySwaps, refetchWalletChainBalances, refetchWalletChainBalances2]);
 
   return {
     isWalletConnected: account.isConnected,
