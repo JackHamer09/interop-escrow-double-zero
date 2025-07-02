@@ -38,6 +38,8 @@ export function useConnectionStatus() {
     };
   }, [refetchMySwaps, refetchWalletChainBalances]);
 
+  console.log('useConnectionStatus - isChainCAuthenticated:', isChainCAuthenticated);
+  
   return {
     isWalletConnected: account.isConnected,
     isSupportedWalletChainSelected: account.isConnected && isSupportedWalletChainSelected,
