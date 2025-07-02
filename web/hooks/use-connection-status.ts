@@ -13,7 +13,7 @@ export function useConnectionStatus() {
 
   // Check if current wallet chain is supported
   const isSupportedWalletChainSelected = useMemo(() => {
-    return allChains.includes(account.chainId as any);
+    return allChains.map(e => e.id).includes(account.chainId as any);
   }, [account.chainId]);
 
   const { isSuccess: successfullyReceivedBalance, refetch: refetchWalletChainBalances } = useBalance({
