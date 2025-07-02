@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { $fetch } from "ofetch";
 import { SiweMessage } from "siwe";
 import { getAddress } from "viem";
@@ -46,6 +46,7 @@ export function useRpcLogin() {
   const client = useClient();
   const [auth, _setAuth] = useState<AuthData | null>(() => getStoredAuth());
   const setAuth = useCallback((data: AuthData | null) => {
+    console.log('setAuth called with:', data);
     _setAuth(data);
     setStoredAuth(data);
   }, []);
@@ -225,15 +226,12 @@ export function useRpcLogin() {
   // }, [isChainAuthenticated]);
 
   // Chain-specific authentication status (reactive)
-  const isChainAAuthenticated = useMemo(() => {
-    return isChainAuthenticated(chain1.id);
-  }, [isChainAuthenticated, auth, address]);
-
-  const isChainCAuthenticated = useMemo(() => {
+  const isChainAAuthenticated = isChainAuthenticated(chain1.id);
+  const isChainCAuthenticated = (() => {
     const result = isChainAuthenticated(chain3.id);
     console.log(`Chain C authentication status: ${result}`);
     return result;
-  }, [isChainAuthenticated, auth, address]);
+  })();
 
   const saveChainToWallet = useCallback(
     async (chainId: number) => {
