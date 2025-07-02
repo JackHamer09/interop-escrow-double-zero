@@ -9,10 +9,13 @@ import { allChains } from "~~/config/chains-config";
 export function useConnectionStatus() {
   const account = useAccount();
   const { successfullyReceivedSwaps, refetchMySwaps } = useTradeEscrow();
-  const rpcLoginResult = useRpcLogin();
-  const { isChainAAuthenticated, isChainCAuthenticated } = rpcLoginResult;
+  const { isChainAAuthenticated, isChainCAuthenticated } = useRpcLogin();
   
   console.log('useConnectionStatus hook called, isChainCAuthenticated:', isChainCAuthenticated);
+
+  useEffect(() => {
+    console.log('useConnectionStatus - auth values changed:', { isChainAAuthenticated, isChainCAuthenticated });
+  }, [isChainAAuthenticated, isChainCAuthenticated]);
 
   // Check if current wallet chain is supported
   const isSupportedWalletChainSelected = useMemo(() => {
