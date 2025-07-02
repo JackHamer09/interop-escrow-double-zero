@@ -200,6 +200,7 @@ export function useRpcLogin() {
         return null;
       }
 
+      console.log(chainId, "getFullRpcUrl 4");
       return `${chainAuthEndpoints.baseRpcUrl}/${authToken}`;
     },
     [address, auth, getAuthToken],
