@@ -14,13 +14,6 @@ type ContentState = "connected" | "wallet-disconnected" | "connection-issues";
 
 export default function HiddenContent({ children, className }: { children: React.ReactNode; className?: string }) {
   const {
-    isWalletConnected,
-    isAbleToRequestWalletChain,
-    hasChainARpcConnection,
-    hasChainCRpcConnection,
-    isSupportedWalletChainSelected,
-  } = useConnectionStatus();
-  const {
     loginToChainA,
     loginToChainC,
     saveChainAToWallet,
@@ -28,6 +21,13 @@ export default function HiddenContent({ children, className }: { children: React
     isChainAAuthenticated,
     isChainCAuthenticated,
   } = useRpcLogin();
+  const {
+    isWalletConnected,
+    isAbleToRequestWalletChain,
+    hasChainARpcConnection,
+    hasChainCRpcConnection,
+    isSupportedWalletChainSelected,
+  } = useConnectionStatus();
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const [showExplanation, setShowExplanation] = useState(false);
