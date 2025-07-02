@@ -42,7 +42,7 @@ export function useConnectionStatus() {
     isWalletConnected: account.isConnected,
     isSupportedWalletChainSelected: account.isConnected && isSupportedWalletChainSelected,
     isAbleToRequestWalletChain: account.isConnected && successfullyReceivedBalance,
-    hasChainARpcConnection: isChainAAuthenticated && successfullyReceivedSwaps,
+    hasChainARpcConnection: isChainAAuthenticated || successfullyReceivedSwaps,
     hasChainCRpcConnection: isChainCAuthenticated,
   };
 }
