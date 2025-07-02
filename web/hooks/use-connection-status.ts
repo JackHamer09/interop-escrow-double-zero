@@ -26,35 +26,23 @@ export function useConnectionStatus() {
       refetchIntervalInBackground: true,
     },
   });
-  const { isSuccess: successfullyReceivedBalance2, refetch: refetchWalletChainBalances2 } = useBalance({
-    address: account.address,
-    chainId: chain1.id,
-    query: {
-      // enabled: true,
-      gcTime: 500,
-      refetchInterval: 500,
-      refetchIntervalInBackground: true,
-    },
-  });
 
   useEffect(() => {
     const interval = setInterval(() => {
       refetchMySwaps();
-      refetchWalletChainBalances2();
       refetchWalletChainBalances();
     }, 500);
 
     return () => {
       clearInterval(interval);
     };
-  }, [refetchMySwaps, refetchWalletChainBalances, refetchWalletChainBalances2]);
+  }, [refetchMySwaps, refetchWalletChainBalances]);
 
   return {
     isWalletConnected: account.isConnected,
     isSupportedWalletChainSelected: account.isConnected && isSupportedWalletChainSelected,
     isAbleToRequestWalletChain: account.isConnected && successfullyReceivedBalance,
-    // hasChainARpcConnection: isChainAAuthenticated && successfullyReceivedSwaps,
-    hasChainARpcConnection: isChainAAuthenticated && successfullyReceivedBalance2,
+    hasChainARpcConnection: isChainAAuthenticated && successfullyReceivedSwaps,
     hasChainCRpcConnection: isChainCAuthenticated,
   };
 }
