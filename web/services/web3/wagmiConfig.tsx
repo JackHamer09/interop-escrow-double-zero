@@ -33,11 +33,12 @@ export const createMetaMaskClient = ({ chain }: { chain: Chain }) => {
           return response;
         }
 
-        const walletChainId: number = (
-          await window.ethereum.request({ method: "eth_chainId" }).then((res: string) => parseInt(res, 16))
-        ).catch((err: string) => {
-          throw new Error("Failed to get wallet chain ID: " + err);
-        });
+        const walletChainId: number = await window.ethereum
+          .request({ method: "eth_chainId" })
+          .then((res: string) => parseInt(res, 16))
+          .catch((err: string) => {
+            throw new Error("Failed to get wallet chain ID: " + err);
+          });
 
         if (walletChainId === chain.id) {
           try {
