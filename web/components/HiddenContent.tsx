@@ -191,7 +191,7 @@ export default function HiddenContent({ children, className }: { children: React
                       Authorize {chain1.name} RPC in the app
                     </Button>
                   )}
-                  {hasChainCRpcConnection && chainId !== chain1.id && (
+                  {hasChainARpcConnection && chainId !== chain1.id && (
                     <Button variant="outline" onClick={useChain1InWallet} className="w-full h-10">
                       Use {chain1.name} in connected MetaMask
                     </Button>

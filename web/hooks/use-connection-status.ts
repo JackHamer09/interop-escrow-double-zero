@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRpcLogin } from "./use-rpc-login";
 import useTradeEscrow from "./use-trade-escrow";
 import { useAccount, useBalance } from "wagmi";
@@ -12,7 +12,9 @@ export function useConnectionStatus() {
   const { isChainAAuthenticated, isChainCAuthenticated } = useRpcLogin();
 
   // Check if current wallet chain is supported
-  const isSupportedWalletChainSelected = allChains.includes(account.chainId as any);
+  const isSupportedWalletChainSelected = useMemo(() => {
+    return allChains.includes(account.chainId as any);
+  }, [account.chainId]);
 
   const { isSuccess: successfullyReceivedBalance, refetch: refetchWalletChainBalances } = useBalance({
     address: account.address,

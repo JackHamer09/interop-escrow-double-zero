@@ -153,7 +153,7 @@ export function useRpcLogin() {
           throw new Error(`Token fetch failed: ${error.message}`);
         });
 
-        console.log(`Login successful for chain ${chainId}. New RPC token:`, tokenRes);
+        console.log(`Login successful for chain ${chainId}. New RPC token:`, tokenRes.token);
 
         /* 5. Save tokens to auth state */
         const getUpdatedTokens = () => {
