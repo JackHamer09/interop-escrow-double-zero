@@ -3,7 +3,7 @@ import { options } from "./use-invoice-contract";
 import toast from "react-hot-toast";
 import { type Address, encodeFunctionData, erc20Abi, parseEther } from "viem";
 import { useAccount } from "wagmi";
-import { invoiceMainChain, invoiceSupportedChains } from "~~/config/invoice-config";
+import { invoiceMainChain } from "~~/config/invoice-config";
 import { getTokenByAddress } from "~~/config/tokens-config";
 
 // Helper function to check if token approval is needed
@@ -17,22 +17,14 @@ async function checkNeedsApproval(
 }
 
 export default function useInvoiceContractInterop() {
-  const { address } = useAccount();
+  const { address, chainId: walletChainId } = useAccount();
   const mainChain = invoiceMainChain;
-
-  // For now we're only supporting interop between the main chain and the first other chain
-  // In the future this could be expanded to support more chains
-  const supportedChain = invoiceSupportedChains.find(chain => chain.id !== mainChain.id);
-
-  if (!supportedChain) {
-    throw new Error("No supported interop chain found");
-  }
 
   const feeAmount = parseEther("0.001");
 
   const cancelInvoiceAsync = async (invoiceId: bigint) => {
     if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+    const builder = new InteropTransactionBuilder(walletChainId || 0, mainChain.id, feeAmount, address);
     const data = encodeFunctionData({
       abi: options.abi,
       functionName: "cancelInvoice",
@@ -61,25 +53,30 @@ export default function useInvoiceContractInterop() {
     return txHash;
   };
 
-  const payInvoiceAsync = async (invoiceId: bigint, paymentTokenAddress: Address, paymentAmount: bigint) => {
+  const payInvoiceAsync = async (
+    invoiceId: bigint,
+    paymentTokenAddress: Address,
+    paymentAmount: bigint,
+    expectedChainId: number,
+  ) => {
     if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+    const builder = new InteropTransactionBuilder(expectedChainId, mainChain.id, feeAmount, address);
 
     // Find token by address
     const token = getTokenByAddress(paymentTokenAddress);
     if (!token) throw new Error("Token not found");
 
-    // Get token address for the supported chain
-    const tokenAddressOnSupportedChain = token.addresses[supportedChain.id];
-    if (!tokenAddressOnSupportedChain)
-      throw new Error(`Token ${token.symbol} not supported on chain ${supportedChain.id}`);
+    // Get token address for the expected chain
+    const tokenAddressOnExpectedChain = token.addresses[expectedChainId];
+    if (!tokenAddressOnExpectedChain)
+      throw new Error(`Token ${token.symbol} not supported on chain ${expectedChainId}`);
 
     // 1. Approve NativeTokenVault if needed
     const tokenSymbol = token.symbol;
-    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnSupportedChain, paymentAmount);
+    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnExpectedChain, paymentAmount);
 
     if (needsApproval) {
-      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnSupportedChain, paymentAmount), {
+      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnExpectedChain, paymentAmount), {
         loading: `Approving use of ${tokenSymbol} funds...`,
         success: `${tokenSymbol} approved!`,
         error: err => {
@@ -142,11 +139,12 @@ export default function useInvoiceContractInterop() {
     text: string,
     creatorRefundAddress: Address,
     recipientRefundAddress: Address,
-    creatorChainId: number,
   ) => {
     if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
-    
+    if (!walletChainId) throw new Error("No wallet chain ID available");
+
+    const builder = new InteropTransactionBuilder(walletChainId || 0, mainChain.id, feeAmount, address);
+
     const data = encodeFunctionData({
       abi: options.abi,
       functionName: "createInvoice",
@@ -155,7 +153,7 @@ export default function useInvoiceContractInterop() {
         BigInt(recipientChainId),
         billingToken,
         amount,
-        BigInt(creatorChainId),
+        BigInt(walletChainId),
         creatorRefundAddress,
         recipientRefundAddress,
         text,

@@ -3,7 +3,7 @@ import { options } from "./use-repo-contract";
 import toast from "react-hot-toast";
 import { type Address, Hash, encodeFunctionData, erc20Abi, parseEther } from "viem";
 import { useAccount } from "wagmi";
-import { repoMainChain, repoSupportedChains } from "~~/config/repo-config";
+import { repoMainChain } from "~~/config/repo-config";
 import { getTokenByAddress } from "~~/config/tokens-config";
 
 // Helper function to check if token approval is needed
@@ -20,14 +20,6 @@ export default function useRepoContractInterop() {
   const { address, chainId: walletChainId } = useAccount();
   const mainChain = repoMainChain;
 
-  // For now we're only supporting interop between the main chain and the first other chain
-  // In the future this could be expanded to support more chains
-  const supportedChain = repoSupportedChains.find(chain => chain.id !== mainChain.id);
-
-  if (!supportedChain) {
-    throw new Error("No supported interop chain found");
-  }
-
   const feeAmount = parseEther("0.001");
 
   const createOfferAsync = async (
@@ -40,23 +32,22 @@ export default function useRepoContractInterop() {
     lenderFee: bigint,
   ) => {
     if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+    const builder = new InteropTransactionBuilder(walletChainId || 0, mainChain.id, feeAmount, address);
 
     // Find token by address
     const token = getTokenByAddress(lendToken);
     if (!token) throw new Error("Token not found");
 
-    // Get token address for the supported chain
-    const tokenAddressOnSupportedChain = token.addresses[supportedChain.id];
-    if (!tokenAddressOnSupportedChain)
-      throw new Error(`Token ${token.symbol} not supported on chain ${supportedChain.id}`);
+    // Get token address for the wallet chain
+    const tokenAddressOnWalletChain = token.addresses[walletChainId || 0];
+    if (!tokenAddressOnWalletChain) throw new Error(`Token ${token.symbol} not supported on chain ${walletChainId}`);
 
     // 1. Approve NativeTokenVault if needed
     const tokenSymbol = token.symbol;
-    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnSupportedChain, lendAmount);
+    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnWalletChain, lendAmount);
 
     if (needsApproval) {
-      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnSupportedChain, lendAmount), {
+      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnWalletChain, lendAmount), {
         loading: `Approving use of ${tokenSymbol} funds...`,
         success: `${tokenSymbol} approved!`,
         error: err => {
@@ -122,7 +113,7 @@ export default function useRepoContractInterop() {
 
   const cancelOfferAsync = async (offerId: bigint) => {
     if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+    const builder = new InteropTransactionBuilder(walletChainId || 0, mainChain.id, feeAmount, address);
     const data = encodeFunctionData({
       abi: options.abi,
       functionName: "cancelOffer",
@@ -158,23 +149,22 @@ export default function useRepoContractInterop() {
     borrowerRefundAddress: Address,
   ) => {
     if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+    const builder = new InteropTransactionBuilder(walletChainId || 0, mainChain.id, feeAmount, address);
 
     // Find token by address
     const token = getTokenByAddress(collateralTokenAddress);
     if (!token) throw new Error("Token not found");
 
-    // Get token address for the supported chain
-    const tokenAddressOnSupportedChain = token.addresses[supportedChain.id];
-    if (!tokenAddressOnSupportedChain)
-      throw new Error(`Token ${token.symbol} not supported on chain ${supportedChain.id}`);
+    // Get token address for the wallet chain
+    const tokenAddressOnWalletChain = token.addresses[walletChainId || 0];
+    if (!tokenAddressOnWalletChain) throw new Error(`Token ${token.symbol} not supported on chain ${walletChainId}`);
 
     // 1. Approve NativeTokenVault if needed
     const tokenSymbol = token.symbol;
-    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnSupportedChain, collateralAmount);
+    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnWalletChain, collateralAmount);
 
     if (needsApproval) {
-      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnSupportedChain, collateralAmount), {
+      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnWalletChain, collateralAmount), {
         loading: `Approving use of ${tokenSymbol} funds...`,
         success: `${tokenSymbol} approved!`,
         error: err => {
@@ -231,23 +221,22 @@ export default function useRepoContractInterop() {
 
   const repayLoanAsync = async (offerId: bigint, lendTokenAddress: Address, totalRepaymentAmount: bigint) => {
     if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+    const builder = new InteropTransactionBuilder(walletChainId || 0, mainChain.id, feeAmount, address);
 
     // Find token by address
     const token = getTokenByAddress(lendTokenAddress);
     if (!token) throw new Error("Token not found");
 
-    // Get token address for the supported chain
-    const tokenAddressOnSupportedChain = token.addresses[supportedChain.id];
-    if (!tokenAddressOnSupportedChain)
-      throw new Error(`Token ${token.symbol} not supported on chain ${supportedChain.id}`);
+    // Get token address for the wallet chain
+    const tokenAddressOnWalletChain = token.addresses[walletChainId || 0];
+    if (!tokenAddressOnWalletChain) throw new Error(`Token ${token.symbol} not supported on chain ${walletChainId}`);
 
     // 1. Approve NativeTokenVault if needed
     const tokenSymbol = token.symbol;
-    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnSupportedChain, totalRepaymentAmount);
+    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnWalletChain, totalRepaymentAmount);
 
     if (needsApproval) {
-      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnSupportedChain, totalRepaymentAmount), {
+      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnWalletChain, totalRepaymentAmount), {
         loading: `Approving use of ${tokenSymbol} funds...`,
         success: `${tokenSymbol} approved!`,
         error: err => {
@@ -304,7 +293,7 @@ export default function useRepoContractInterop() {
 
   const claimCollateralAsync = async (offerId: bigint) => {
     if (!address) throw new Error("No address available");
-    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+    const builder = new InteropTransactionBuilder(walletChainId || 0, mainChain.id, feeAmount, address);
     const data = encodeFunctionData({
       abi: options.abi,
       functionName: "claimCollateral",

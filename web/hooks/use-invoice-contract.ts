@@ -54,6 +54,7 @@ export default function useInvoiceContract() {
   async function checkAllowance(tokenAddress: Address, owner: Address, spender: Address): Promise<bigint> {
     try {
       const result = await readContract(wagmiConfig as any, {
+        chainId: mainChain.id,
         address: tokenAddress,
         abi: erc20Abi,
         functionName: "allowance",
@@ -87,6 +88,7 @@ export default function useInvoiceContract() {
       const approveHash = await toast.promise(
         writeContractAsync({
           abi: erc20Abi,
+          chainId: mainChain.id,
           address: token.addresses[walletChainId],
           functionName: "approve",
           args: [INVOICE_CONTRACT_ADDRESS, amount],
@@ -153,6 +155,8 @@ export default function useInvoiceContract() {
     args: [address || "0x"],
   });
 
+  console.log("pendingInvoiceCount:", pendingInvoiceCount);
+
   // Create a new invoice
   const createInvoiceAsync = async (
     recipient: Address,
@@ -172,13 +176,14 @@ export default function useInvoiceContract() {
         const createInvoice = await toast.promise(
           writeContractAsync({
             ...options,
+            chainId: mainChain.id,
             functionName: "createInvoice",
             args: [
               recipient,
               BigInt(recipientChainId),
               billingToken,
               amount,
-              BigInt(walletChainId || mainChain.id),
+              BigInt(walletChainId || 0),
               address, // creatorRefundAddress
               recipient, // recipientRefundAddress
               text,
@@ -194,7 +199,7 @@ export default function useInvoiceContract() {
           },
         );
 
-        await toast.promise(waitForTransactionReceipt({ hash: createInvoice }), {
+        await toast.promise(waitForTransactionReceipt({ chainId: mainChain.id, hash: createInvoice }), {
           loading: "Creating invoice...",
           success: "Invoice created successfully!",
           error: err => {
@@ -213,7 +218,6 @@ export default function useInvoiceContract() {
           text,
           address, // creatorRefundAddress
           recipient, // recipientRefundAddress
-          walletChainId || mainChain.id,
         );
         return createInvoice;
       }
@@ -228,26 +232,25 @@ export default function useInvoiceContract() {
     const expectedChainId = Number(invoice.recipientChainId);
     await switchChainIfNotSet(expectedChainId);
 
-    const cancelInvoice = await toast.promise(
-      isInvoiceMainChain(walletChainId || 0)
-        ? writeContractAsync({
-            ...options,
-            functionName: "cancelInvoice",
-            args: [invoice.id],
-          })
-        : interop.cancelInvoiceAsync(invoice.id),
-      {
-        loading: "Waiting for wallet approval...",
-        success: "Transaction approved!",
-        error: err => {
-          console.error(err);
-          return "Failed to approve transaction";
-        },
-      },
-    );
-
     if (isInvoiceMainChain(walletChainId || 0)) {
-      await toast.promise(waitForTransactionReceipt({ hash: cancelInvoice }), {
+      const cancelInvoice = await toast.promise(
+        writeContractAsync({
+          ...options,
+          chainId: mainChain.id,
+          functionName: "cancelInvoice",
+          args: [invoice.id],
+        }),
+        {
+          loading: "Waiting for wallet approval...",
+          success: "Transaction approved!",
+          error: err => {
+            console.error(err);
+            return "Failed to approve transaction";
+          },
+        },
+      );
+
+      await toast.promise(waitForTransactionReceipt({ chainId: mainChain.id, hash: cancelInvoice }), {
         loading: "Canceling invoice...",
         success: "Invoice cancelled successfully!",
         error: err => {
@@ -255,9 +258,12 @@ export default function useInvoiceContract() {
           return "Failed to cancel invoice";
         },
       });
-    }
 
-    return cancelInvoice;
+      return cancelInvoice;
+    } else {
+      const cancelInvoice = await interop.cancelInvoiceAsync(invoice.id);
+      return cancelInvoice;
+    }
   };
 
   // Pay an invoice
@@ -288,16 +294,13 @@ export default function useInvoiceContract() {
       return false;
     }
 
-    // Handle token approvals for main chain case
     if (isInvoiceMainChain(expectedChainId)) {
       // Approve payment token
       await checkAndApproveToken(paymentToken, paymentAmount);
-    }
-
-    if (isInvoiceMainChain(expectedChainId)) {
       const payInvoice = await toast.promise(
         writeContractAsync({
           ...options,
+          chainId: mainChain.id,
           functionName: "payInvoice",
           args: [invoice.id, paymentToken],
           value: 0n, // We need to include ETH value for cross-chain transfers
@@ -312,7 +315,7 @@ export default function useInvoiceContract() {
         },
       );
 
-      await toast.promise(waitForTransactionReceipt({ hash: payInvoice }), {
+      await toast.promise(waitForTransactionReceipt({ chainId: mainChain.id, hash: payInvoice }), {
         loading: "Processing payment...",
         success: "Invoice paid successfully!",
         error: err => {
@@ -323,7 +326,7 @@ export default function useInvoiceContract() {
 
       return payInvoice;
     } else {
-      const payInvoice = await interop.payInvoiceAsync(invoice.id, paymentToken, paymentAmount);
+      const payInvoice = await interop.payInvoiceAsync(invoice.id, paymentToken, paymentAmount, expectedChainId);
       return payInvoice;
     }
   };
@@ -347,24 +350,28 @@ export default function useInvoiceContract() {
     ...options,
     chainId: mainChain.id,
     functionName: "getUserAllInvoices",
-    args: [address || "0x", 0n, createdInvoiceCount || 0n, 0n, 0n],
+    args: [address || "0x", 0n, createdInvoiceCount || 10n, 0n, 0n],
     query: {
       enabled: !!address && !!createdInvoiceCount,
       select: data => data[0],
     },
   });
 
+  console.log("Created Invoices:", createdInvoices);
+
   // Get pending invoices directly
   const { data: pendingInvoices, refetch: refetchPendingInvoices } = useReadContract({
     ...options,
     chainId: mainChain.id,
     functionName: "getUserAllInvoices",
-    args: [address || "0x", 0n, 0n, 0n, pendingInvoiceCount || 0n],
+    args: [address || "0x", 0n, 0n, 0n, pendingInvoiceCount || 10n],
     query: {
       enabled: !!address && !!pendingInvoiceCount,
       select: data => data[1],
     },
   });
+
+  console.log("Pending Invoices:", pendingInvoices);
 
   const refetchAll = useCallback(() => {
     refetchCreatedInvoiceCount();

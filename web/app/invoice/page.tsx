@@ -135,7 +135,7 @@ export default function InvoicePaymentPage() {
     }));
   };
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInvoiceState(prev => ({
       ...prev,
       text: e.target.value,

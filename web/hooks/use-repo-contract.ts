@@ -268,27 +268,25 @@ export default function useRepoContract() {
     const offer = findOffer(offerId, openOffers);
     await switchChainIfNotSet(Number(offer.lenderChainId));
 
-    const cancelOffer = await toast.promise(
-      isRepoMainChain(Number(offer.lenderChainId))
-        ? writeContractAsync({
-            ...options,
-            chainId: mainChain.id,
-            functionName: "cancelOffer",
-            args: [offerId],
-          })
-        : interop.cancelOfferAsync(offerId),
-      {
-        loading: "Waiting for wallet approval...",
-        success: "Transaction approved!",
-        error: err => {
-          console.error(err);
-          return "Failed to approve transaction";
-        },
-      },
-    );
-
     if (isRepoMainChain(Number(offer.lenderChainId))) {
-      await toast.promise(waitForTransactionReceipt({ hash: cancelOffer }), {
+      const cancelOffer = await toast.promise(
+        writeContractAsync({
+          ...options,
+          chainId: mainChain.id,
+          functionName: "cancelOffer",
+          args: [offerId],
+        }),
+        {
+          loading: "Waiting for wallet approval...",
+          success: "Transaction approved!",
+          error: err => {
+            console.error(err);
+            return "Failed to approve transaction";
+          },
+        },
+      );
+
+      await toast.promise(waitForTransactionReceipt({ chainId: mainChain.id, hash: cancelOffer }), {
         loading: "Canceling offer...",
         success: "Offer cancelled successfully!",
         error: err => {
@@ -296,9 +294,12 @@ export default function useRepoContract() {
           return "Failed to cancel offer";
         },
       });
-    }
 
-    return cancelOffer;
+      return cancelOffer;
+    } else {
+      const cancelOffer = await interop.cancelOfferAsync(offerId);
+      return cancelOffer;
+    }
   };
 
   // Accept an offer as borrower

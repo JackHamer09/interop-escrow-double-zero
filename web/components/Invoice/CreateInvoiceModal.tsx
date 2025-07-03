@@ -25,7 +25,7 @@ interface CreateInvoiceModalProps {
   onRecipientChange: (recipient: string) => void;
   onTokenChange: (tokenAssetId: Hash) => void;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onTextChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTextChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onChainChange: (value: number) => void;
   onSubmit: () => void;
   whitelistedTokens: TokenConfig[];
@@ -61,7 +61,8 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
     return (
       invoiceState.recipientAddress.startsWith("0x") &&
       invoiceState.recipientAddress.length === 42 &&
-      invoiceState.amount > 0n
+      invoiceState.amount > 0n &&
+      invoiceState.text.length <= 100
     );
   };
 
@@ -97,16 +98,36 @@ export const CreateInvoiceModal: React.FC<CreateInvoiceModalProps> = ({
 
           {/* Invoice description */}
           <div className="flex flex-col items-start gap-2">
-            <Label htmlFor="description" className="text-right">
-              Invoice Description
-            </Label>
-            <input
+            <div className="flex items-center justify-between w-full">
+              <Label htmlFor="description" className="text-right">
+                Invoice Description
+              </Label>
+              <span
+                className={`text-xs ${
+                  invoiceState.text.length > 100
+                    ? "text-red-500"
+                    : invoiceState.text.length > 80
+                      ? "text-yellow-500"
+                      : "text-muted-foreground"
+                }`}
+              >
+                {invoiceState.text.length}/100
+              </span>
+            </div>
+            <textarea
               id="description"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors"
+              className={`w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors resize-none ${
+                invoiceState.text.length > 100 ? "border-red-500" : "border-input"
+              }`}
               placeholder="Enter invoice description..."
               value={invoiceState.text}
               onChange={onTextChange}
+              maxLength={100}
+              rows={3}
             />
+            {invoiceState.text.length > 100 && (
+              <span className="text-xs text-red-500">Description cannot exceed 100 characters</span>
+            )}
           </div>
 
           {/* Recipient Chain */}
