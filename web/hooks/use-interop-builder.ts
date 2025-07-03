@@ -128,8 +128,8 @@ export class InteropTransactionBuilder {
         },
       ],
     });
-    console.log("Interop transaction submitted");
-
+    console.log(`Interop transaction submitted on ${this.fromChainId}`, transactionHash);
+    console.log(`Waiting for interop transaction to be processed...`);
     const receipt = await waitForTransactionReceipt({ chainId: this.fromChainId, hash: transactionHash });
     if (receipt.status !== "success") throw new Error("Interop transaction failed");
     console.log(`Interop transaction processed on chain ${this.fromChainId}`);

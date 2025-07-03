@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { useBoolean } from "usehooks-ts";
 import { Address, Hash, parseUnits } from "viem";
-import { useAccount, useChainId } from "wagmi";
+import { useAccount } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
 import { CreateOfferModal, RepoHistoryTable, RepoTable } from "~~/components/Repo";
 import { TokenBalances } from "~~/components/Trade";
@@ -51,7 +51,6 @@ export default function IntradayRepo() {
   } = useRepoContract();
 
   const { address: myAddress } = useAccount();
-  const walletChainId = useChainId();
 
   // Get supported tokens from configuration
   if (repoSupportedTokens.length < 2) {
@@ -211,7 +210,6 @@ export default function IntradayRepo() {
         collateralTokenAddress,
         offerState.collateralAmount,
         BigInt(offerState.duration),
-        offerState.chainA,
         myAddress as Address,
         offerState.lenderFee,
       );
@@ -257,7 +255,6 @@ export default function IntradayRepo() {
     try {
       await acceptOfferAsync(
         offer.offerId,
-        walletChainId || mainChain.id, // Use current wallet chain or default to main chain
         myAddress as Address, // Use current address as refund address
       );
     } finally {

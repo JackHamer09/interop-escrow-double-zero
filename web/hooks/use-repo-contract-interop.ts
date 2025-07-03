@@ -17,7 +17,7 @@ async function checkNeedsApproval(
 }
 
 export default function useRepoContractInterop() {
-  const { address } = useAccount();
+  const { address, chainId: walletChainId } = useAccount();
   const mainChain = repoMainChain;
 
   // For now we're only supporting interop between the main chain and the first other chain
@@ -29,6 +29,96 @@ export default function useRepoContractInterop() {
   }
 
   const feeAmount = parseEther("0.001");
+
+  const createOfferAsync = async (
+    lendToken: Address,
+    lendAmount: bigint,
+    collateralToken: Address,
+    collateralAmount: bigint,
+    duration: bigint,
+    lenderRefundAddress: Address,
+    lenderFee: bigint,
+  ) => {
+    if (!address) throw new Error("No address available");
+    const builder = new InteropTransactionBuilder(supportedChain.id, mainChain.id, feeAmount, address);
+
+    // Find token by address
+    const token = getTokenByAddress(lendToken);
+    if (!token) throw new Error("Token not found");
+
+    // Get token address for the supported chain
+    const tokenAddressOnSupportedChain = token.addresses[supportedChain.id];
+    if (!tokenAddressOnSupportedChain)
+      throw new Error(`Token ${token.symbol} not supported on chain ${supportedChain.id}`);
+
+    // 1. Approve NativeTokenVault if needed
+    const tokenSymbol = token.symbol;
+    const needsApproval = await checkNeedsApproval(builder, tokenAddressOnSupportedChain, lendAmount);
+
+    if (needsApproval) {
+      await toast.promise(builder.approveNativeTokenVault(tokenAddressOnSupportedChain, lendAmount), {
+        loading: `Approving use of ${tokenSymbol} funds...`,
+        success: `${tokenSymbol} approved!`,
+        error: err => {
+          console.error(err);
+          return `Failed to approve ${tokenSymbol}`;
+        },
+      });
+    }
+
+    // 2. Transfer funds to aliased address
+    const aliasAddress = await builder.getAliasedAddress(address);
+    console.log(`Alias of ${address} is ${aliasAddress}`);
+    builder.addTransfer({ assetId: token.assetId as Hash, amount: lendAmount, to: aliasAddress });
+
+    // 3. Approve allowance for token at Main Chain
+    const mainChainTokenAddress = token.addresses[mainChain.id];
+    if (!mainChainTokenAddress) throw new Error(`Token ${token.symbol} not supported on main chain`);
+
+    const approvalData = encodeFunctionData({
+      abi: erc20Abi,
+      functionName: "approve",
+      args: [options.address, lendAmount],
+    });
+    builder.addTransaction({ contractAddress: mainChainTokenAddress, data: approvalData, value: 0n });
+
+    // 4. Create offer transaction
+    const createOfferData = encodeFunctionData({
+      abi: options.abi,
+      functionName: "createOffer",
+      args: [
+        lendToken,
+        lendAmount,
+        collateralToken,
+        collateralAmount,
+        duration,
+        BigInt(walletChainId || 0),
+        lenderRefundAddress,
+        lenderFee,
+      ],
+    });
+    builder.addTransaction({ contractAddress: options.address, data: createOfferData, value: 0n });
+
+    const txHash = await toast.promise(builder.send(), {
+      loading: "Waiting for wallet approval...",
+      success: "Transaction approved!",
+      error: err => {
+        console.error(err);
+        return "Failed to process transaction";
+      },
+    });
+
+    await toast.promise(builder.waitUntilInteropTxProcessed(txHash), {
+      loading: "Processing cross-chain transaction...",
+      success: "Transaction processed successfully!",
+      error: err => {
+        console.error(err);
+        return "Failed to process transaction";
+      },
+    });
+
+    return txHash;
+  };
 
   const cancelOfferAsync = async (offerId: bigint) => {
     if (!address) throw new Error("No address available");
@@ -65,7 +155,6 @@ export default function useRepoContractInterop() {
     offerId: bigint,
     collateralTokenAddress: Address,
     collateralAmount: bigint,
-    borrowerChainId: number,
     borrowerRefundAddress: Address,
   ) => {
     if (!address) throw new Error("No address available");
@@ -115,7 +204,7 @@ export default function useRepoContractInterop() {
     const acceptData = encodeFunctionData({
       abi: options.abi,
       functionName: "acceptOffer",
-      args: [offerId, BigInt(borrowerChainId), borrowerRefundAddress],
+      args: [offerId, BigInt(walletChainId || 0), borrowerRefundAddress],
     });
     builder.addTransaction({ contractAddress: options.address, data: acceptData, value: 0n });
 
@@ -245,6 +334,7 @@ export default function useRepoContractInterop() {
   };
 
   return {
+    createOfferAsync,
     cancelOfferAsync,
     acceptOfferAsync,
     repayLoanAsync,
