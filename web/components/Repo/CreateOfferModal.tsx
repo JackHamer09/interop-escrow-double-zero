@@ -27,7 +27,6 @@ interface CreateOfferModalProps {
   isCreatingOffer: boolean;
   onTokenChange: (tokenAssetId: Hash, tokenType: "lendToken" | "collateralToken") => void;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>, tokenType: "lendToken" | "collateralToken") => void;
-  onChainChange: (value: number, chainType: "chainA" | "chainB") => void;
   onDurationChange: (value: number) => void;
   onFeeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
@@ -42,7 +41,6 @@ export const CreateOfferModal: React.FC<CreateOfferModalProps> = ({
   isCreatingOffer,
   onTokenChange,
   onAmountChange,
-  onChainChange,
   onDurationChange,
   onFeeChange,
   onSubmit,
@@ -75,7 +73,6 @@ export const CreateOfferModal: React.FC<CreateOfferModalProps> = ({
             isCreatingOffer={isCreatingOffer}
             onTokenChange={onTokenChange}
             onAmountChange={onAmountChange}
-            onChainChange={onChainChange}
             onDurationChange={onDurationChange}
             onFeeChange={onFeeChange}
             onSubmit={handleSubmit}

@@ -27,7 +27,6 @@ interface RepoOfferFormProps {
   isCreatingOffer: boolean;
   onTokenChange: (tokenAssetId: Hash, tokenType: "lendToken" | "collateralToken") => void;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>, tokenType: "lendToken" | "collateralToken") => void;
-  onChainChange: (value: number, chainType: "chainA" | "chainB") => void;
   onDurationChange: (value: number) => void;
   onFeeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
@@ -40,7 +39,6 @@ export const RepoOfferForm: React.FC<RepoOfferFormProps> = ({
   isCreatingOffer,
   onTokenChange,
   onAmountChange,
-  onChainChange,
   onDurationChange,
   onFeeChange,
   onSubmit,
@@ -77,22 +75,19 @@ export const RepoOfferForm: React.FC<RepoOfferFormProps> = ({
       </div>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">Lender Fee (%)</label>
+        <label className="block text-sm font-medium mb-2">Lender Fee (bps)</label>
         <input
           type="number"
           value={offerState.displayLenderFee}
           onChange={onFeeChange}
           disabled={isCreatingOffer}
-          placeholder="0.00"
+          placeholder="3"
           min="0"
-          max="100"
-          step="0.01"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          max="10000"
+          step="1"
+          className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
-        <p className="text-xs text-gray-500 mt-1">
-          Fee percentage that borrowers will pay on top of the loan amount (e.g., 0.3% means borrowers repay 100.3% of
-          the loan)
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">Fee in basis points (1 bps = 0.01%)</p>
       </div>
 
       <RepoPoolCard
@@ -103,7 +98,6 @@ export const RepoOfferForm: React.FC<RepoOfferFormProps> = ({
         chain={chainA}
         token={offerState.lendToken}
         onAmountChange={e => onAmountChange(e, "lendToken")}
-        onChainChange={e => onChainChange(e, "chainA")}
         onTokenChange={e => onTokenChange(e, "lendToken")}
         disabled={isCreatingOffer}
         label="I want to lend"
@@ -119,7 +113,6 @@ export const RepoOfferForm: React.FC<RepoOfferFormProps> = ({
         chain={chainB}
         token={offerState.collateralToken}
         onAmountChange={e => onAmountChange(e, "collateralToken")}
-        onChainChange={e => onChainChange(e, "chainB")}
         onTokenChange={e => onTokenChange(e, "collateralToken")}
         disabled={isCreatingOffer}
         label="I want as collateral"

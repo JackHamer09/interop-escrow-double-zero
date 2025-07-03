@@ -146,6 +146,7 @@ export const RepoHistoryTable: React.FC<RepoHistoryTableProps> = ({ offers, myAd
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Duration
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fee</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Completed
                 </th>
@@ -170,9 +171,10 @@ export const RepoHistoryTable: React.FC<RepoHistoryTableProps> = ({ offers, myAd
                     ? repoSupportedChains.find(chain => BigInt(chain.id) === offer.borrowerChainId)
                     : undefined;
 
-                // Determine which address to show as counterparty
-                const counterparty =
-                  myAddress === offer.lenderRefundAddress ? offer.borrowerRefundAddress : offer.lenderRefundAddress;
+                // Determine which address to show as counterparty and their chain
+                const isLender = myAddress === offer.lenderRefundAddress;
+                const counterparty = isLender ? offer.borrowerRefundAddress : offer.lenderRefundAddress;
+                const counterpartyChain = isLender ? collateralChain : lendChain;
                 const endTimeFormatted = formatTimestamp(offer.endTime);
 
                 return (
@@ -191,10 +193,12 @@ export const RepoHistoryTable: React.FC<RepoHistoryTableProps> = ({ offers, myAd
                               height={20}
                               className="rounded-full mr-2"
                             />
-                            <div className="text-sm">
-                              {formatUnits(offer.lendAmount, lendToken.decimals)} {lendToken.symbol}
+                            <div>
+                              <div className="text-sm">
+                                {formatUnits(offer.lendAmount, lendToken.decimals)} {lendToken.symbol}
+                              </div>
+                              {lendChain && <div className="text-xs text-gray-400">from {lendChain.name}</div>}
                             </div>
-                            {lendChain && <div className="text-xs text-gray-400 ml-2">on {lendChain.name}</div>}
                           </>
                         )}
                       </div>
@@ -210,12 +214,14 @@ export const RepoHistoryTable: React.FC<RepoHistoryTableProps> = ({ offers, myAd
                               height={20}
                               className="rounded-full mr-2"
                             />
-                            <div className="text-sm">
-                              {formatUnits(offer.collateralAmount, collateralToken.decimals)} {collateralToken.symbol}
+                            <div>
+                              <div className="text-sm">
+                                {formatUnits(offer.collateralAmount, collateralToken.decimals)} {collateralToken.symbol}
+                              </div>
+                              {collateralChain && (
+                                <div className="text-xs text-gray-400">from {collateralChain.name}</div>
+                              )}
                             </div>
-                            {collateralChain && (
-                              <div className="text-xs text-gray-400 ml-2">on {collateralChain.name}</div>
-                            )}
                           </>
                         )}
                       </div>
@@ -227,16 +233,24 @@ export const RepoHistoryTable: React.FC<RepoHistoryTableProps> = ({ offers, myAd
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm">{Number(offer.lenderFee)} bps</div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm">{endTimeFormatted}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        {counterparty === "0x" ? (
-                          <span className="text-gray-400">N/A</span>
-                        ) : counterparty === myAddress ? (
-                          <span className="text-blue-400">You</span>
-                        ) : (
-                          <ShortAddress address={counterparty} isRight={false} />
+                      <div>
+                        <div className="text-sm">
+                          {counterparty === "0x" ? (
+                            <span className="text-gray-400">N/A</span>
+                          ) : counterparty === myAddress ? (
+                            <span className="text-blue-400">You</span>
+                          ) : (
+                            <ShortAddress address={counterparty} isRight={false} />
+                          )}
+                        </div>
+                        {counterpartyChain && counterparty !== "0x" && (
+                          <div className="text-xs text-gray-400">on {counterpartyChain.name}</div>
                         )}
                       </div>
                     </td>

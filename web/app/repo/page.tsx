@@ -79,8 +79,8 @@ export default function IntradayRepo() {
     displayLendAmount: "",
     displayCollateralAmount: "",
     duration: repoDurationOptions[0].value,
-    lenderFee: 0n,
-    displayLenderFee: "",
+    lenderFee: 3n,
+    displayLenderFee: "3",
   });
   const { value: isCreatingOffer, setValue: setIsCreatingOffer } = useBoolean(false);
 
@@ -171,26 +171,15 @@ export default function IntradayRepo() {
       return;
     }
 
-    // Parse fee as percentage and convert to basis points (multiply by 100)
-    // For example: 0.3% becomes 30 basis points
+    // Parse fee as basis points directly
     const feeAsNumber = parseFloat(fee);
-    if (isNaN(feeAsNumber) || feeAsNumber < 0 || feeAsNumber > 100) return;
+    if (isNaN(feeAsNumber) || feeAsNumber < 0 || feeAsNumber > 10000) return;
 
     setOfferState(prev => ({
       ...prev,
-      lenderFee: BigInt(Math.round(feeAsNumber * 100)), // Convert percentage to basis points
+      lenderFee: BigInt(Math.round(feeAsNumber)), // Use basis points directly
       displayLenderFee: fee,
     }));
-  };
-
-  const handleChainChange = async (value: number, chainType: "chainA" | "chainB") => {
-    // We only update chainA now, chainB is fixed
-    if (chainType === "chainA") {
-      setOfferState(prev => ({
-        ...prev,
-        [chainType]: value,
-      }));
-    }
   };
 
   const handleDurationChange = (value: number) => {
@@ -235,8 +224,8 @@ export default function IntradayRepo() {
           collateralAmount: 0n,
           displayLendAmount: "",
           displayCollateralAmount: "",
-          lenderFee: 0n,
-          displayLenderFee: "",
+          lenderFee: 3n,
+          displayLenderFee: "3",
         }));
         setIsCreateModalOpen(false);
       }
@@ -391,7 +380,6 @@ export default function IntradayRepo() {
               isCreatingOffer={isCreatingOffer}
               onTokenChange={handleTokenChange}
               onAmountChange={handleAmountChange}
-              onChainChange={handleChainChange}
               onDurationChange={handleDurationChange}
               onFeeChange={handleFeeChange}
               onSubmit={handleCreateOffer}

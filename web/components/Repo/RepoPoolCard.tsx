@@ -1,10 +1,9 @@
 import React from "react";
 import Image from "next/image";
-import { AlertCircle, InfoIcon, WalletIcon } from "lucide-react";
+import { AlertCircle, WalletIcon } from "lucide-react";
 import { Chain, Hash, formatUnits } from "viem";
 import { Card, CardContent, CardHeader, CardTitle } from "~~/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~~/components/ui/tooltip";
 import { repoSupportedTokens } from "~~/config/repo-config";
 import { TokenConfig } from "~~/config/tokens-config";
 import { cn } from "~~/utils/cn";
@@ -17,7 +16,6 @@ interface RepoPoolCardProps {
   chain: Chain;
   token: TokenConfig;
   onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onChainChange: (value: number) => void;
   onTokenChange: (tokenAssetId: Hash) => void;
   disabled: boolean;
   label: string;
@@ -31,7 +29,6 @@ export const RepoPoolCard: React.FC<RepoPoolCardProps> = ({
   chain,
   token,
   onAmountChange,
-  onChainChange,
   onTokenChange,
   disabled,
   label,
@@ -85,19 +82,7 @@ export const RepoPoolCard: React.FC<RepoPoolCardProps> = ({
             <span className="font-medium text-base">{label}</span>
             {isLending && (
               <div className="flex items-center gap-1">
-                <span className="text-xs px-2 py-0.5 bg-secondary/50 rounded-full ml-2">
-                  {chain.name}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <InfoIcon className="h-3 w-3 ml-1 inline relative -top-px" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Selected chain for this token</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </span>
+                <span className="text-xs px-2 py-0.5 bg-secondary/50 rounded-full ml-2">From {chain.name}</span>
               </div>
             )}
           </div>
@@ -106,7 +91,7 @@ export const RepoPoolCard: React.FC<RepoPoolCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-y-2 p-4 pt-0 w-full">
-        <div className="w-full grid grid-cols-[1fr_max-content] items-center overflow-hidden">
+        <div className="w-full grid grid-cols-[1fr_max-content] gap-x-4 items-center overflow-hidden">
           <div className="flex flex-col w-full">
             <input
               placeholder="0"
@@ -125,7 +110,7 @@ export const RepoPoolCard: React.FC<RepoPoolCardProps> = ({
                 <button
                   type="button"
                   className={cn(
-                    "flex items-center gap-x-1 text-sm self-start px-2 py-0.5",
+                    "flex items-center gap-x-1 text-sm self-start px-2 py-0.5 whitespace-nowrap truncate max-w-[12rem]",
                     isMaxSelected
                       ? "bg-blue-500/20 rounded text-blue-400 font-medium cursor-default"
                       : "text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded cursor-pointer",
@@ -133,8 +118,8 @@ export const RepoPoolCard: React.FC<RepoPoolCardProps> = ({
                   onClick={handleMaxClick}
                   disabled={disabled || isMaxSelected}
                 >
-                  <WalletIcon className="h-3 w-3" />
-                  <span>Max: {formatUnits(balance, token.decimals)}</span>
+                  <WalletIcon className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">Max: {formatUnits(balance, token.decimals)}</span>
                 </button>
 
                 {hasInsufficientBalance && (

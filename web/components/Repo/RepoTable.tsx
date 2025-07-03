@@ -235,6 +235,7 @@ export const RepoTable: React.FC<RepoTableProps> = ({
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Duration
               </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fee</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 {isMyOffers ? "Counterparty" : "Lender"}
               </th>
@@ -257,12 +258,18 @@ export const RepoTable: React.FC<RepoTableProps> = ({
                   ? repoSupportedChains.find(chain => BigInt(chain.id) === offer.borrowerChainId)
                   : undefined;
 
-              // Determine which address to show as counterparty
+              // Determine which address to show as counterparty and their chain
+              const isLender = myAddress === offer.lenderRefundAddress;
               const counterparty = isMyOffers
-                ? myAddress === offer.lenderRefundAddress
+                ? isLender
                   ? offer.borrowerRefundAddress
                   : offer.lenderRefundAddress
                 : offer.lenderRefundAddress;
+              const counterpartyChain = isMyOffers
+                ? isLender
+                  ? collateralChain
+                  : lendChain
+                : lendChain;
 
               return (
                 <tr key={offer.offerId.toString()} className="hover:bg-gray-800/30">
@@ -280,10 +287,12 @@ export const RepoTable: React.FC<RepoTableProps> = ({
                             height={20}
                             className="rounded-full mr-2"
                           />
-                          <div className="text-sm">
-                            {formatUnits(offer.lendAmount, lendToken.decimals)} {lendToken.symbol}
+                          <div>
+                            <div className="text-sm">
+                              {formatUnits(offer.lendAmount, lendToken.decimals)} {lendToken.symbol}
+                            </div>
+                            {lendChain && <div className="text-xs text-gray-400">from {lendChain.name}</div>}
                           </div>
-                          {lendChain && <div className="text-xs text-gray-400 ml-2">on {lendChain.name}</div>}
                         </>
                       )}
                     </div>
@@ -299,12 +308,14 @@ export const RepoTable: React.FC<RepoTableProps> = ({
                             height={20}
                             className="rounded-full mr-2"
                           />
-                          <div className="text-sm">
-                            {formatUnits(offer.collateralAmount, collateralToken.decimals)} {collateralToken.symbol}
+                          <div>
+                            <div className="text-sm">
+                              {formatUnits(offer.collateralAmount, collateralToken.decimals)} {collateralToken.symbol}
+                            </div>
+                            {collateralChain && (
+                              <div className="text-xs text-gray-400">from {collateralChain.name}</div>
+                            )}
                           </div>
-                          {collateralChain && (
-                            <div className="text-xs text-gray-400 ml-2">on {collateralChain.name}</div>
-                          )}
                         </>
                       )}
                     </div>
@@ -316,13 +327,21 @@ export const RepoTable: React.FC<RepoTableProps> = ({
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm">
-                      {counterparty !== zeroAddress &&
-                        (counterparty === myAddress ? (
-                          <span className="text-blue-400">You</span>
-                        ) : (
-                          <ShortAddress address={counterparty} isRight={false} />
-                        ))}
+                    <div className="text-sm">{Number(offer.lenderFee)} bps</div>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm">
+                        {counterparty !== zeroAddress &&
+                          (counterparty === myAddress ? (
+                            <span className="text-blue-400">You</span>
+                          ) : (
+                            <ShortAddress address={counterparty} isRight={false} />
+                          ))}
+                      </div>
+                      {counterpartyChain && counterparty !== zeroAddress && (
+                        <div className="text-xs text-gray-400">on {counterpartyChain.name}</div>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
