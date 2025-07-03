@@ -297,13 +297,18 @@ cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoic
 cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "whitelistToken(address,string)" $sgd_address_chain_c "SGD"
 
 # Set exchange rates between tokens on Chain C
-echo "Setting exchange rates in InvoicePayment contract on Chain C..."
 # 1 SGD = 0.74 USD (1 SGD token = 0.74 USDC tokens)
 cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $sgd_address_chain_c $usdc_address_chain_c 740000000000000000
+# 1 SGD = 0.74 TTBILL (1 SGD token = 0.74 TTBILL tokens)
+cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $sgd_address_chain_c $ttbill_address_chain_c 740000000000000000
 # 1 TTBILL = 1.02 USD (1 TTBILL token = 1.02 USDC tokens)
 cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $ttbill_address_chain_c $usdc_address_chain_c 1020000000000000000
 # 1 TTBILL = 1.38 SGD (1 TTBILL token = 1.38 SGD tokens)
 cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $ttbill_address_chain_c $sgd_address_chain_c 1380000000000000000
+# 1 USD = 1.35 SGD (1 USDC token = 1.35 SGD tokens)
+cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $usdc_address_chain_c $sgd_address_chain_c 1350000000000000000
+# 1 USD = 0.98 TTBILL (1 USDC token = 0.98 TTBILL tokens)
+cast send --rpc-url $CHAIN_C_RPC_URL --private-key $DEPLOYER_PRIVATE_KEY $invoice_payment_address "setExchangeRate(address,address,uint256)" $usdc_address_chain_c $ttbill_address_chain_c 980000000000000000
 
 echo ""
 echo "Accounts:"

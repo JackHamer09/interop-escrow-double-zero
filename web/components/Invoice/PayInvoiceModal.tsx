@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { ShortAddress } from "../Trade/ShortAddress";
 import { ArrowRight, Wallet } from "lucide-react";
+import { Hash } from "viem";
 import { Button } from "~~/components/ui/button";
 import {
   Dialog,
@@ -13,7 +14,7 @@ import {
 } from "~~/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~~/components/ui/select";
 import { TokenConfig } from "~~/config/tokens-config";
-import { getTokenByAddress } from "~~/config/tokens-config";
+import { getTokenByAddress, getTokenByAssetId } from "~~/config/tokens-config";
 import { Invoice } from "~~/hooks/use-invoice-contract";
 import { formatAmount } from "~~/utils/format";
 
@@ -29,10 +30,10 @@ interface PayInvoiceModalProps {
   whitelistedTokens: TokenConfig[];
   tokens: TokenWithBalance[]; // Tokens with balances
   isProcessing: boolean;
-  onPaymentTokenChange: (tokenAddress: `0x${string}`) => void;
+  onPaymentTokenChange: (tokenAssetId: Hash) => void;
   onSubmit: () => void;
   conversionAmount: bigint | null;
-  selectedPaymentToken: `0x${string}` | null;
+  selectedPaymentToken: Hash | null;
   chainId?: number; // Optional chainId to determine which token address to use
 }
 
@@ -52,7 +53,7 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({
   if (!invoice) return null;
 
   const billingToken = getTokenByAddress(invoice.billingToken);
-  const paymentToken = selectedPaymentToken ? getTokenByAddress(selectedPaymentToken) : null;
+  const paymentToken = selectedPaymentToken ? getTokenByAssetId(selectedPaymentToken) : null;
 
   // Find the token with balance info
   const selectedTokenWithBalance = paymentToken ? tokens.find(t => t.assetId === paymentToken.assetId) : null;
@@ -116,22 +117,19 @@ export const PayInvoiceModal: React.FC<PayInvoiceModalProps> = ({
               )}
             </div>
 
-            <Select
-              value={selectedPaymentToken || ""}
-              onValueChange={value => onPaymentTokenChange(value as `0x${string}`)}
-            >
+            <Select value={selectedPaymentToken || ""} onValueChange={value => onPaymentTokenChange(value as Hash)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Token" />
               </SelectTrigger>
               <SelectContent>
                 {whitelistedTokens.map(token => {
-                  // Determine which chain's token address to use
+                  // Determine which chain's token address to use for display purposes
                   const tokenChainId = chainId || Number(Object.keys(token.addresses)[0]);
                   const tokenAddress = token.addresses[tokenChainId];
                   if (!tokenAddress) return null; // Skip tokens without an address for this chain
 
                   return (
-                    <SelectItem key={token.assetId} value={tokenAddress}>
+                    <SelectItem key={token.assetId} value={token.assetId}>
                       <div className="flex items-center gap-2">
                         <Image src={token.logo} alt={token.symbol} width={20} height={20} className="rounded-full" />
                         <span>{token.symbol}</span>

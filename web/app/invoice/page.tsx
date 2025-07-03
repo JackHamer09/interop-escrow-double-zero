@@ -11,7 +11,7 @@ import { Button } from "~~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs";
 import { InvoiceStatus, invoiceMainChain, invoiceSupportedChains } from "~~/config/invoice-config";
 import { defaultBillingToken, defaultPaymentToken } from "~~/config/invoice-config";
-import { TokenConfig, getTokenByAddress, getTokenByAssetId } from "~~/config/tokens-config";
+import { TokenConfig, getTokenAddress, getTokenByAddress, getTokenByAssetId } from "~~/config/tokens-config";
 import useInvoiceContract, { Invoice } from "~~/hooks/use-invoice-contract";
 
 export default function InvoicePaymentPage() {
@@ -20,7 +20,7 @@ export default function InvoicePaymentPage() {
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [processingInvoiceId, setProcessingInvoiceId] = useState<bigint | undefined>(undefined);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [selectedPaymentToken, setSelectedPaymentToken] = useState<`0x${string}` | null>(null);
+  const [selectedPaymentToken, setSelectedPaymentToken] = useState<Hash | null>(null);
   const [conversionAmount, setConversionAmount] = useState<bigint | null>(null);
 
   const {
@@ -60,9 +60,16 @@ export default function InvoicePaymentPage() {
   useEffect(() => {
     const updateConversionAmount = async () => {
       if (selectedInvoice && selectedPaymentToken) {
+        // Get the payment token address on the main chain
+        const paymentTokenAddress = getTokenAddress(selectedPaymentToken, mainChain.id);
+        if (!paymentTokenAddress) {
+          console.error("Payment token not available on main chain");
+          return;
+        }
+
         const amount = await getConversionAmount(
           selectedInvoice.billingToken,
-          selectedPaymentToken,
+          paymentTokenAddress,
           selectedInvoice.amount,
         );
         setConversionAmount(amount);
@@ -72,7 +79,7 @@ export default function InvoicePaymentPage() {
     };
 
     updateConversionAmount();
-  }, [selectedInvoice, selectedPaymentToken, getConversionAmount]);
+  }, [selectedInvoice, selectedPaymentToken, getConversionAmount, mainChain.id]);
 
   const handleRefreshBalances = async () => {
     setIsRefreshingBalances(true);
@@ -157,11 +164,11 @@ export default function InvoicePaymentPage() {
 
     setIsCreatingInvoice(true);
     try {
-      // Get the token address for the chain
-      const billingTokenAddress = invoiceState.billingToken.addresses[mainChain.id];
+      // Get the token address for the main chain
+      const billingTokenAddress = getTokenAddress(invoiceState.billingToken.assetId, mainChain.id);
 
       if (!billingTokenAddress) {
-        throw new Error("Token not supported on selected chain");
+        throw new Error("Token not supported on main chain");
       }
 
       const result = await createInvoiceAsync(
@@ -209,23 +216,30 @@ export default function InvoicePaymentPage() {
     // Set default payment token if available
     if (whitelistedTokens && whitelistedTokens[0].length > 0) {
       const defaultToken = getTokenByAddress(invoice.billingToken) || defaultPaymentToken;
-      setSelectedPaymentToken(defaultToken.addresses[mainChain.id]);
+      setSelectedPaymentToken(defaultToken.assetId);
     }
     setIsPayModalOpen(true);
   };
 
-  const handlePaymentTokenChange = (tokenAddress: `0x${string}`) => {
-    setSelectedPaymentToken(tokenAddress);
+  const handlePaymentTokenChange = (tokenAssetId: Hash) => {
+    setSelectedPaymentToken(tokenAssetId);
   };
 
   const handlePayInvoice = async () => {
     if (!selectedInvoice || !selectedPaymentToken) return;
 
+    // Get the payment token address on the main chain
+    const paymentTokenAddress = getTokenAddress(selectedPaymentToken, mainChain.id);
+    if (!paymentTokenAddress) {
+      console.error("Payment token not available on main chain");
+      return;
+    }
+
     setIsCreatingInvoice(true);
     setProcessingInvoiceId(selectedInvoice.id);
 
     try {
-      await payInvoiceAsync(selectedInvoice, selectedPaymentToken);
+      await payInvoiceAsync(selectedInvoice, paymentTokenAddress);
       setIsPayModalOpen(false);
       refetchAll();
     } finally {

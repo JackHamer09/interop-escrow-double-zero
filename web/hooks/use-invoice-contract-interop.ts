@@ -108,7 +108,7 @@ export default function useInvoiceContractInterop() {
       functionName: "payInvoice",
       args: [invoiceId, paymentTokenAddress],
     });
-    builder.addTransaction({ contractAddress: options.address, data: payData, value: 0n }); // Include fee value for cross-chain transfers
+    builder.addTransaction({ contractAddress: options.address, data: payData, value: 0n });
 
     const txHash = await toast.promise(builder.send(), {
       loading: "Waiting for wallet approval...",

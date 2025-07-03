@@ -155,8 +155,6 @@ export default function useInvoiceContract() {
     args: [address || "0x"],
   });
 
-  console.log("pendingInvoiceCount:", pendingInvoiceCount);
-
   // Create a new invoice
   const createInvoiceAsync = async (
     recipient: Address,
@@ -229,7 +227,8 @@ export default function useInvoiceContract() {
 
   // Cancel an invoice
   const cancelInvoiceAsync = async (invoice: Invoice) => {
-    const expectedChainId = Number(invoice.recipientChainId);
+    const expectedChainId =
+      invoice.recipientRefundAddress === address ? Number(invoice.recipientChainId) : Number(invoice.creatorChainId);
     await switchChainIfNotSet(expectedChainId);
 
     if (isInvoiceMainChain(walletChainId || 0)) {
@@ -357,8 +356,6 @@ export default function useInvoiceContract() {
     },
   });
 
-  console.log("Created Invoices:", createdInvoices);
-
   // Get pending invoices directly
   const { data: pendingInvoices, refetch: refetchPendingInvoices } = useReadContract({
     ...options,
@@ -370,8 +367,6 @@ export default function useInvoiceContract() {
       select: data => data[1],
     },
   });
-
-  console.log("Pending Invoices:", pendingInvoices);
 
   const refetchAll = useCallback(() => {
     refetchCreatedInvoiceCount();
