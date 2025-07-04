@@ -1,7 +1,7 @@
 import { InteropTransactionBuilder } from "./use-interop-builder";
 import { options } from "./use-invoice-contract";
 import toast from "react-hot-toast";
-import { type Address, encodeFunctionData, erc20Abi, parseEther } from "viem";
+import { type Address, encodeFunctionData, erc20Abi, formatEther, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { invoiceMainChain } from "~~/config/invoice-config";
 import { getTokenByAddress } from "~~/config/tokens-config";
@@ -106,7 +106,7 @@ export default function useInvoiceContractInterop() {
     const payData = encodeFunctionData({
       abi: options.abi,
       functionName: "payInvoice",
-      args: [invoiceId, paymentTokenAddress],
+      args: [invoiceId, mainChainTokenAddress],
     });
     builder.addTransaction({ contractAddress: options.address, data: payData, value: 0n });
 

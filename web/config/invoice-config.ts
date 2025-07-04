@@ -1,10 +1,10 @@
-import { chain3 } from "./chains-config";
-import { escrowSupportedChains, escrowSupportedTokens } from "./escrow-trade-config";
+import { chain1, chain2, chain3 } from "./chains-config";
+import { escrowSupportedTokens } from "./escrow-trade-config";
 import { Address, getAddress } from "viem";
 import { env } from "~~/utils/env";
 
 export const invoiceMainChain = chain3; // Invoice contract is deployed on Chain C
-export const invoiceSupportedChains = escrowSupportedChains;
+export const invoiceSupportedChains = [chain1, chain2, chain3];
 export const invoiceSupportedTokens = escrowSupportedTokens;
 
 export const invoiceContracts = {
