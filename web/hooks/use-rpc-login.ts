@@ -8,7 +8,7 @@ import { addChain } from "viem/actions";
 import { useAccount, useClient, useSignMessage } from "wagmi";
 import { allChains, chain1, chain3, chainsAuthEndpoints } from "~~/config/chains-config";
 
-const STORAGE_KEY = "rpc_auth_v2";
+const STORAGE_KEY = "rpc_auth_v3";
 
 type ChainAuthRecord = Record<string, string>; // address -> rpcToken
 type AuthRecord = Record<number, ChainAuthRecord>; // chainId -> (address -> rpcToken)
