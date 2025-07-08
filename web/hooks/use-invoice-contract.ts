@@ -4,8 +4,8 @@ import { useInterval } from "./use-interval";
 import useInvoiceContractInterop from "./use-invoice-contract-interop";
 import { readContract } from "@wagmi/core";
 import toast from "react-hot-toast";
-import { Address, erc20Abi, formatUnits } from "viem";
-import { useAccount, useReadContract, useSwitchChain, useWriteContract } from "wagmi";
+import { Address, encodeFunctionData, erc20Abi, formatUnits } from "viem";
+import { useAccount, useReadContract, useSendTransaction, useSwitchChain, useWriteContract } from "wagmi";
 import { InvoiceStatus, invoiceMainChain, isInvoiceMainChain } from "~~/config/invoice-config";
 import { getTokenByAddress } from "~~/config/tokens-config";
 import { INVOICE_CONTRACT_ABI, INVOICE_CONTRACT_ADDRESS } from "~~/contracts/invoice-payment";
@@ -39,6 +39,7 @@ export default function useInvoiceContract() {
   const { address, chainId: walletChainId } = useAccount();
   const interop = useInvoiceContractInterop();
   const { writeContractAsync } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
   const { switchChainAsync } = useSwitchChain();
   const { tokens, refetch: refetchTokens } = useBalances(walletChainId);
 
@@ -60,7 +61,7 @@ export default function useInvoiceContract() {
         functionName: "allowance",
         args: [owner, spender],
       });
-      return result as bigint;
+      return result;
     } catch (error) {
       console.error("Error checking allowance:", error);
       return 0n;
@@ -75,40 +76,37 @@ export default function useInvoiceContract() {
     const tokenConfig = getTokenByAddress(tokenAddress);
     if (!tokenConfig) throw new Error("Token not found");
 
-    // Find token in our tokens array
-    const token = getTokenWithBalanceByAssetId(tokens, tokenConfig.assetId);
-    if (!token) throw new Error("Token not found in wallet");
-
     // Check allowance directly when needed
-    const currentAllowance = await checkAllowance(token.addresses[walletChainId], address, INVOICE_CONTRACT_ADDRESS);
+    const currentAllowance = await checkAllowance(tokenAddress, address, INVOICE_CONTRACT_ADDRESS);
 
     // Check if we need to approve
     if (currentAllowance < amount) {
       // Approve token
       const approveHash = await toast.promise(
         writeContractAsync({
+          account: address,
           abi: erc20Abi,
           chainId: mainChain.id,
-          address: token.addresses[walletChainId],
+          address: tokenAddress,
           functionName: "approve",
           args: [INVOICE_CONTRACT_ADDRESS, amount],
         }),
         {
-          loading: `Approving use of ${token.symbol} funds...`,
-          success: `${token.symbol} approved!`,
+          loading: `Approving use of ${tokenConfig.symbol} funds...`,
+          success: `${tokenConfig.symbol} approved!`,
           error: err => {
             console.error(err);
-            return `Failed to approve ${token.symbol}`;
+            return `Failed to approve ${tokenConfig.symbol}`;
           },
         },
       );
 
       await toast.promise(waitForTransactionReceipt({ hash: approveHash }), {
-        loading: `Waiting for ${token.symbol} approval confirmation...`,
-        success: `${token.symbol} approval confirmed!`,
+        loading: `Waiting for ${tokenConfig.symbol} approval confirmation...`,
+        success: `${tokenConfig.symbol} approval confirmed!`,
         error: err => {
           console.error(err);
-          return `Failed to approve ${token.symbol}`;
+          return `Failed to approve ${tokenConfig.symbol}`;
         },
       });
     }
@@ -269,6 +267,7 @@ export default function useInvoiceContract() {
   const payInvoiceAsync = async (invoice: Invoice, paymentToken: Address) => {
     const expectedChainId = Number(invoice.recipientChainId);
     await switchChainIfNotSet(expectedChainId);
+    console.log(invoice);
 
     // Calculate payment amount using the conversion rate
     const paymentAmount = await getConversionAmount(invoice.billingToken, paymentToken, invoice.amount);
@@ -296,13 +295,20 @@ export default function useInvoiceContract() {
     if (isInvoiceMainChain(expectedChainId)) {
       // Approve payment token
       await checkAndApproveToken(paymentToken, paymentAmount);
+      // Encode the function data
+      const data = encodeFunctionData({
+        abi: INVOICE_CONTRACT_ABI,
+        functionName: "payInvoice",
+        args: [invoice.id, paymentToken],
+      });
+
       const payInvoice = await toast.promise(
-        writeContractAsync({
-          ...options,
+        sendTransactionAsync({
+          to: INVOICE_CONTRACT_ADDRESS,
+          data,
+          account: address,
           chainId: mainChain.id,
-          functionName: "payInvoice",
-          args: [invoice.id, paymentToken],
-          value: 0n, // We need to include ETH value for cross-chain transfers
+          value: 0n,
         }),
         {
           loading: "Waiting for wallet approval...",
@@ -381,6 +387,10 @@ export default function useInvoiceContract() {
     refetchCreatedInvoices,
     refetchPendingInvoices,
   ]);
+
+  useEffect(() => {
+    console.log(whitelistedTokensData);
+  }, [whitelistedTokensData]);
 
   return {
     whitelistedTokens: whitelistedTokensData,
