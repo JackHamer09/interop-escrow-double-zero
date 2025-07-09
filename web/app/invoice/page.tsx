@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Hash, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import HiddenContent from "~~/components/HiddenContent";
 import { CreateInvoiceModal, InvoiceFormState, InvoiceTable, PayInvoiceModal } from "~~/components/Invoice";
 import { TokenBalances } from "~~/components/Trade";
 import { Button } from "~~/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs";
-import { InvoiceStatus, invoiceMainChain, invoiceSupportedChains } from "~~/config/invoice-config";
+import { chain2 } from "~~/config/chains-config";
+import { invoiceMainChain, invoiceSupportedChains } from "~~/config/invoice-config";
 import { defaultBillingToken, defaultPaymentToken } from "~~/config/invoice-config";
 import { TokenConfig, getTokenAddress, getTokenByAddress, getTokenByAssetId } from "~~/config/tokens-config";
 import useInvoiceContract, { Invoice } from "~~/hooks/use-invoice-contract";
@@ -45,10 +45,13 @@ export default function InvoicePaymentPage() {
     throw new Error("No secondary chain configured");
   }
 
+  // Set default recipient chain to Chain B (chain2)
+  const defaultRecipientChain = invoiceSupportedChains.find(chain => chain.id === chain2.id) || supportedChain;
+
   // State for the invoice creation form
   const [invoiceState, setInvoiceState] = useState<InvoiceFormState>({
     recipientAddress: "",
-    recipientChainId: supportedChain.id,
+    recipientChainId: defaultRecipientChain.id,
     billingToken: defaultBillingToken,
     amount: 0n,
     displayAmount: "",
@@ -249,9 +252,6 @@ export default function InvoicePaymentPage() {
     }
   };
 
-  // State for managing the active tab
-  const [activeTab, setActiveTab] = useState("recent");
-
   // Format whitelist tokens data
   const formattedWhitelistedTokens = whitelistedTokens
     ? whitelistedTokens[0]
@@ -271,19 +271,6 @@ export default function InvoicePaymentPage() {
     Number(b.createdAt - a.createdAt),
   );
 
-  // Separate invoices for tabs
-  const recentInvoices = allInvoices.filter(
-    invoice =>
-      invoice.status === InvoiceStatus.Created ||
-      (invoice.status === InvoiceStatus.Paid && Number(invoice.paidAt) > Date.now() / 1000 - 7 * 24 * 60 * 60), // Last 7 days
-  );
-
-  const historyInvoices = allInvoices.filter(
-    invoice =>
-      invoice.status !== InvoiceStatus.Created &&
-      (invoice.status !== InvoiceStatus.Paid || Number(invoice.paidAt) <= Date.now() / 1000 - 7 * 24 * 60 * 60),
-  );
-
   return (
     <div className="flex-1 flex flex-col items-center justify-center relative w-full px-4">
       <div className="flex flex-col items-center w-full mt-10">
@@ -299,51 +286,18 @@ export default function InvoicePaymentPage() {
                   Create Invoice
                 </Button>
               </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-                onClick={handleRefreshBalances}
-                disabled={isRefreshingBalances}
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshingBalances ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
             </div>
 
-            {/* Tabs for Recent and History */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
-              <TabsList className="w-full flex justify-start mb-4">
-                <TabsTrigger value="recent">Recent Invoices</TabsTrigger>
-                <TabsTrigger value="history">Invoice History</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="recent" className="space-y-6">
-                {/* Recent Invoices */}
-                <InvoiceTable
-                  title="Recent Invoices"
-                  invoices={recentInvoices}
-                  myAddress={myAddress}
-                  isProcessing={isCreatingInvoice}
-                  processingInvoiceId={processingInvoiceId}
-                  onPayInvoice={handleOpenPayModal}
-                  onCancelInvoice={handleCancelInvoice}
-                />
-              </TabsContent>
-
-              <TabsContent value="history">
-                {/* Historical Invoices */}
-                <InvoiceTable
-                  title="Invoice History"
-                  invoices={historyInvoices}
-                  myAddress={myAddress}
-                  isProcessing={isCreatingInvoice}
-                  processingInvoiceId={processingInvoiceId}
-                  showFilters={true}
-                />
-              </TabsContent>
-            </Tabs>
+            {/* All Invoices Table */}
+            <InvoiceTable
+              title="Invoices"
+              invoices={allInvoices}
+              myAddress={myAddress}
+              isProcessing={isCreatingInvoice}
+              processingInvoiceId={processingInvoiceId}
+              onPayInvoice={handleOpenPayModal}
+              onCancelInvoice={handleCancelInvoice}
+            />
 
             {/* Create Invoice Modal */}
             <CreateInvoiceModal

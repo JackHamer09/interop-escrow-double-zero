@@ -46,12 +46,12 @@ export const AddressInfoDropdown = ({ address }: AddressInfoDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="min-h-[42px] h-[42px] pl-2 pr-3 flex items-center gap-2">
-          <BlockieAvatar address={address} size={24} className="rounded-full" />
-          <span className="ml-1.5 text-base font-normal">
+        <Button variant="outline" className="w-max h-[42px] px-3 flex items-center gap-2">
+          <BlockieAvatar address={address} size={20} className="rounded-full" />
+          <span className="text-sm sm:text-base font-normal">
             {address.slice(0, 6)}...{address.slice(-4)}
           </span>
-          <ChevronDownIcon className="h-4 w-4 ml-1" />
+          <ChevronDownIcon className="size-2" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={4}>

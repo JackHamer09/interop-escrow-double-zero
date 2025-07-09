@@ -327,7 +327,21 @@ export const RepoTable: React.FC<RepoTableProps> = ({
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm">{Number(offer.lenderFee)} bps</div>
+                    <div>
+                      <div className="text-sm">{Number(offer.lenderFee)} bps</div>
+                      {lendToken && (
+                        <div className="flex items-center text-xs text-gray-400">
+                          <Image
+                            src={lendToken.logo}
+                            alt={lendToken.symbol}
+                            width={14}
+                            height={14}
+                            className="rounded-full mr-1"
+                          />
+                          {formatUnits((offer.lendAmount * offer.lenderFee) / 10000n, lendToken.decimals)} {lendToken.symbol}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div>

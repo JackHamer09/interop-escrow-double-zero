@@ -44,11 +44,11 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
   const getStatusBadge = (status: InvoiceStatus) => {
     switch (status) {
       case InvoiceStatus.Created:
-        return <Badge className="bg-yellow-500">Pending</Badge>;
+        return <Badge className="bg-blue-400">Pending</Badge>;
       case InvoiceStatus.Paid:
         return <Badge className="bg-green-500">Paid</Badge>;
       case InvoiceStatus.Cancelled:
-        return <Badge className="bg-red-500">Cancelled</Badge>;
+        return <Badge className="bg-red-400">Cancelled</Badge>;
       default:
         return <Badge className="bg-gray-500">Unknown</Badge>;
     }
@@ -146,23 +146,27 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                       <div className="text-sm font-medium">#{invoice.id.toString()}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        {invoice.creatorRefundAddress === myAddress ? (
-                          <span className="text-blue-400">You</span>
-                        ) : (
-                          <ShortAddress address={invoice.creatorRefundAddress} isRight={false} />
-                        )}
-                        <span className="ml-1 text-xs text-gray-500">({creatorChain?.name})</span>
+                      <div>
+                        <div className="text-sm">
+                          {invoice.creatorRefundAddress === myAddress ? (
+                            <span className="text-blue-400">You</span>
+                          ) : (
+                            <ShortAddress address={invoice.creatorRefundAddress} isRight={false} />
+                          )}
+                        </div>
+                        {creatorChain && <div className="text-xs text-gray-400">{creatorChain.name}</div>}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        {invoice.recipientRefundAddress === myAddress ? (
-                          <span className="text-blue-400">You</span>
-                        ) : (
-                          <ShortAddress address={invoice.recipientRefundAddress} isRight={false} />
-                        )}
-                        <span className="ml-1 text-xs text-gray-500">({recipientChain?.name})</span>
+                      <div>
+                        <div className="text-sm">
+                          {invoice.recipientRefundAddress === myAddress ? (
+                            <span className="text-blue-400">You</span>
+                          ) : (
+                            <ShortAddress address={invoice.recipientRefundAddress} isRight={false} />
+                          )}
+                        </div>
+                        {recipientChain && <div className="text-xs text-gray-400">{recipientChain.name}</div>}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
@@ -188,8 +192,16 @@ export const InvoiceTable: React.FC<InvoiceTableProps> = ({
                         )}
                       </div>
                       {invoice.status === InvoiceStatus.Paid && paymentToken && (
-                        <div className="text-xs text-gray-400 mt-1">
-                          Paid with: {formatAmount(invoice.paymentAmount, paymentToken.decimals)} {paymentToken.symbol}
+                        <div className="flex items-center text-xs text-gray-400 mt-1">
+                          <span className="mr-1">Paid with:</span>
+                          <Image
+                            src={paymentToken.logo}
+                            alt={paymentToken.symbol}
+                            width={14}
+                            height={14}
+                            className="rounded-full mr-1"
+                          />
+                          {formatAmount(invoice.paymentAmount, paymentToken.decimals)} {paymentToken.symbol}
                         </div>
                       )}
                     </td>
